@@ -151,3 +151,18 @@ Prioritize correctness of league rules, intuitive workflows, security, and visua
 Avoid unnecessary complexity and paid infrastructure until it is justified.
 
 Implementation details may evolve, but material changes to league rules or architecture must be discussed and documented.
+
+## Initial Frontend Implementation Decisions
+
+The initial complete frontend runs locally with mock identity, a typed repository/service layer, and browser-local persistence. Database, real authentication, Azure Functions, email delivery, and deployment remain later integrations. The frontend includes administration, approval workflows, historical seasons, and playoffs without provisioning cloud services.
+
+Defaults established for this iteration:
+
+- Deterministic ranking uses league points, frame difference, frames won, then immutable participant ID ascending as the final exact-tie fallback.
+- Top-four seeds lock automatically after all regular-season fixtures are confirmed, or through explicit administrator finalization with a reason and confirmation. Explicit finalization closes unresolved fixtures without awarding points or automatic defeats.
+- Later historical corrections update standings but preserve finalized playoff seeds. Changes to semifinal winners cannot replace participants in an already started final.
+- New schedule generation moves due-date clashes to three days after recorded leave, checking subsequent leave intervals. Published fixtures are adjusted explicitly by an administrator or postponed by a participant; they are not silently penalized or moved when leave is recorded.
+- Draft seasons allow a configurable rounds-per-week target, defaulting to two. Published schedule settings are locked; individual fixture dates remain adjustable.
+- The competition participant model supports individual or team entries. The initial management UI is singles only; doubles management is deferred.
+
+See README.md for the complete architecture, local startup, workflow guide, backend integration boundaries, and demo limitations. See IMPLEMENTATION_STATUS.md for delivered and deferred scope.

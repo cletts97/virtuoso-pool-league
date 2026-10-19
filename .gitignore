@@ -3,3 +3,14 @@
 
 # VS Code local settings
 .vscode/
+
+node_modules/
+dist/
+coverage/
+.tools/
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/
+*.tsbuildinfo
