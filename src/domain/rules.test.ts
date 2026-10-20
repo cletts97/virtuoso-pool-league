@@ -19,7 +19,7 @@ function makeSeason(count: number): Season {
     participantIds: Array.from({ length: count }, (_, i) => `p${i}`),
     format: 'singles',
     status: 'regular',
-    config: { pointsPerWin: 3, roundsPerWeek: 2 },
+    config: { roundsPerWeek: 2 },
     qualifiers: [],
   };
 }
@@ -97,7 +97,6 @@ describe('standings', () => {
       played: 1,
       won: 1,
       lost: 0,
-      points: 3,
       framesWon: 2,
       framesLost: 1,
       difference: 1,
@@ -125,8 +124,8 @@ describe('standings', () => {
       const a = rows[i - 1],
         b = rows[i];
       expect(
-        a.points > b.points ||
-          (a.points === b.points &&
+        a.won > b.won ||
+          (a.won === b.won &&
             (a.difference > b.difference ||
               (a.difference === b.difference &&
                 (a.framesWon > b.framesWon ||

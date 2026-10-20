@@ -4,6 +4,7 @@ import { useLeague } from '../app/LeagueContext';
 import { participantName, standings } from '../domain/rules';
 import type { Fixture } from '../domain/types';
 import { Avatar, Badge, PageHeading } from '../components/ui';
+import { QualificationNotice } from '../components/QualificationNotice';
 
 function BracketMatch({
   fixture,
@@ -87,6 +88,7 @@ export function Playoffs() {
           </span>
         }
       />
+      <QualificationNotice />
       {!locked && (
         <div className="action-banner neutral">
           <LockKeyhole size={22} />
@@ -95,7 +97,7 @@ export function Playoffs() {
             <span>
               Projected from today’s standings. Seeds lock after all {count || 'regular-season'}{' '}
               matches are confirmed ({confirmed} so far), or when an administrator finalizes the
-              season.
+              season, provided no unresolved tie crosses the qualification cutoff.
             </span>
           </div>
         </div>
@@ -103,7 +105,7 @@ export function Playoffs() {
       {season.finalizedReason && (
         <p className="info-banner">
           Regular season explicitly finalized: {season.finalizedReason}. Unresolved fixtures were
-          closed without points.
+          closed without wins or losses.
         </p>
       )}
       <div className="bracket-panel">

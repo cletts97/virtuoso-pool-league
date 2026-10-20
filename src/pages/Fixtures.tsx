@@ -145,8 +145,8 @@ export function Fixtures() {
               {stage === 'regular' && byes.length > 0 && (
                 <p className="bye-note">
                   <Search size={14} />
-                  Bye this round: {byes.map((id) => participantName(state, id)).join(', ')}. No
-                  result or points awarded.
+                  Bye this round: {byes.map((id) => participantName(state, id)).join(', ')}. No win
+                  or loss awarded.
                 </p>
               )}
             </section>

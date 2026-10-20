@@ -51,8 +51,8 @@ describe('result lifecycle', () => {
     expect(
       standings(approved.seasons[0], approved.fixtures).find(
         (r) => r.participantId === fixture.homeId,
-      )?.points,
-    ).toBe(before.find((r) => r.participantId === fixture.homeId)!.points + 3);
+      )?.won,
+    ).toBe(before.find((r) => r.participantId === fixture.homeId)!.won + 1);
     expect(
       approved.fixtures.find((f) => f.id === fixture.id)?.history.map((h) => h.actorId),
     ).toEqual([homeUser, awayUser]);
@@ -123,7 +123,7 @@ describe('result lifecycle', () => {
     expect(match.history[2].score).toEqual({ home: 0, away: 2 });
     expect(match.status).toBe('confirmed');
   });
-  it('postpones and reschedules without awarding points; still allows an early result', () => {
+  it('postpones and reschedules without awarding wins or losses; still allows an early result', () => {
     const { state, fixture } = scenario();
     const before = standings(state.seasons[0], state.fixtures);
     let result = executeCommand(state, {
@@ -215,9 +215,11 @@ describe('administration and playoffs', () => {
     expect(fixtures.every((f) => f.status === 'postponed' && f.dueDate === '2027-02-03')).toBe(
       true,
     );
-    expect(standings(state.seasons[0], state.fixtures).every((r) => r.points === 0)).toBe(true);
+    expect(
+      standings(state.seasons[0], state.fixtures).every((r) => r.won === 0 && r.lost === 0),
+    ).toBe(true);
   });
-  it('explicitly finalizes, closes outstanding fixtures without points, and derives seeds from standings', () => {
+  it('explicitly finalizes, closes outstanding fixtures without wins or losses, and derives seeds from standings', () => {
     const source = createSeed('2026-10-19');
     const table = standings(source.seasons[0], source.fixtures);
     const state = executeCommand(source, {
@@ -322,6 +324,48 @@ describe('administration and playoffs', () => {
   });
 });
 describe('edge cases and notifications', () => {
+  it('persists the last approval but holds playoff seeding when the cutoff is tied', () => {
+    let state = createSeed('2026-10-19');
+    const ids = state.participants.slice(0, 5).map((p) => p.id);
+    state = executeCommand(state, {
+      type: 'createSeason',
+      name: 'Tied finish',
+      startDate: '2027-01-01',
+      participantIds: ids,
+      roundsPerWeek: 2,
+    });
+    const seasonId = state.selectedSeasonId;
+    state = executeCommand(state, { type: 'generate', seasonId });
+    const fixtures = state.fixtures.filter((f) => f.seasonId === seasonId);
+    fixtures.forEach((f) => {
+      f.status = 'confirmed';
+      f.score =
+        (ids.indexOf(f.homeId) - ids.indexOf(f.awayId) + 5) % 5 <= 2
+          ? { home: 2, away: 1 }
+          : { home: 1, away: 2 };
+    });
+    const last = fixtures.at(-1)!;
+    last.status = 'pending';
+    last.submittedBy = state.participants.find((p) => p.id === last.homeId)!.playerIds[0];
+    state.currentUserId = state.participants.find((p) => p.id === last.awayId)!.playerIds[0];
+    const next = executeCommand(state, {
+      type: 'review',
+      fixtureId: last.id,
+      approve: true,
+      reason: '',
+    });
+    expect(next.fixtures.find((f) => f.id === last.id)?.status).toBe('confirmed');
+    expect(next.seasons[0].status).toBe('regular');
+    expect(next.seasons[0].qualifiers).toEqual([]);
+    expect(next.fixtures.filter((f) => f.seasonId === seasonId && f.stage !== 'regular')).toEqual(
+      [],
+    );
+    next.currentUserId = 'p01';
+    expect(() =>
+      executeCommand(next, { type: 'finalize', seasonId, reason: 'Try to force a tie' }),
+    ).toThrow('decider');
+    expect(next.fixtures.find((f) => f.id === last.id)?.status).toBe('confirmed');
+  });
   it('numbers playoffs after all regular rounds for a fourteen-player season', () => {
     let state = createSeed('2026-10-19');
     for (const name of ['Robin Hayes', 'Casey Jordan'])
@@ -340,6 +384,10 @@ describe('edge cases and notifications', () => {
     });
     const seasonId = state.selectedSeasonId;
     state = executeCommand(state, { type: 'generate', seasonId });
+    for (const fixture of state.fixtures.filter((f) => f.seasonId === seasonId)) {
+      fixture.status = 'confirmed';
+      fixture.score = fixture.homeId < fixture.awayId ? { home: 2, away: 0 } : { home: 0, away: 2 };
+    }
     state = executeCommand(state, {
       type: 'finalize',
       seasonId,
@@ -428,8 +476,39 @@ describe('demo persistence', () => {
       department: 'Service Desk',
       active: true,
     });
-    expect((await new LocalLeagueRepository(storage).load()).players).toHaveLength(13);
-    expect((await repository.reset()).players).toHaveLength(12);
+    expect((await new LocalLeagueRepository(storage).load()).players).toHaveLength(14);
+    expect((await repository.reset()).players).toHaveLength(13);
+  });
+  it('migrates legacy scoring without losing records, preferences or finalized seeds', async () => {
+    const storage = memory();
+    const original = createSeed('2026-10-19');
+    const legacy = {
+      ...original,
+      version: 1,
+      seasons: original.seasons.map((s) => ({ ...s, config: { ...s.config, pointsPerWin: 3 } })),
+      announcements: original.announcements.map((a) => ({
+        ...a,
+        body: a.body.replace('Every match win counts.', 'Three points for a win.'),
+      })),
+    };
+    storage.setItem(STORAGE_KEY, JSON.stringify(legacy));
+    const repository = new LocalLeagueRepository(storage);
+    const next = await repository.load();
+    expect(next).toEqual(original);
+    expect(storage.getItem(STORAGE_KEY)).not.toContain('pointsPerWin');
+    expect(storage.getItem(STORAGE_KEY)).not.toContain('Three points');
+    expect(await repository.load()).toEqual(next);
+  });
+  it('does not overwrite a legacy save when migration cannot be persisted', async () => {
+    const raw = JSON.stringify({ ...createSeed('2026-10-19'), version: 1 });
+    const storage = {
+      getItem: () => raw,
+      setItem: () => {
+        throw new Error('QuotaExceeded');
+      },
+    };
+    await expect(new LocalLeagueRepository(storage).load()).rejects.toThrow('not saved');
+    expect(storage.getItem()).toBe(raw);
   });
   it('fails explicitly for corrupt data rather than silently overwriting it', async () => {
     const storage = memory();

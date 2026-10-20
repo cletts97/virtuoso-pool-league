@@ -22,6 +22,7 @@ import {
 } from '../components/AdminForms';
 import { MatchCard } from '../components/MatchCard';
 import type { Player } from '../domain/types';
+import { QualificationNotice } from '../components/QualificationNotice';
 
 export function Admin() {
   const { state, season, run, preferences, busy } = useLeague();
@@ -62,7 +63,7 @@ export function Admin() {
       <div className="stats-grid">
         <Stat
           label="Active players"
-          value={state.players.filter((p) => p.active).length}
+          value={state.players.filter((p) => p.active && p.role !== 'colleague').length}
           detail="Across the club"
         />
         <Stat label="Disputed results" value={disputes.length} detail="Waiting for your review" />
@@ -112,6 +113,7 @@ export function Admin() {
           </button>
         ))}
       </div>
+      <QualificationNotice />
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'overview' && (
           <div className="dashboard-columns">
@@ -159,8 +161,8 @@ export function Admin() {
                       <dd>{season.config.roundsPerWeek} rounds / week</dd>
                     </div>
                     <div>
-                      <dt>Scoring</dt>
-                      <dd>{season.config.pointsPerWin} points per win · 0 per loss</dd>
+                      <dt>Ranking</dt>
+                      <dd>Match wins · Frame-based tiebreakers</dd>
                     </div>
                     <div>
                       <dt>Match formats</dt>
@@ -244,7 +246,12 @@ export function Admin() {
                   <div>
                     <strong>{p.name}</strong>
                     <small>
-                      {p.department} · {p.role === 'admin' ? 'Administrator' : 'Player'}
+                      {p.department} ·{' '}
+                      {p.role === 'admin'
+                        ? 'Administrator'
+                        : p.role === 'colleague'
+                          ? 'Casual colleague'
+                          : 'Player'}
                     </small>
                   </div>
                   <span className={`badge ${p.active ? 'badge-confirmed' : 'badge-cancelled'}`}>

@@ -14,6 +14,7 @@ import { canApprove, isParticipant, participantName, playedDate, standings } fro
 import { Avatar, Badge, Empty, PageHeading, Section, Stat } from '../components/ui';
 import { MatchCard } from '../components/MatchCard';
 import { StandingsTable } from '../components/StandingsTable';
+import { TodayBookings } from '../components/TodayBookings';
 
 export function Dashboard() {
   const { state, season } = useLeague();
@@ -103,6 +104,7 @@ export function Dashboard() {
           </span>
         </div>
       </div>
+      <TodayBookings />
       <div className="stats-grid">
         <Stat
           label="In the competition"
@@ -125,7 +127,11 @@ export function Dashboard() {
           label="Your position"
           value={own?.played ? `#${own.position}` : '—'}
           detail={
-            own?.played ? `${own.points} points · ${own.won} wins` : 'Your story starts with a game'
+            own?.played
+              ? `${own.won} wins · ${own.lost} losses`
+              : ownEntry
+                ? 'Your story starts with a game'
+                : 'Casual bookings are open to you'
           }
           icon={<Flag size={18} />}
         />
@@ -134,7 +140,7 @@ export function Dashboard() {
           value={leader ? participantName(state, leader.participantId).split(' ')[0] : '—'}
           detail={
             leader
-              ? `${leader.points} points · ${leader.difference > 0 ? '+' : ''}${leader.difference} frame difference`
+              ? `${leader.won} wins · ${leader.difference > 0 ? '+' : ''}${leader.difference} frame difference`
               : 'No players yet'
           }
           icon={<Trophy size={18} />}
@@ -163,7 +169,9 @@ export function Dashboard() {
             <StandingsTable preview />
             <div className="panel-footnote">
               <span className="qualification-dot" />
-              Top four qualify for the playoffs
+              {season.qualifiers.length
+                ? 'Confirmed playoff qualifiers highlighted'
+                : 'Top four · Provisional playoff positions'}
             </div>
           </Section>
           <Section

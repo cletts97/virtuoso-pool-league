@@ -159,9 +159,8 @@ export function SeasonForm({ edit = false, onClose }: { edit?: boolean; onClose(
           </fieldset>
         )}
         <p className="field-help">
-          Singles round-robin · 3 points per win · Best of 3 · Top 4 playoffs. Scheduling settings
-          and entries lock when fixtures are generated. An odd number of players receives rotating
-          byes.
+          Singles round-robin · Best of 3 · Top 4 playoffs. Scheduling settings and entries lock
+          when fixtures are generated. An odd number of players receives rotating byes.
         </p>
         <FormActions onClose={onClose} label={edit ? 'Save settings' : 'Create draft season'} />
       </form>
@@ -254,8 +253,8 @@ export function FinalizeForm({ onClose }: { onClose(): void }) {
       <form className="form-stack" onSubmit={submit}>
         <p className="info-banner">
           This locks the top four based on currently confirmed results and creates the semifinals.{' '}
-          {unresolved} unresolved fixtures will close without points. Pending and disputed scores
-          will not count. This action cannot be undone in the demo.
+          {unresolved} unresolved fixtures will close without wins or losses. Pending and disputed
+          scores will not count. This action cannot be undone in the demo.
         </p>
         <label>
           Reason for finalizing

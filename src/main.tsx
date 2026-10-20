@@ -13,40 +13,49 @@ import { Players, PlayerProfile } from './pages/Players';
 import { Playoffs } from './pages/Playoffs';
 import { Admin } from './pages/Admin';
 import { Notifications } from './pages/Notifications';
+import { Bookings } from './pages/Bookings';
+import { Display } from './pages/Display';
 import { Empty } from './components/ui';
 import './styles.css';
+import './bookings.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <LeagueProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <Routes>
-            <Route element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="standings" element={<Standings />} />
-              <Route path="fixtures" element={<Fixtures />} />
-              <Route path="fixtures/:id" element={<MatchDetails />} />
-              <Route path="players" element={<Players />} />
-              <Route path="players/:id" element={<PlayerProfile />} />
-              <Route path="playoffs" element={<Playoffs />} />
-              <Route path="admin" element={<Admin />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route
-                path="*"
-                element={
-                  <Empty title="You’ve gone off the table">
-                    <Link className="text-link" to="/">
-                      Return to the clubhouse
-                    </Link>
-                  </Empty>
-                }
-              />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </LeagueProvider>
+      <BrowserRouter>
+        <ScrollToTop />
+        <Routes>
+          <Route path="display" element={<Display />} />
+          <Route
+            element={
+              <LeagueProvider>
+                <Layout />
+              </LeagueProvider>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="standings" element={<Standings />} />
+            <Route path="fixtures" element={<Fixtures />} />
+            <Route path="fixtures/:id" element={<MatchDetails />} />
+            <Route path="players" element={<Players />} />
+            <Route path="players/:id" element={<PlayerProfile />} />
+            <Route path="playoffs" element={<Playoffs />} />
+            <Route path="admin" element={<Admin />} />
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="bookings" element={<Bookings />} />
+            <Route
+              path="*"
+              element={
+                <Empty title="You’ve gone off the table">
+                  <Link className="text-link" to="/">
+                    Return to the clubhouse
+                  </Link>
+                </Empty>
+              }
+            />
+          </Route>
+        </Routes>
+      </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>,
 );

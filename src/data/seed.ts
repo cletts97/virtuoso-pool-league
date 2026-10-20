@@ -1,5 +1,7 @@
 import { addDays, dateOnly, generateRoundRobin, standings, winner } from '../domain/rules';
 import type { Fixture, LeagueState, Season } from '../domain/types';
+import { DEFAULT_BOOKING_CONFIG } from '../domain/bookings';
+import { casualColleague, seedBookings } from './bookingSeed';
 
 export function createSeed(today = dateOnly()): LeagueState {
   const names = [
@@ -45,7 +47,7 @@ export function createSeed(today = dateOnly()): LeagueState {
     participantIds: participants.map((p) => p.id),
     format: 'singles',
     status: 'regular',
-    config: { pointsPerWin: 3, roundsPerWeek: 2 },
+    config: { roundsPerWeek: 2 },
     qualifiers: [],
   };
   const previous: Season = {
@@ -146,8 +148,10 @@ export function createSeed(today = dateOnly()): LeagueState {
   previous.championId = winner(final);
   fixtures.push(...semis, final);
   const state: LeagueState = {
-    version: 1,
-    players,
+    version: 3,
+    players: [...players, { ...casualColleague }],
+    bookings: [],
+    bookingConfig: structuredClone(DEFAULT_BOOKING_CONFIG),
     participants,
     seasons: [current, previous],
     fixtures,
@@ -165,7 +169,7 @@ export function createSeed(today = dateOnly()): LeagueState {
         id: 'welcome',
         seasonId: current.id,
         title: 'The race to the final four is on.',
-        body: 'Two rounds a week. Three points for a win. Arrange your matches with your opponent, and remember to confirm the score. Our top four will meet in the playoffs.',
+        body: 'Two rounds a week. Every match win counts. Arrange your matches with your opponent, and remember to confirm the score. Our top four will meet in the playoffs.',
         createdAt: `${today}T09:00:00Z`,
       },
     ],
@@ -270,5 +274,6 @@ export function createSeed(today = dateOnly()): LeagueState {
     createdAt: `${today}T10:00:00Z`,
     read: false,
   });
+  state.bookings = seedBookings(state, today);
   return state;
 }

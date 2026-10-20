@@ -27,6 +27,7 @@ test('all primary screens render without runtime errors or page overflow', async
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
     await expect(page.locator('main')).not.toContainText('Something interrupted');
+    await expect(page.locator('main')).not.toContainText(/\bpoints\b|\bPTS\b/i);
     if (['/', '/standings', '/playoffs'].includes(path))
       await page.screenshot({
         path: `.tools/screenshots/${testInfo.project.name}-${path === '/' ? 'dashboard' : path.slice(1)}.png`,
@@ -34,6 +35,63 @@ test('all primary screens render without runtime errors or page overflow', async
       });
   }
   expect(errors).toEqual([]);
+});
+
+test('standings expose the agreed columns, sorting and qualification labels', async ({ page }) => {
+  await page.goto('/standings');
+  await expect(page.locator('thead th')).toHaveText([
+    'Pos',
+    'Player',
+    'P',
+    'W',
+    'L',
+    'F',
+    'A',
+    '+/-',
+    'Win %',
+  ]);
+  await expect(
+    page.getByText('Top four · Provisional playoff positions', { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('tbody tr.qualifying')).toHaveCount(4);
+  await page.getByRole('button', { name: 'Sort by matches won', exact: true }).click();
+  await expect(
+    page
+      .locator('th')
+      .filter({ has: page.getByRole('button', { name: 'Sort by matches won', exact: true }) }),
+  ).toHaveAttribute('aria-sort', 'descending');
+  const wins = await page.locator('td.wins').allTextContents();
+  expect(wins.map(Number)).toEqual(wins.map(Number).sort((a, b) => b - a));
+  await page.getByRole('button', { name: 'Sort by league position', exact: true }).click();
+  await page.getByLabel('Select season').selectOption('summer-2026');
+  await expect(
+    page.getByText('Confirmed playoff qualifiers · Seeds locked', { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('tbody tr.qualifying')).toHaveCount(4);
+});
+
+test('legacy demo data migrates on refresh without changing approved results', async ({ page }) => {
+  const before = await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    const legacy = {
+      ...state,
+      version: 1,
+      seasons: state.seasons.map((s) => ({ ...s, config: { ...s.config, pointsPerWin: 3 } })),
+      announcements: state.announcements.map((a) => ({
+        ...a,
+        body: a.body.replace('Every match win counts.', 'Three points for a win.'),
+      })),
+    };
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(legacy));
+    return state;
+  });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Good to see you, Alex.' })).toBeVisible();
+  const after = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState,
+  );
+  expect(after).toEqual(before);
+  await expect(page.locator('main')).not.toContainText(/\bpoints\b/i);
 });
 
 test('submit, switch to opponent, approve, update standings and persist after refresh', async ({
@@ -73,7 +131,7 @@ test('submit, switch to opponent, approve, update standings and persist after re
       ((f.homeId === match.homeId && f.score!.home > f.score!.away) ||
         (f.awayId === match.homeId && f.score!.away > f.score!.home)),
   ).length;
-  await expect(homeRow.locator('.points')).toHaveText(String((originalWins + 1) * 3));
+  await expect(homeRow.locator('.wins')).toHaveText(String(originalWins + 1));
 });
 
 test('administrator creates an odd-player season, publishes fixtures and postpones a match', async ({

@@ -88,7 +88,6 @@ export function standings(season: Season, fixtures: Fixture[]): Standing[] {
         played: 0,
         won: 0,
         lost: 0,
-        points: 0,
         framesWon: 0,
         framesLost: 0,
         difference: 0,
@@ -99,6 +98,7 @@ export function standings(season: Season, fixtures: Fixture[]): Standing[] {
     ]),
   );
   const seen = new Set<string>();
+  const approved: Fixture[] = [];
   for (const fixture of [...fixtures].sort(
     (a, b) =>
       playedDate(a).localeCompare(playedDate(b)) || a.round - b.round || a.id.localeCompare(b.id),
@@ -108,11 +108,14 @@ export function standings(season: Season, fixtures: Fixture[]): Standing[] {
       fixture.stage !== 'regular' ||
       fixture.status !== 'confirmed' ||
       !fixture.score ||
+      !rows.has(fixture.homeId) ||
+      !rows.has(fixture.awayId) ||
       !validScore(fixture.score, fixture.bestOf) ||
       seen.has(fixture.id)
     )
       continue;
     seen.add(fixture.id);
+    approved.push(fixture);
     for (const [id, own, other] of [
       [fixture.homeId, fixture.score.home, fixture.score.away],
       [fixture.awayId, fixture.score.away, fixture.score.home],
@@ -126,20 +129,57 @@ export function standings(season: Season, fixtures: Fixture[]): Standing[] {
       row.won += Number(won);
       row.lost += Number(!won);
       row.form.push(won);
-      row.points = row.won * season.config.pointsPerWin;
       row.difference = row.framesWon - row.framesLost;
       row.winPercentage = Math.round((row.won / row.played) * 100);
     }
   }
-  return [...rows.values()]
-    .sort(
-      (a, b) =>
-        b.points - a.points ||
-        b.difference - a.difference ||
-        b.framesWon - a.framesWon ||
-        (a.participantId < b.participantId ? -1 : a.participantId > b.participantId ? 1 : 0),
+  const ranked = [...rows.values()].sort(
+    (a, b) =>
+      b.won - a.won ||
+      b.difference - a.difference ||
+      b.framesWon - a.framesWon ||
+      (a.participantId < b.participantId ? -1 : a.participantId > b.participantId ? 1 : 0),
+  );
+  const result: Standing[] = [];
+  for (let start = 0; start < ranked.length;) {
+    let end = start + 1;
+    const first = ranked[start];
+    while (
+      end < ranked.length &&
+      ranked[end].won === first.won &&
+      ranked[end].difference === first.difference &&
+      ranked[end].framesWon === first.framesWon
     )
-    .map((row, index) => ({ ...row, position: index + 1 }));
+      end++;
+    const group: Standing[] = ranked.slice(start, end);
+    // Resolve whole tied groups, never pairwise comparisons that can form a cyclic sort.
+    const meeting =
+      group.length === 2
+        ? approved.find(
+            (f) =>
+              [f.homeId, f.awayId].includes(group[0].participantId) &&
+              [f.homeId, f.awayId].includes(group[1].participantId),
+          )
+        : undefined;
+    if (meeting) {
+      if (winner(meeting) === group[1].participantId) group.reverse();
+    } else if (group.length > 1) {
+      const ids = group.map((row) => row.participantId);
+      group.forEach((row) => {
+        row.unresolvedTie = ids;
+      });
+    }
+    result.push(...group);
+    start = end;
+  }
+  return result.map((row, index) => ({ ...row, position: index + 1 }));
+}
+
+/** Only an unresolved group spanning the fourth-place cutoff blocks qualification. */
+export function qualificationTie(season: Season, fixtures: Fixture[]): string[] {
+  const rows = standings(season, fixtures);
+  const tied = rows[3]?.unresolvedTie;
+  return tied && rows[4] && tied.includes(rows[4].participantId) ? tied : [];
 }
 /** Use the original submission date, so a later correction does not change match order. */
 export function playedDate(fixture: Fixture): string {
@@ -200,6 +240,10 @@ export function qualifiedIds(season: Season, fixtures: Fixture[], force = false)
   invariant(
     force || regularComplete(season, fixtures),
     'Complete the regular season or explicitly finalize it as an administrator.',
+  );
+  invariant(
+    qualificationTie(season, fixtures).length === 0,
+    'A tie crosses the playoff cutoff. An administrator-approved decider is required before qualification can be finalized.',
   );
   return standings(season, fixtures)
     .slice(0, 4)

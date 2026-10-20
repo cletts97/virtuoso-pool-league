@@ -3,7 +3,7 @@ export interface Player {
   id: ID;
   name: string;
   department: string;
-  role: 'player' | 'admin';
+  role: 'player' | 'admin' | 'colleague';
   active: boolean;
   color: number;
 }
@@ -15,7 +15,6 @@ export interface Participant {
   kind: 'individual' | 'team';
 }
 export interface LeagueConfig {
-  pointsPerWin: number;
   roundsPerWeek: number;
 }
 export interface Season {
@@ -89,7 +88,9 @@ export interface Announcement {
   createdAt: string;
 }
 export interface LeagueState {
-  version: 1;
+  version: 3;
+  bookings: Booking[];
+  bookingConfig: BookingConfig;
   players: Player[];
   participants: Participant[];
   seasons: Season[];
@@ -101,16 +102,37 @@ export interface LeagueState {
   selectedSeasonId: ID;
   theme: 'dark' | 'light';
 }
+/** User records live in players for compatibility; league membership is held in participants. */
+export interface BookingConfig {
+  timeZone: 'Europe/London';
+  opensAt: string;
+  closesAt: string;
+  weekdays: number[];
+}
+export interface BookingInput {
+  kind: 'league' | 'casual';
+  startAt: string;
+  duration: 15 | 30 | 60;
+  fixtureId?: ID;
+  guestIds: ID[];
+}
+export interface Booking extends BookingInput {
+  id: ID;
+  ownerId: ID;
+  status: 'reserved' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
 export interface Standing {
   participantId: ID;
   played: number;
   won: number;
   lost: number;
-  points: number;
   framesWon: number;
   framesLost: number;
   difference: number;
   winPercentage: number;
   position: number;
   form: boolean[];
+  unresolvedTie?: ID[];
 }

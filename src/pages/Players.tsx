@@ -51,8 +51,8 @@ export function Players() {
               </p>
               <div className="player-card-stats">
                 <div>
-                  <strong>{row.points}</strong>
-                  <span>POINTS</span>
+                  <strong>{row.played}</strong>
+                  <span>PLAYED</span>
                 </div>
                 <div>
                   <strong>{row.won}</strong>
@@ -126,7 +126,13 @@ export function PlayerProfile() {
         </div>
         <div className="profile-badge">
           <Trophy size={28} />
-          <span>{row && row.position <= 4 ? 'PLAYOFF POSITION' : 'THE CHASE IS ON'}</span>
+          <span>
+            {season.qualifiers.includes(participant.id)
+              ? 'CONFIRMED QUALIFIER'
+              : !season.qualifiers.length && row && row.position <= 4
+                ? 'PROVISIONAL TOP FOUR'
+                : 'THE CHASE IS ON'}
+          </span>
         </div>
       </div>
       <div className="stats-grid">
@@ -151,7 +157,7 @@ export function PlayerProfile() {
         <Stat
           label="Win percentage"
           value={`${row?.winPercentage ?? 0}%`}
-          detail={`${row?.points ?? 0} league points earned`}
+          detail={`${row?.won ?? 0} wins from ${row?.played ?? 0} matches`}
           icon={<Target size={18} />}
         />
       </div>

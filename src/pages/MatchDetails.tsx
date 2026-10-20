@@ -13,10 +13,13 @@ import {
 } from '../domain/rules';
 import { Avatar, Badge, Empty, Modal, PageHeading, Section } from '../components/ui';
 import type { Score } from '../domain/types';
+import { bookingDayLabel, bookingEnd, londonDate, londonTime } from '../domain/bookings';
+import { useClock } from '../app/useClock';
 
 export function MatchDetails() {
   const { id } = useParams();
   const { state, run, busy, preferences } = useLeague();
+  const now = useClock();
   const fixture = state.fixtures.find((f) => f.id === id);
   const [action, setAction] = useState<
     'submit' | 'correct' | 'dispute' | 'postpone' | 'reschedule' | 'approve'
@@ -39,6 +42,12 @@ export function MatchDetails() {
   const closed =
     season.status === 'complete' || (match.stage === 'regular' && season.status === 'playoffs');
   const open = ['scheduled', 'postponed'].includes(match.status) && !closed;
+  const reservation = state.bookings.find(
+    (b) =>
+      b.fixtureId === match.id &&
+      b.status === 'reserved' &&
+      Date.parse(bookingEnd(b)) > now.getTime(),
+  );
   const launch = (next: typeof action) => {
     setScore(match.score);
     setReason('');
@@ -130,6 +139,15 @@ export function MatchDetails() {
           </Link>
         </div>
         <div className="match-centre-actions">
+          {(participant || admin) && open && (
+            <Link
+              className="button secondary"
+              to={reservation ? '/bookings' : `/bookings?fixture=${encodeURIComponent(match.id)}`}
+            >
+              <Clock3 size={17} />
+              {reservation ? 'View table reservation' : 'Book the table'}
+            </Link>
+          )}
           {participant && open && (
             <button className="button primary" onClick={() => launch('submit')}>
               Submit result
@@ -165,6 +183,13 @@ export function MatchDetails() {
             </button>
           )}
         </div>
+        {reservation && (
+          <p className="match-message">
+            Table reserved · {bookingDayLabel(londonDate(reservation.startAt))} ·{' '}
+            {londonTime(reservation.startAt)}–{londonTime(bookingEnd(reservation))} Europe/London.
+            Manage this separately from the fixture due date.
+          </p>
+        )}
         {match.status === 'pending' && (
           <p className="match-message">
             Submitted by {state.players.find((p) => p.id === match.submittedBy)?.name}. Only the
@@ -181,7 +206,7 @@ export function MatchDetails() {
         {match.note && <p className="match-message">{match.note}</p>}
         {match.status === 'cancelled' && (
           <p className="match-message">
-            Closed when the regular season was finalized. No automatic defeat or points were
+            Closed when the regular season was finalized. No win, loss, or automatic defeat was
             awarded.
           </p>
         )}

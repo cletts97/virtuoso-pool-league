@@ -4,6 +4,7 @@ import {
   invariant,
   isParticipant,
   qualifiedIds,
+  qualificationTie,
   regularComplete,
   requireAdmin,
   validScore,
@@ -13,6 +14,7 @@ import {
 import { generateRoundRobin } from '../domain/rules';
 import type { Fixture, LeagueState, ResultRevision, Season } from '../domain/types';
 import type { LeagueCommand, NotificationService } from './contracts';
+import { executeBookingCommand } from './bookingCommands';
 
 const id = () => crypto.randomUUID();
 const text = (value: string, label: string, max = 300) => {
@@ -85,7 +87,8 @@ function progressPlayoffs(state: LeagueState, season: Season) {
   if (
     season.status === 'regular' &&
     season.participantIds.length >= 4 &&
-    regularComplete(season, state.fixtures)
+    regularComplete(season, state.fixtures) &&
+    qualificationTie(season, state.fixtures).length === 0
   )
     seedPlayoffs(state, season);
   if (season.status !== 'playoffs') return;
@@ -124,6 +127,12 @@ export function executeCommand(
   command: LeagueCommand,
   notifications: NotificationService = inAppNotifications,
 ): LeagueState {
+  if (
+    command.type === 'saveBooking' ||
+    command.type === 'cancelBooking' ||
+    command.type === 'bookingConfig'
+  )
+    return executeBookingCommand(source, command);
   const state = structuredClone(source);
   const actor = state.players.find((p) => p.id === state.currentUserId);
   invariant(actor?.active, 'Select an active demo user.');
@@ -318,7 +327,7 @@ export function executeCommand(
         participantIds: command.participantIds,
         format: 'singles',
         status: 'draft',
-        config: { pointsPerWin: 3, roundsPerWeek: command.roundsPerWeek },
+        config: { roundsPerWeek: command.roundsPerWeek },
         qualifiers: [],
       });
       state.selectedSeasonId = seasonId;

@@ -3,7 +3,7 @@ import { ArrowDownUp } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
 import { standings } from '../domain/rules';
 import type { Standing } from '../domain/types';
-import { FormDots, ParticipantLink } from './ui';
+import { ParticipantLink } from './ui';
 
 export function StandingsTable({ preview = false }: { preview?: boolean }) {
   const { state, season } = useLeague();
@@ -20,15 +20,14 @@ export function StandingsTable({ preview = false }: { preview?: boolean }) {
           a.position - b.position,
       );
   const columns: { label: string; key: keyof Standing; className?: string; title: string }[] = [
-    { label: '#', key: 'position', title: 'League position' },
+    { label: 'Pos', key: 'position', title: 'League position' },
     { label: 'P', key: 'played', title: 'Matches played' },
     { label: 'W', key: 'won', title: 'Matches won' },
     { label: 'L', key: 'lost', title: 'Matches lost' },
-    { label: 'FW', key: 'framesWon', title: 'Frames won', className: 'extended' },
-    { label: 'FL', key: 'framesLost', title: 'Frames lost', className: 'extended' },
-    { label: '+/−', key: 'difference', title: 'Frame difference' },
-    { label: 'WIN %', key: 'winPercentage', title: 'Win percentage', className: 'extended' },
-    { label: 'PTS', key: 'points', title: 'League points' },
+    { label: 'F', key: 'framesWon', title: 'Frames won' },
+    { label: 'A', key: 'framesLost', title: 'Frames against (frames lost)' },
+    { label: '+/-', key: 'difference', title: 'Frame difference: frames won minus frames against' },
+    { label: 'Win %', key: 'winPercentage', title: 'Match win percentage' },
   ];
   const header = (column: (typeof columns)[number]) => (
     <th
@@ -66,7 +65,7 @@ export function StandingsTable({ preview = false }: { preview?: boolean }) {
         <thead>
           <tr>
             {header(columns[0])}
-            <th className="player-col">PLAYER</th>
+            <th className="player-col">Player</th>
             {columns
               .slice(1)
               .filter(
@@ -74,19 +73,27 @@ export function StandingsTable({ preview = false }: { preview?: boolean }) {
                   !preview || !['framesWon', 'framesLost', 'winPercentage', 'lost'].includes(c.key),
               )
               .map(header)}
-            {!preview && <th className="extended">FORM</th>}
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr
               key={row.participantId}
-              className={`${row.position <= 4 ? 'qualifying' : ''} ${state.participants.find((p) => p.id === row.participantId)?.playerIds.includes(state.currentUserId) ? 'current-player' : ''}`}
+              className={`${(season.qualifiers.length ? season.qualifiers.includes(row.participantId) : row.position <= 4) ? 'qualifying' : ''} ${state.participants.find((p) => p.id === row.participantId)?.playerIds.includes(state.currentUserId) ? 'current-player' : ''}`}
             >
               <td>
                 <span className={`position pos-${row.position}`}>
                   {String(row.position).padStart(2, '0')}
                 </span>
+                {(season.qualifiers.length
+                  ? season.qualifiers.includes(row.participantId)
+                  : row.position <= 4) && (
+                  <span className="sr-only">
+                    {season.qualifiers.length
+                      ? 'Confirmed playoff qualifier'
+                      : 'Provisional playoff position'}
+                  </span>
+                )}
               </td>
               <td>
                 <ParticipantLink id={row.participantId} />
@@ -101,18 +108,13 @@ export function StandingsTable({ preview = false }: { preview?: boolean }) {
                 .map((c) => (
                   <td
                     key={c.key}
-                    className={`${c.className ?? ''} ${c.key === 'points' ? 'points' : ''} ${c.key === 'difference' && row.difference > 0 ? 'positive' : ''}`}
+                    className={`${c.className ?? ''} ${c.key === 'won' ? 'wins' : ''} ${c.key === 'difference' && row.difference > 0 ? 'positive' : ''}`}
                   >
                     {c.key === 'difference' && row.difference > 0 ? '+' : ''}
                     {String(row[c.key])}
                     {c.key === 'winPercentage' ? '%' : ''}
                   </td>
                 ))}
-              {!preview && (
-                <td className="extended">
-                  <FormDots form={row.form} />
-                </td>
-              )}
             </tr>
           ))}
         </tbody>

@@ -3,6 +3,7 @@ import { useLeague } from '../app/LeagueContext';
 import { standings, participantName } from '../domain/rules';
 import { Avatar, PageHeading, Section } from '../components/ui';
 import { StandingsTable } from '../components/StandingsTable';
+import { QualificationNotice } from '../components/QualificationNotice';
 import { Link } from 'react-router-dom';
 
 export function Standings() {
@@ -39,23 +40,28 @@ export function Standings() {
               </p>
             </div>
             <strong>
-              {row.points}
-              <small>PTS</small>
+              {row.won}
+              <small>WINS</small>
             </strong>
           </Link>
         ))}
       </div>
+      <QualificationNotice />
       <Section
         title="League standings"
-        subtitle={`${season.participantIds.length} players · ${season.config.pointsPerWin} points for a win`}
+        subtitle={`${season.participantIds.length} players · Ranked by match wins`}
       >
         <StandingsTable />
         <div className="table-legend">
           <span>
             <span className="qualification-dot" />
-            Top four · Playoff positions
+            {season.qualifiers.length
+              ? 'Confirmed playoff qualifiers · Seeds locked'
+              : 'Top four · Provisional playoff positions'}
           </span>
-          <span>W / L · Recent form, oldest to newest</span>
+          <span>
+            P: played · W: won · L: lost · F: frames won · A: frames against · Win %: win rate
+          </span>
         </div>
       </Section>
       <div className="rules-callout">
@@ -63,10 +69,13 @@ export function Standings() {
         <div>
           <h3>The road to the title</h3>
           <p>
-            Ranked by points, frame difference, then frames won. An immutable participant ID breaks
-            an exact tie. The top four are locked when every regular-season match is confirmed, or
-            an administrator explicitly finalizes the season. Historical corrections update
-            standings but preserve the finalized playoff seeds.
+            Ranked by match wins, frame difference, then frames won. For exactly two players still
+            tied, their confirmed regular-season head-to-head result decides the order. Otherwise
+            immutable participant ID determines display order only. Unresolved ties across the
+            fourth-place cutoff require an administrator-approved decider. Once qualification is
+            resolved, seeds lock after the regular season is confirmed or explicitly finalized by an
+            administrator. Historical corrections update standings but preserve finalized playoff
+            seeds; highlights identify those locked qualifiers.
           </p>
         </div>
       </div>

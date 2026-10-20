@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { CheckCircle2, X, AlertCircle } from 'lucide-react';
-import { LocalLeagueRepository } from '../data/localRepository';
+import { browserRepository as repository } from '../data/browserRepository';
 import { LeagueContext } from './LeagueContext';
 import type { LeagueState } from '../domain/types';
 import type { LeagueCommand } from '../data/contracts';
 
-const repository = new LocalLeagueRepository({
-  getItem: (key) => window.localStorage.getItem(key),
-  setItem: (key, value) => window.localStorage.setItem(key, value),
-});
 export function LeagueProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<LeagueState>();
   const [error, setError] = useState('');
@@ -23,8 +19,12 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     load();
+    const timer = window.setInterval(load, 30_000);
     window.addEventListener('storage', load);
-    return () => window.removeEventListener('storage', load);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('storage', load);
+    };
   }, [load]);
   useEffect(() => {
     if (state) document.documentElement.dataset.theme = state.theme;

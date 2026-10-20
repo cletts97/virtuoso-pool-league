@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   RotateCcw,
   ChevronDown,
+  CalendarClock,
 } from 'lucide-react';
 import { useLeague } from './LeagueContext';
 import { Avatar, Confirm } from '../components/ui';
@@ -23,6 +24,7 @@ const links = [
   { to: '/fixtures', label: 'Fixtures & results', icon: CalendarDays },
   { to: '/players', label: 'Players', icon: Users },
   { to: '/playoffs', label: 'Playoffs', icon: GitBranch },
+  { to: '/bookings', label: 'Table bookings', icon: CalendarClock },
 ];
 export function Layout() {
   const { state, season, preferences, reset } = useLeague();
@@ -138,7 +140,13 @@ export function Layout() {
             <Avatar id={user.id} />
             <span className="header-user">
               <strong>{user.name}</strong>
-              <small>{user.role === 'admin' ? 'League administrator' : 'League player'}</small>
+              <small>
+                {user.role === 'admin'
+                  ? 'League administrator'
+                  : user.role === 'colleague'
+                    ? 'Office colleague'
+                    : 'League player'}
+              </small>
             </span>
           </div>
         </header>
@@ -162,6 +170,7 @@ export function Layout() {
                   <option key={p.id} value={p.id}>
                     {p.name}
                     {p.role === 'admin' ? ' (Admin)' : ''}
+                    {p.role === 'colleague' ? ' (Casual)' : ''}
                   </option>
                 ))}
             </select>

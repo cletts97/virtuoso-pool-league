@@ -1,6 +1,8 @@
 import type { LeagueState, Score } from '../domain/types';
+import type { BookingCommand } from './bookingCommands';
 
 export type LeagueCommand =
+  | BookingCommand
   | { type: 'submit'; fixtureId: string; score: Score }
   | { type: 'review'; fixtureId: string; approve: boolean; reason: string }
   | { type: 'correct'; fixtureId: string; score: Score; reason: string }

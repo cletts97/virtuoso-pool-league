@@ -3,17 +3,21 @@ import type { LeagueCommand, LeagueRepository } from './contracts';
 import { invariant } from '../domain/rules';
 import { executeCommand } from './commands';
 import { createSeed } from './seed';
+import { migrateDemoState } from './migrations';
+import { displaySnapshot, type DisplayRepository } from './display';
 
 export const STORAGE_KEY = 'virtuoso-pool-league.v1';
-export class LocalLeagueRepository implements LeagueRepository {
+export class LocalLeagueRepository implements LeagueRepository, DisplayRepository {
   constructor(private readonly storage: Pick<Storage, 'getItem' | 'setItem'>) {}
   private read(): LeagueState {
     const raw = this.storage.getItem(STORAGE_KEY);
     if (!raw) return this.write(createSeed());
+    let value: Parameters<typeof migrateDemoState>[0];
     try {
-      const value = JSON.parse(raw) as LeagueState;
+      value = JSON.parse(raw) as Parameters<typeof migrateDemoState>[0];
       invariant(
-        value.version === 1 &&
+        (value.version === 1 || value.version === 2 || value.version === 3) &&
+          (value.version !== 3 || (Array.isArray(value.bookings) && !!value.bookingConfig)) &&
           Array.isArray(value.players) &&
           Array.isArray(value.participants) &&
           Array.isArray(value.seasons) &&
@@ -25,12 +29,12 @@ export class LocalLeagueRepository implements LeagueRepository {
           value.seasons.some((s) => s.id === value.selectedSeasonId),
         'Invalid demo data.',
       );
-      return value;
     } catch {
       throw new Error(
         'Saved demo data could not be read. Reset the demo to restore the sample league.',
       );
     }
+    return value.version !== 3 ? this.write(migrateDemoState(value)) : value;
   }
   private write(state: LeagueState): LeagueState {
     try {
@@ -44,6 +48,9 @@ export class LocalLeagueRepository implements LeagueRepository {
   }
   async load() {
     return this.read();
+  }
+  async loadDisplay() {
+    return displaySnapshot(this.read());
   }
   async execute(command: LeagueCommand) {
     return this.write(executeCommand(this.read(), command));
