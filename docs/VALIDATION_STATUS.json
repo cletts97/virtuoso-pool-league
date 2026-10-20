@@ -1,0 +1,40 @@
+{
+  "scope": "Static file-level checks only; not SQL parsing or database execution",
+  "table_count": 14,
+  "tables": [
+    "profiles",
+    "participants",
+    "participant_members",
+    "seasons",
+    "season_participants",
+    "season_qualifiers",
+    "fixtures",
+    "result_events",
+    "availability",
+    "booking_settings",
+    "table_bookings",
+    "booking_guests",
+    "notifications",
+    "announcements"
+  ],
+  "checks_passed": [
+    "14 unique table definitions",
+    "All defined tables listed in RLS/revoke block",
+    "Application foreign-key table names resolve within migration",
+    "No DROP TABLE/SCHEMA/DATABASE statements",
+    "No numeric league-points columns",
+    "Restricted service-role grants are explicit",
+    "Totals filter confirmed regular matches",
+    "Single-table booking exclusion present",
+    "Files exist and are nonempty"
+  ],
+  "not_run": [
+    "PostgreSQL execution",
+    "pgTAP suite",
+    "Supabase Auth invite flow",
+    "Concurrent database sessions",
+    "Azure Functions authorization",
+    "Frontend integration"
+  ],
+  "migration_sha256": "1dd992f0389a1448ea6d534a2390d4fcad39add29bd19e943162640a08f74772"
+}
