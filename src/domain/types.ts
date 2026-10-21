@@ -46,6 +46,8 @@ export interface ResultRevision {
   reason?: string;
 }
 export interface Fixture {
+  revision?: number;
+  bracketSlot?: number;
   id: ID;
   seasonId: ID;
   round: number;
@@ -88,6 +90,7 @@ export interface Announcement {
   createdAt: string;
 }
 export interface LeagueState {
+  revision?: string;
   version: 3;
   bookings: Booking[];
   bookingConfig: BookingConfig;
@@ -117,6 +120,7 @@ export interface BookingInput {
   guestIds: ID[];
 }
 export interface Booking extends BookingInput {
+  revision?: number;
   id: ID;
   ownerId: ID;
   status: 'reserved' | 'cancelled';

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Clock3, Trophy } from 'lucide-react';
 import { useClock } from '../app/useClock';
+import { liveMode } from '../auth/client';
 import { browserRepository } from '../data/browserRepository';
 import type { DisplaySnapshot } from '../data/display';
 import { bookingDayLabel, londonDate, londonTime } from '../domain/bookings';
@@ -206,36 +207,42 @@ export function Display() {
           )}
         </section>
         <section className="tv-panel tv-results">
-          <div className="tv-section-title">
-            <h2>Fresh off the table</h2>
-            <span>Approved results</span>
+          <div className="tv-result-column">
+            <div className="tv-section-title">
+              <h2>Fresh off the table</h2>
+              <span>Approved results</span>
+            </div>
+            {data?.results.map((r) => (
+              <div className="tv-result" key={r.id}>
+                <span>{r.home}</span>
+                <strong>
+                  {r.homeScore}
+                  <i>:</i>
+                  {r.awayScore}
+                </strong>
+                <span>{r.away}</span>
+              </div>
+            ))}
+            {!data?.results.length && (
+              <p className="tv-empty">The first result is still to come.</p>
+            )}
           </div>
-          {data?.results.map((r) => (
-            <div className="tv-result" key={r.id}>
-              <span>{r.home}</span>
-              <strong>
-                {r.homeScore}
-                <i>:</i>
-                {r.awayScore}
-              </strong>
-              <span>{r.away}</span>
-            </div>
-          ))}
-          {!data?.results.length && <p className="tv-empty">The first result is still to come.</p>}
-          <h2 className="tv-fixtures-title">Coming up in the league</h2>
-          {data?.fixtures.map((f) => (
-            <div className="tv-fixture" key={f.id}>
-              <strong>
-                {f.home} <span>v</span> {f.away}
-              </strong>
-              <small>
-                {f.bookedAt
-                  ? `Table booked · ${bookingDayLabel(londonDate(f.bookedAt))} ${londonTime(f.bookedAt)}`
-                  : `Due ${bookingDayLabel(f.dueDate)} · Table not reserved`}
-              </small>
-            </div>
-          ))}
-          {!data?.fixtures.length && <p className="tv-empty">No upcoming league fixtures.</p>}
+          <div className="tv-result-column">
+            <h2 className="tv-fixtures-title">Coming up in the league</h2>
+            {data?.fixtures.map((f) => (
+              <div className="tv-fixture" key={f.id}>
+                <strong>
+                  {f.home} <span>v</span> {f.away}
+                </strong>
+                <small>
+                  {f.bookedAt
+                    ? `Table booked · ${bookingDayLabel(londonDate(f.bookedAt))} ${londonTime(f.bookedAt)}`
+                    : `Due ${bookingDayLabel(f.dueDate)} · Table not reserved`}
+                </small>
+              </div>
+            ))}
+            {!data?.fixtures.length && <p className="tv-empty">No upcoming league fixtures.</p>}
+          </div>
         </section>
         <aside className="tv-qr">
           <QRCodeSVG
@@ -264,7 +271,7 @@ export function Display() {
               ? `Updated ${londonTime(data.fetchedAt)} · Refreshes every 30 seconds`
               : 'Connecting…'}
         </span>
-        <span>Demo · Browser-local data</span>
+        <span>{liveMode ? 'Virtuoso · Shared office table' : 'Demo · Browser-local data'}</span>
         <span>Good games. Great colleagues.</span>
       </footer>
     </main>

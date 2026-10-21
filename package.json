@@ -3,9 +3,14 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "api"
+  ],
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
+    "build:api": "npm run build --workspace api",
+    "dev:api": "npm run build:api && npm run dev --workspace api",
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc -b",
     "lint": "eslint .",
@@ -15,6 +20,7 @@
     "format": "prettier --write src tests *.ts *.json *.js README.md IMPLEMENTATION_STATUS.md"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "@tailwindcss/vite": "^4.1.0",
     "lucide-react": "^0.468.0",
     "qrcode.react": "^4.2.0",
@@ -27,9 +33,11 @@
     "@eslint/js": "^10.0.0",
     "@playwright/test": "^1.52.0",
     "@types/node": "^22.15.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "esbuild": "^0.28.2",
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.4.20",

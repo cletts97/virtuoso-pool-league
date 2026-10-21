@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useLeague } from './LeagueContext';
 import { Avatar, Confirm } from '../components/ui';
+import { liveMode, authClient } from '../auth/client';
 
 const links = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
@@ -105,12 +106,14 @@ export function Layout() {
             </label>
             <select
               id="season"
+              disabled={!state.seasons.length}
               value={season.id}
               onChange={(e) => {
                 void preferences({ selectedSeasonId: e.target.value });
                 if (location.pathname.startsWith('/fixtures/')) navigate('/fixtures');
               }}
             >
+              {!state.seasons.length && <option value="">No season yet</option>}
               {state.seasons.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -148,52 +151,62 @@ export function Layout() {
                     : 'League player'}
               </small>
             </span>
+            {liveMode && (
+              <button
+                className="button secondary small"
+                onClick={() => void authClient().auth.signOut()}
+              >
+                Sign out
+              </button>
+            )}
           </div>
         </header>
-        <div className="demo-bar">
-          <span>
-            <span className="demo-pill">DEMO</span>
-            <span className="demo-explanation">
-              Your league, in play. Changes are saved in this browser.
+        {!liveMode && (
+          <div className="demo-bar">
+            <span>
+              <span className="demo-pill">DEMO</span>
+              <span className="demo-explanation">
+                Your league, in play. Changes are saved in this browser.
+              </span>
             </span>
-          </span>
-          <div>
-            <label htmlFor="demo-user">Playing as</label>
-            <select
-              id="demo-user"
-              value={user.id}
-              onChange={(e) => void preferences({ currentUserId: e.target.value })}
-            >
-              {state.players
-                .filter((p) => p.active)
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                    {p.role === 'admin' ? ' (Admin)' : ''}
-                    {p.role === 'colleague' ? ' (Casual)' : ''}
-                  </option>
-                ))}
-            </select>
-            <button
-              className="icon-button"
-              title="Reset demo data"
-              aria-label="Reset demo data"
-              onClick={() => setConfirmReset(true)}
-            >
-              <RotateCcw size={14} />
-            </button>
+            <div>
+              <label htmlFor="demo-user">Playing as</label>
+              <select
+                id="demo-user"
+                value={user.id}
+                onChange={(e) => void preferences({ currentUserId: e.target.value })}
+              >
+                {state.players
+                  .filter((p) => p.active)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                      {p.role === 'admin' ? ' (Admin)' : ''}
+                      {p.role === 'colleague' ? ' (Casual)' : ''}
+                    </option>
+                  ))}
+              </select>
+              <button
+                className="icon-button"
+                title="Reset demo data"
+                aria-label="Reset demo data"
+                onClick={() => setConfirmReset(true)}
+              >
+                <RotateCcw size={14} />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         <main id="main-content" className="page-content">
           <Outlet />
         </main>
         <footer className="app-footer">
           <span>Virtuoso Pool League</span>
           <span>Good games. Great colleagues.</span>
-          <span>Demo workspace · Local data</span>
+          <span>{liveMode ? 'Shared league workspace' : 'Demo workspace · Local data'}</span>
         </footer>
       </div>
-      {confirmReset && (
+      {!liveMode && confirmReset && (
         <Confirm
           title="Reset the demo league?"
           label="Reset demo"

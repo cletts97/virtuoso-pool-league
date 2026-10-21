@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { liveMode } from '../auth/client';
+import { AccountManagement, ReminderAction } from '../components/AccountManagement';
 import { Link } from 'react-router-dom';
 import {
   CalendarPlus,
@@ -119,63 +121,72 @@ export function Admin() {
           <div className="dashboard-columns">
             <div className="stack">
               <Section title="Current season" subtitle="The competition selected in the header.">
-                <div className="admin-season">
-                  <Badge status={season.status} />
-                  <h2>{season.name}</h2>
-                  <p>
-                    {season.participantIds.length} players · Starts{' '}
-                    {new Date(`${season.startDate}T12:00:00`).toLocaleDateString('en-GB')} ·{' '}
-                    {fixtures.filter((f) => f.stage === 'regular').length} league fixtures
-                  </p>
-                  <div className="admin-actions">
-                    <button className="button secondary" onClick={() => setModal('settings')}>
-                      <Edit3 size={15} />
-                      Season settings
-                    </button>
-                    {season.status === 'draft' && (
-                      <button className="button primary" onClick={() => setModal('generate')}>
-                        <WandSparkles size={15} />
-                        Generate fixtures
-                      </button>
-                    )}
-                    {season.status === 'regular' && (
-                      <button className="button secondary" onClick={() => setModal('finalize')}>
-                        <ShieldCheck size={15} />
-                        Finalize regular season
-                      </button>
-                    )}
-                    {['playoffs', 'complete'].includes(season.status) && (
-                      <Link className="button primary" to="/playoffs">
-                        View playoff bracket
-                        <ChevronRight size={16} />
-                      </Link>
-                    )}
-                  </div>
-                  <dl className="config-list">
-                    <div>
-                      <dt>Competition</dt>
-                      <dd>Singles · Round-robin</dd>
+                {!season.id ? (
+                  <Empty title="Create the first season">
+                    Invite colleagues, add at least four to the league, then create a season.
+                  </Empty>
+                ) : (
+                  <>
+                    <div className="admin-season">
+                      <Badge status={season.status} />
+                      <h2>{season.name}</h2>
+                      <p>
+                        {season.participantIds.length} players · Starts{' '}
+                        {new Date(`${season.startDate}T12:00:00`).toLocaleDateString('en-GB')} ·{' '}
+                        {fixtures.filter((f) => f.stage === 'regular').length} league fixtures
+                      </p>
+                      <div className="admin-actions">
+                        <button className="button secondary" onClick={() => setModal('settings')}>
+                          <Edit3 size={15} />
+                          Season settings
+                        </button>
+                        {season.status === 'draft' && (
+                          <button className="button primary" onClick={() => setModal('generate')}>
+                            <WandSparkles size={15} />
+                            Generate fixtures
+                          </button>
+                        )}
+                        {season.status === 'regular' && (
+                          <button className="button secondary" onClick={() => setModal('finalize')}>
+                            <ShieldCheck size={15} />
+                            Finalize regular season
+                          </button>
+                        )}
+                        {['playoffs', 'complete'].includes(season.status) && (
+                          <Link className="button primary" to="/playoffs">
+                            View playoff bracket
+                            <ChevronRight size={16} />
+                          </Link>
+                        )}
+                      </div>
+                      <dl className="config-list">
+                        <div>
+                          <dt>Competition</dt>
+                          <dd>Singles · Round-robin</dd>
+                        </div>
+                        <div>
+                          <dt>Scheduling target</dt>
+                          <dd>{season.config.roundsPerWeek} rounds / week</dd>
+                        </div>
+                        <div>
+                          <dt>Ranking</dt>
+                          <dd>Match wins · Frame-based tiebreakers</dd>
+                        </div>
+                        <div>
+                          <dt>Match formats</dt>
+                          <dd>League BO3 · Semifinal BO5 · Final BO7</dd>
+                        </div>
+                        <div>
+                          <dt>Playoff qualification</dt>
+                          <dd>
+                            Top four ·{' '}
+                            {season.qualifiers.length ? 'Seeds locked' : 'Not yet finalized'}
+                          </dd>
+                        </div>
+                      </dl>
                     </div>
-                    <div>
-                      <dt>Scheduling target</dt>
-                      <dd>{season.config.roundsPerWeek} rounds / week</dd>
-                    </div>
-                    <div>
-                      <dt>Ranking</dt>
-                      <dd>Match wins · Frame-based tiebreakers</dd>
-                    </div>
-                    <div>
-                      <dt>Match formats</dt>
-                      <dd>League BO3 · Semifinal BO5 · Final BO7</dd>
-                    </div>
-                    <div>
-                      <dt>Playoff qualification</dt>
-                      <dd>
-                        Top four · {season.qualifiers.length ? 'Seeds locked' : 'Not yet finalized'}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
+                  </>
+                )}
               </Section>
               <Section title="Season archive">
                 <div className="admin-list">
@@ -204,10 +215,15 @@ export function Admin() {
                   <Megaphone className="accent" size={28} />
                   <h3>Keep everyone in the loop</h3>
                   <p>Post a notice to the dashboard and everyone’s in-app inbox for this season.</p>
-                  <button className="button secondary" onClick={() => setModal('announcement')}>
+                  <button
+                    disabled={!season.id}
+                    className="button secondary"
+                    onClick={() => setModal('announcement')}
+                  >
                     Post announcement
                     <Plus size={16} />
                   </button>
+                  {liveMode && <ReminderAction />}
                 </div>
               </Section>
               <div className="notice-card">
@@ -228,16 +244,22 @@ export function Admin() {
             subtitle="Changes preserve existing season entries and results."
           >
             <div className="admin-toolbar">
-              <button
-                className="button primary"
-                onClick={() => {
-                  setEditing(undefined);
-                  setModal('player');
-                }}
-              >
-                <Plus size={16} />
-                Add player
-              </button>
+              {liveMode ? (
+                <AccountManagement />
+              ) : (
+                <>
+                  <button
+                    className="button primary"
+                    onClick={() => {
+                      setEditing(undefined);
+                      setModal('player');
+                    }}
+                  >
+                    <Plus size={16} />
+                    Add player
+                  </button>
+                </>
+              )}
             </div>
             <div className="admin-list">
               {state.players.map((p) => (

@@ -2,6 +2,7 @@ import type { LeagueState, Score } from '../domain/types';
 import type { BookingCommand } from './bookingCommands';
 
 export type LeagueCommand =
+  | { type: 'enrolPlayer'; id: string }
   | BookingCommand
   | { type: 'submit'; fixtureId: string; score: Score }
   | { type: 'review'; fixtureId: string; approve: boolean; reason: string }

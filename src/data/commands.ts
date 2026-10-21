@@ -295,6 +295,22 @@ export function executeCommand(
   }
   requireAdmin(actor);
   switch (command.type) {
+    case 'enrolPlayer': {
+      const player = state.players.find((p) => p.id === command.id);
+      invariant(player?.active, 'Choose an active colleague.');
+      invariant(
+        !state.participants.some((p) => p.kind === 'individual' && p.playerIds.includes(player.id)),
+        'This colleague is already a league player.',
+      );
+      state.participants.push({
+        id: id(),
+        name: player.name,
+        kind: 'individual',
+        playerIds: [player.id],
+      });
+      if (player.role === 'colleague') player.role = 'player';
+      break;
+    }
     case 'createSeason': {
       validateDate(command.startDate);
       invariant(

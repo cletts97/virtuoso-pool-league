@@ -4,9 +4,10 @@ import tseslint from 'typescript-eslint';
 import hooks from 'eslint-plugin-react-hooks';
 import refresh from 'eslint-plugin-react-refresh';
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', '.tools', 'coverage', 'playwright-report', 'test-results'] },
+  { ignores: ['**/dist', '**/node_modules', '.tools', 'coverage', 'playwright-report', 'test-results'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  { files: ['**/*.mjs'], languageOptions: { globals: globals.node } },
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },

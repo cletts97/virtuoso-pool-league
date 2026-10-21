@@ -1,5 +1,15 @@
 # Frontend implementation status
 
+## Backend integration — in progress (20 October 2026)
+
+- Reviewed AGENTS, PROJECT, README, implementation status, all database design/setup/review documents, the deployed initial SQL migration, and all pgTAP tests. The old validation-only review task is superseded by the explicit backend-integration request. The deployed migration is unchanged.
+- Reconciled interrupted booking work: repaired TV result-card layout; the earlier booking selector/setup fixes are present. All 14 booking browser cases have now passed across the main run and a targeted rerun after Vite warmed its dependency cache. A final full regression run remains pending.
+- Added explicit API/mock modes, Supabase sign-in/password/callback screens, session gates, API repository, and live-mode removal of demo identity/reset controls.
+- Added Azure Functions HTTP adapter, local HTTP runner using the same handlers, PostgreSQL mapping, parameterized transactional writes, active-profile checks, strict request validation, concurrency revision guards, sanitized public display, and account enrollment/invitation controls. No cloud calls or schema changes.
+- Server serializes short writes with a transaction-scoped advisory lock, additionally locks linked fixtures, and commits results/events/notifications/playoffs together. Existing pure competition and booking rules remain authoritative.
+- Local Docker was started by the owner. Local Supabase is running; integration tests exposed a configuration distinction: global signup must be disabled while the email provider remains enabled. Local settings are being verified accordingly. Invitation domain is configurable, with `virtuoso.tech` agreed by the owner. Real email remains disabled by default.
+- Next: finish local Auth/database/concurrency tests, live-browser workflows, code cleanup, deployment/configuration documentation, and final regression validation. Do not interpret file presence as validated completion.
+
 ## Current milestone — table bookings and office display (in progress, 20 October 2026)
 
 - Reviewed the new PROJECT.md booking/HUD requirements and existing service boundaries.

@@ -15,6 +15,8 @@ import { Admin } from './pages/Admin';
 import { Notifications } from './pages/Notifications';
 import { Bookings } from './pages/Bookings';
 import { Display } from './pages/Display';
+import { AuthGate } from './auth/AuthGate';
+import { SignIn, AuthCallback } from './auth/AuthPages';
 import { Empty } from './components/ui';
 import './styles.css';
 import './bookings.css';
@@ -26,11 +28,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <ScrollToTop />
         <Routes>
           <Route path="display" element={<Display />} />
+          <Route path="login" element={<SignIn />} />
+          <Route path="auth/callback" element={<AuthCallback />} />
           <Route
             element={
-              <LeagueProvider>
-                <Layout />
-              </LeagueProvider>
+              <AuthGate>
+                <LeagueProvider>
+                  <Layout />
+                </LeagueProvider>
+              </AuthGate>
             }
           >
             <Route index element={<Dashboard />} />
