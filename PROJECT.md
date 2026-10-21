@@ -28,7 +28,10 @@ Keep operating costs as close to zero as reasonably possible.
 - Initially support approximately 10–14 players.
 - Support adding, editing, and deactivating players.
 - Track individual player statistics.
+- Allow active accounts to upload, replace and remove their own profile photo through the profile editor. Show photos wherever the shared player avatar appears, with initials as fallback.
+- Store profile photos in private Supabase Storage with server-authorized uploads and short-lived image URLs; do not expose private photo URLs through the public TV response.
 - Support multiple seasons and historical results.
+- When creating a season, administrators select from all active accounts. Create or reuse individual competition entries automatically; no separate Add to league enrollment step is required.
 
 ### Regular Season
 

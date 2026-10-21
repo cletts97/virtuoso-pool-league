@@ -67,11 +67,18 @@ export function PlayerForm({ player, onClose }: { player?: Player; onClose(): vo
 }
 export function SeasonForm({ edit = false, onClose }: { edit?: boolean; onClose(): void }) {
   const { state, season, run } = useLeague();
-  const available = state.participants.filter(
-    (p) =>
-      p.kind === 'individual' &&
-      p.playerIds.every((id) => state.players.find((u) => u.id === id)?.active),
-  );
+  const available = state.players
+    .filter((player) => player.active)
+    .map((player) => ({
+      id:
+        state.participants.find(
+          (entry) =>
+            entry.kind === 'individual' &&
+            entry.playerIds.length === 1 &&
+            entry.playerIds[0] === player.id,
+        )?.id ?? player.id,
+      name: player.name,
+    }));
   const [name, setName] = useState(edit ? season.name : '');
   const [startDate, setStartDate] = useState(edit ? season.startDate : dateOnly());
   const [rounds, setRounds] = useState(edit ? season.config.roundsPerWeek : 2);

@@ -81,4 +81,5 @@ export const requestSchema = z.strictObject({
 });
 export const inviteSchema = z.strictObject({ email: z.email().max(254), name: text.max(70) });
 export const resetSchema = z.strictObject({ email: z.email().max(254) });
+export const avatarSchema = z.strictObject({ image: z.string().min(1).max(349528).nullable() });
 export type ApiCommand = z.infer<typeof commandSchema>;

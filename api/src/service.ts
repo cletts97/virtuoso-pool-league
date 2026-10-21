@@ -10,6 +10,7 @@ import { privateSnapshot, readState } from './state';
 import { ApiError, requireCondition } from './errors';
 import type { ApiCommand } from './validation';
 import { allowedEmail } from './access';
+import { AvatarStorage } from './avatars';
 
 export class LeagueService {
   constructor(
@@ -64,16 +65,22 @@ export class LeagueService {
     return this.transaction((client) => this.actor(client, user));
   }
   async load(user: User) {
-    return this.transaction(async (client) => {
+    const state = await this.transaction(async (client) => {
       const actor = await this.actor(client, user);
       return privateSnapshot(await readState(client, actor.id));
     });
+    return new AvatarStorage(this.auth).decorate(state);
+  }
+  async saveAvatar(user: User, image: string | null) {
+    const actor = await this.me(user);
+    await new AvatarStorage(this.auth).save(actor.id, image);
+    return this.load(user);
   }
   async display() {
     return this.transaction(async (client) => displaySnapshot(await readState(client)));
   }
   async execute(user: User, command: ApiCommand, expectedRevision: string) {
-    return this.transaction(async (client) => {
+    const state = await this.transaction(async (client) => {
       const actor = await this.actor(client, user);
       // All APIs use the advisory lock; row locks also coordinate with database maintenance.
       if ('fixtureId' in command)
@@ -148,6 +155,7 @@ export class LeagueService {
       saved.selectedSeasonId = next.selectedSeasonId;
       return privateSnapshot(saved);
     }, true);
+    return new AvatarStorage(this.auth).decorate(state);
   }
   async reminders(user: User) {
     return this.transaction(async (client) => {

@@ -4,7 +4,7 @@ createServer(async (req, res) => {
   let body = '';
   for await (const chunk of req) {
     body += chunk;
-    if (body.length > 65536) {
+    if (body.length > (req.url?.split('?')[0] === '/api/profile/photo' ? 360000 : 65536)) {
       res.writeHead(413);
       res.end();
       return;

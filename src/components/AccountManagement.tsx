@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { useLeague } from '../app/LeagueContext';
 import { authenticatedRequest } from '../data/apiRepository';
 import { Modal } from './ui';
 export function AccountManagement() {
-  const { state, run } = useLeague();
   const [open, setOpen] = useState(false),
     [name, setName] = useState(''),
     [email, setEmail] = useState(''),
@@ -31,7 +29,8 @@ export function AccountManagement() {
     <div className="admin-season">
       <h2>Colleague accounts</h2>
       <p>
-        Invite colleagues to book casually, then add them to the league when they want to compete.
+        Invite colleagues to book casually or select them when creating a season. No separate league
+        enrollment is needed.
       </p>
       <button
         className="button primary"
@@ -42,32 +41,6 @@ export function AccountManagement() {
       >
         Invite colleague
       </button>
-      <div className="admin-list">
-        {state.players
-          .filter(
-            (p) =>
-              p.active &&
-              !state.participants.some(
-                (entry) => entry.kind === 'individual' && entry.playerIds.includes(p.id),
-              ),
-          )
-          .map((p) => (
-            <div className="managed-player" key={p.id}>
-              <strong>{p.name}</strong>
-              <button
-                className="button secondary small"
-                onClick={() =>
-                  void run(
-                    { type: 'enrolPlayer', id: p.id },
-                    'Colleague added to the league. Include them in a new season.',
-                  )
-                }
-              >
-                Add to league
-              </button>
-            </div>
-          ))}
-      </div>
       {open && (
         <Modal title="Invite a colleague" onClose={() => setOpen(false)}>
           <form className="form-stack" onSubmit={(e) => void invite(e)}>

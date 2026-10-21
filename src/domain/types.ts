@@ -6,6 +6,8 @@ export interface Player {
   role: 'player' | 'admin' | 'colleague';
   active: boolean;
   color: number;
+  /** Short-lived private Storage URL, supplied by the API; never persisted in league tables. */
+  avatarUrl?: string;
 }
 // A participant is a competition entry, not necessarily an individual player.
 export interface Participant {

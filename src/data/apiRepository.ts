@@ -45,6 +45,9 @@ export class ApiLeagueRepository implements LeagueRepository, DisplayRepository 
   async load() {
     return this.apply(await authenticatedRequest<LeagueState>('/state'));
   }
+  async saveAvatar(image: string | null) {
+    return this.apply(await authenticatedRequest<LeagueState>('/profile/photo', { image }));
+  }
   async execute(command: LeagueCommand) {
     if (!this.snapshot?.revision) throw new Error('Refresh the page before saving.');
     const state = await authenticatedRequest<LeagueState>('/commands', {

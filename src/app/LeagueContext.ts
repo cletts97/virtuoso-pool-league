@@ -6,6 +6,7 @@ export interface LeagueContextValue {
   season: Season;
   busy: boolean;
   run(command: LeagueCommand, message?: string): Promise<boolean>;
+  saveAvatar(image: string | null): Promise<boolean>;
   preferences(
     patch: Partial<Pick<LeagueState, 'currentUserId' | 'selectedSeasonId' | 'theme'>>,
   ): Promise<void>;

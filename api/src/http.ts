@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ZodError } from 'zod';
 import type { ApiConfig } from './config';
 import { ApiError, requireCondition } from './errors';
-import { inviteSchema, requestSchema, resetSchema } from './validation';
+import { avatarSchema, inviteSchema, requestSchema, resetSchema } from './validation';
 import type { LeagueService } from './service';
 import { allowedEmail } from './access';
 export function createHandler(service: LeagueService, auth: SupabaseClient, config: ApiConfig) {
@@ -16,9 +16,9 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
       new Response(JSON.stringify(value), { status, headers });
     try {
       const path = new URL(request.url).pathname.replace(/^\/api/, '');
-      const body = async () => {
+      const body = async (limit = 65536) => {
         const raw = await request.text();
-        requireCondition(raw.length <= 65536, 413, 'Request is too large.');
+        requireCondition(raw.length <= limit, 413, 'Request is too large.');
         try {
           return JSON.parse(raw) as unknown;
         } catch {
@@ -59,6 +59,10 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
         'Sign in to continue.',
       );
       const user = await service.identity(authorization.slice(7));
+      if (request.method === 'POST' && path === '/profile/photo') {
+        const { image } = avatarSchema.parse(await body(360000));
+        return json(await service.saveAvatar(user, image));
+      }
       if (request.method === 'GET' && path === '/me') return json(await service.me(user));
       if (request.method === 'GET' && path === '/state') return json(await service.load(user));
       if (request.method === 'POST' && path === '/commands') {

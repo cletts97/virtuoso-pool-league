@@ -152,6 +152,23 @@ The first administrator is a controlled bootstrap data change after verifying th
 
 ## API and consistency
 
+### Profile photos — one-time Storage setup
+
+In the existing Supabase project's **Storage**, create a bucket with the exact name **`profile-photos`**:
+
+- **Public bucket: off** (private).
+- **Maximum file size: 262144 bytes / 256 KB**.
+- **Allowed MIME types: `image/jpeg`**.
+- Do not add anonymous or authenticated browser upload/read policies. The existing server-only Supabase secret key handles Storage after the API verifies the active account.
+
+This bucket has not been created in the cloud by development work. No application-table migration, new Azure resource or new environment variable is required. It uses the existing Supabase Storage allocation; monitor the project's normal Storage limits.
+
+After deploying frontend/API, click the header avatar → **Profile photo**. Select JPG/PNG/WebP up to 5 MB. The browser crops centrally to a square, resizes to at most 512 × 512 and converts to a JPEG without the original file's EXIF metadata. The API separately checks request size, JPEG headers/dimensions and the 256 KB stored-size limit. SVG/GIF uploads, client-selected object paths and account IDs are not accepted. Upload/replacement is saved immediately; **Remove photo** restores initials.
+
+The object path is the verified application profile UUID plus `/avatar.jpg`, so no avatar column or Auth-metadata URL is needed. Authenticated snapshots include five-minute signed URLs; URLs are attached after database revision calculation and refreshed with normal polling. The shared `Avatar` component shows photos throughout the app and falls back to initials on missing/failed images. Photo-service failures do not block league reads. TV responses remain unchanged and do not expose private photo URLs. Mock repositories can persist photo data locally, although the profile editor is currently exposed in API mode.
+
+Signed URLs already issued can remain usable until expiry after account deactivation. Auth account deletion preserves the historical profile and its image; an operator can delete that profile UUID's Storage folder if removal is required. No original uploads are retained. For disposable local testing the focused live browser test creates a private bucket if absent and removes its own photo/bucket afterward; it refuses cloud endpoints.
+
 Application bearer tokens travel in `X-VPL-Authorization` because the SWA managed Functions proxy can replace the standard `Authorization` header with a platform token. The API prefers the app-specific header and fully verifies its token with Supabase; a standard bearer header remains supported for local clients. Neither header grants access without verified identity and an active database profile. See [Azure's token-overwrite issue](https://github.com/Azure/static-web-apps/issues/158). A successful Supabase login followed by an API 401 causes local sign-out and can appear as a login redirect loop; deploy the corresponding frontend and API transport changes together.
 
 | Route                         | Access / behavior                                                                                               |

@@ -49,6 +49,13 @@ export class LocalLeagueRepository implements LeagueRepository, DisplayRepositor
   async load() {
     return this.read();
   }
+  async saveAvatar(image: string | null) {
+    const state = this.read();
+    const user = state.players.find((p) => p.id === state.currentUserId)!;
+    invariant(user.active, 'An active account is required.');
+    user.avatarUrl = image ? `data:image/jpeg;base64,${image}` : undefined;
+    return this.write(state);
+  }
   async loadDisplay() {
     return displaySnapshot(this.read());
   }

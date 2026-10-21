@@ -53,7 +53,13 @@ try {
   process.exitCode = await new Promise((resolve) => {
     const tests = spawn(
       process.execPath,
-      ['node_modules/@playwright/test/cli.js', 'test', '--config', 'playwright.live.config.ts'],
+      [
+        'node_modules/@playwright/test/cli.js',
+        'test',
+        '--config',
+        'playwright.live.config.ts',
+        ...process.argv.slice(2),
+      ],
       { env, stdio: 'inherit' },
     );
     tests.on('exit', (code) => resolve(code ?? 1));

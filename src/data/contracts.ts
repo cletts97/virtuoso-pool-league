@@ -36,6 +36,7 @@ export type LeagueCommand =
 export interface LeagueRepository {
   load(): Promise<LeagueState>;
   execute(command: LeagueCommand): Promise<LeagueState>;
+  saveAvatar(image: string | null): Promise<LeagueState>;
   preferences(
     patch: Partial<Pick<LeagueState, 'currentUserId' | 'selectedSeasonId' | 'theme'>>,
   ): Promise<LeagueState>;

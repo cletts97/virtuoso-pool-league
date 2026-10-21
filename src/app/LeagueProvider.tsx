@@ -62,6 +62,19 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
       setToast({ text: (e as Error).message, error: true });
     }
   }
+  async function saveAvatar(image: string | null) {
+    setBusy(true);
+    try {
+      setState(await repository.saveAvatar(image));
+      setToast({ text: image ? 'Profile photo updated.' : 'Profile photo removed.', error: false });
+      return true;
+    } catch (e) {
+      setToast({ text: e instanceof Error ? e.message : 'Photo could not be saved.', error: true });
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
   async function reset() {
     try {
       setState(await repository.reset());
@@ -117,7 +130,17 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
   };
   return (
     <LeagueContext.Provider
-      value={{ state, season, run, preferences, reset, busy, feedback: toast, clearFeedback }}
+      value={{
+        state,
+        season,
+        run,
+        saveAvatar,
+        preferences,
+        reset,
+        busy,
+        feedback: toast,
+        clearFeedback,
+      }}
     >
       {children}
       {toast && (

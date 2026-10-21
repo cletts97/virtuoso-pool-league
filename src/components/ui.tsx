@@ -1,10 +1,11 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowUpRight, Inbox, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLeague } from '../app/LeagueContext';
 import { participantName } from '../domain/rules';
 
 export function Avatar({ id, large = false }: { id: string; large?: boolean }) {
+  const [failedUrl, setFailedUrl] = useState<string>();
   const { state } = useLeague();
   const participant = state.participants.find((p) => p.id === id);
   const player = state.players.find((p) => p.id === id || p.id === participant?.playerIds[0]);
@@ -14,11 +15,20 @@ export function Avatar({ id, large = false }: { id: string; large?: boolean }) {
       aria-hidden="true"
       className={`avatar color-${player?.color ?? 0} ${large ? 'large' : ''}`}
     >
-      {name
-        .split(' ')
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join('')}
+      {player?.avatarUrl && player.avatarUrl !== failedUrl ? (
+        <img
+          src={player.avatarUrl}
+          alt=""
+          referrerPolicy="no-referrer"
+          onError={() => setFailedUrl(player.avatarUrl)}
+        />
+      ) : (
+        name
+          .split(' ')
+          .map((n) => n[0])
+          .slice(0, 2)
+          .join('')
+      )}
     </span>
   );
 }

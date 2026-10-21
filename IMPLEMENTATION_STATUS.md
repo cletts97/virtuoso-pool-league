@@ -1,5 +1,19 @@
 # Implementation status — Virtuoso Pool League
 
+## Simplified season enrollment — 21 October 2026
+
+- Create-season selection now lists every active account. The existing server-validated season command creates missing individual competition entries automatically, reuses previous entries and includes only selected accounts. Existing entry-ID clients remain compatible. Selected casual colleagues become players; existing admin roles/history are preserved. Inactive and duplicate-person selections are rejected.
+- Removed the separate Add to league UI step. Administrators invite accounts, then choose participants when creating each season. Existing database persistence already saves new entries/members and seasons atomically, so no migration or permission change is required.
+- Validation: 22 focused season/domain tests, targeted ESLint and TypeScript checks passed. Updated the existing live test to reflect direct selection, but did not run browser tests, builds or full suites. No commit, push, cloud change or deployment performed.
+
+## Profile photos — 21 October 2026
+
+- Added upload, replacement and removal in the existing header-avatar profile editor. JPG/PNG/WebP source images up to 5 MB are centrally cropped and resized to a square JPEG at most 512 pixels; originals/EXIF are not stored. Preview updates immediately after persistence. The shared Avatar component displays the photo everywhere it previously showed player initials, falling back to initials for absent/failed images. Profile editing remains API-mode UI; mock repositories support isolated photo persistence too.
+- Added authenticated `POST /api/profile/photo` accepting only an image payload or null for removal. Identity and active-profile checks derive the Storage path from the server-side profile UUID. Strict payload validation rejects client-chosen IDs/paths; server validates size and JPEG header/dimensions independently. Other API body limits remain unchanged. No role or database access changes.
+- Uses the existing Supabase SDK and a private `profile-photos` bucket, fixed per-profile object paths, and five-minute signed URLs attached to authenticated snapshots after database revision calculation. URLs are not stored in application tables and photo failures do not block league reads. The public TV snapshot remains unchanged and does not expose photo URLs. No database migration, new dependency or additional Azure setting is required.
+- **Manual cloud setup required before use:** create private Supabase Storage bucket `profile-photos`, maximum object size 262144 bytes, allowed MIME `image/jpeg`; add no browser upload/read policies. Existing server-only Supabase credentials perform Storage operations after API authorization. See `docs/BACKEND_SETUP.md` → Profile photos. No cloud bucket/resources were created, schema/data changed, commits/pushes made or deployment performed.
+- Validation: **10 focused tests** (photo validation/storage behaviour, auth-header handling and own-name permissions) passed; targeted ESLint and TypeScript checks passed. **One focused live browser test passed** against local Supabase, proving actual private Storage upload, image decoding/rendering, refresh persistence, denied anonymous public read and removal. The test created/deleted its disposable local bucket and image. Local API bundle was built by that test helper. Full suites and production frontend build were not run for this incremental change. The helper now forwards filters so individual browser tests can be run with `npm run test:live -- --grep 'profile photo upload'`.
+
 ## Invited account display names — 21 October 2026
 
 - Cause: the deployed profile-creation trigger uses invitation `name` metadata, falling back to `Invited colleague`. Supabase portal invitations can omit that metadata; app-issued invitations already collect a full name. Auth metadata changes alone do not rename an existing application profile.

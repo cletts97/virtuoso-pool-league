@@ -325,16 +325,31 @@ export function executeCommand(
           new Set(command.participantIds).size === command.participantIds.length,
         'Select at least four unique players.',
       );
+      // Existing entry IDs remain valid; first-time entrants can be selected by account ID.
+      const participantIds = command.participantIds.map((selection) => {
+        const selectedEntry = state.participants.find((p) => p.id === selection);
+        const player = state.players.find(
+          (p) =>
+            p.id ===
+            (selectedEntry?.kind === 'individual' && selectedEntry.playerIds.length === 1
+              ? selectedEntry.playerIds[0]
+              : selection),
+        );
+        invariant(player?.active, 'Select active individual participants.');
+        let entry = state.participants.find(
+          (p) =>
+            p.kind === 'individual' && p.playerIds.length === 1 && p.playerIds[0] === player.id,
+        );
+        if (!entry) {
+          entry = { id: id(), name: player.name, kind: 'individual', playerIds: [player.id] };
+          state.participants.push(entry);
+        }
+        if (player.role === 'colleague') player.role = 'player';
+        return entry.id;
+      });
       invariant(
-        command.participantIds.every((pid) =>
-          state.participants.some(
-            (p) =>
-              p.id === pid &&
-              p.kind === 'individual' &&
-              p.playerIds.every((uid) => state.players.some((u) => u.id === uid && u.active)),
-          ),
-        ),
-        'Select active individual participants.',
+        new Set(participantIds).size === participantIds.length,
+        'Select at least four unique players.',
       );
       invariant(
         Number.isInteger(command.roundsPerWeek) &&
@@ -347,7 +362,7 @@ export function executeCommand(
         id: seasonId,
         name: text(command.name, 'Season name', 80),
         startDate: command.startDate,
-        participantIds: command.participantIds,
+        participantIds,
         format: 'singles',
         status: 'draft',
         config: { roundsPerWeek: command.roundsPerWeek },

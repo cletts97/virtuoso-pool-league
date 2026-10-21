@@ -53,6 +53,54 @@ async function login(page: Page, index: number) {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible();
 }
+test('profile photo upload persists privately, renders in avatars, and can be removed', async ({
+  page,
+}) => {
+  const bucketName = 'profile-photos';
+  const existing = await admin.storage.getBucket(bucketName);
+  let created = false;
+  if (existing.error) {
+    const result = await admin.storage.createBucket(bucketName, {
+      public: false,
+      fileSizeLimit: 262144,
+      allowedMimeTypes: ['image/jpeg'],
+    });
+    if (result.error) throw result.error;
+    created = true;
+  } else expect(existing.data.public).toBe(false);
+  const { rows } = await pool.query('SELECT id FROM public.profiles WHERE auth_user_id=$1', [
+    accounts[1].id,
+  ]);
+  const path = `${rows[0].id}/avatar.jpg`;
+  try {
+    await login(page, 1);
+    await page.getByRole('button', { name: 'Edit your profile' }).click();
+    await page
+      .getByLabel('Profile photo', { exact: true })
+      .setInputFiles('api/tests/fixtures/avatar.jpg');
+    const preview = page.getByRole('dialog').locator('.avatar img');
+    await expect(preview).toBeVisible();
+    await expect
+      .poll(() => preview.evaluate((img) => (img as HTMLImageElement).naturalWidth))
+      .toBe(32);
+    const publicRead = await fetch(`${url}/storage/v1/object/public/${bucketName}/${path}`);
+    expect(publicRead.ok).toBe(false);
+    await page.getByRole('button', { name: 'Close dialog' }).click();
+    await page.reload();
+    await expect(page.locator('.topbar .avatar img')).toBeVisible();
+    await page.getByRole('button', { name: 'Edit your profile' }).click();
+    await page.getByRole('button', { name: 'Remove photo', exact: true }).click();
+    await expect(page.getByRole('dialog').locator('.avatar img')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Close dialog' }).click();
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Edit your profile' })).toBeVisible();
+    await expect(page.locator('.topbar .avatar img')).toHaveCount(0);
+  } finally {
+    await admin.storage.from(bucketName).remove([path]);
+    if (created) await admin.storage.deleteBucket(bucketName);
+  }
+});
+
 test('real colleague login, shared casual booking, TV polling and logout', async ({
   page,
   context,
@@ -85,21 +133,13 @@ test('real colleague login, shared casual booking, TV polling and logout', async
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
 });
-test('admin enrolls invited colleagues, publishes a season, and two sessions submit and approve', async ({
+test('admin selects invited colleagues for a season, and two sessions submit and approve', async ({
   page,
   browser,
 }) => {
   await login(page, 0);
   await page.goto('/admin');
   await page.getByRole('tab', { name: 'Players', exact: true }).click();
-  for (const account of accounts) {
-    const row = page
-      .locator('.managed-player')
-      .filter({ hasText: account.name })
-      .filter({ has: page.getByRole('button', { name: 'Add to league', exact: true }) });
-    await row.getByRole('button', { name: 'Add to league' }).click();
-    await expect(row).toHaveCount(0);
-  }
   await page.getByRole('button', { name: 'Create season', exact: true }).click();
   await page.getByLabel('Season name').fill(prefix);
   await page.getByRole('button', { name: 'Create draft season' }).click();
