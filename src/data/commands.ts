@@ -136,6 +136,13 @@ export function executeCommand(
   const state = structuredClone(source);
   const actor = state.players.find((p) => p.id === state.currentUserId);
   invariant(actor?.active, 'An active account is required.');
+  if (command.type === 'updateProfile') {
+    actor.name = text(command.name, 'Display name', 70);
+    for (const participant of state.participants)
+      if (participant.kind === 'individual' && participant.playerIds.includes(actor.id))
+        participant.name = actor.name;
+    return state;
+  }
   if ('fixtureId' in command) {
     const fixture = state.fixtures.find((f) => f.id === command.fixtureId);
     invariant(fixture, 'Match not found.');

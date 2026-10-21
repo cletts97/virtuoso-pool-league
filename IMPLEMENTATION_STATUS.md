@@ -1,5 +1,12 @@
 # Implementation status — Virtuoso Pool League
 
+## Invited account display names — 21 October 2026
+
+- Cause: the deployed profile-creation trigger uses invitation `name` metadata, falling back to `Invited colleague`. Supabase portal invitations can omit that metadata; app-issued invitations already collect a full name. Auth metadata changes alone do not rename an existing application profile.
+- Added a display-name form accessible through the header avatar in API mode, including mobile. Accounts still named `Invited colleague` see the form automatically after login; they can dismiss it and reopen from the avatar. Saves update the shared database-backed profile and individual participant display names through the existing transactional command/repository flow. No migration or direct cloud update is needed.
+- New strict `updateProfile` command accepts only a trimmed display name (1–70 characters), derives the account from the authenticated active actor and cannot set account ID, role, active status or department. Available to casual colleagues as well as players/admins. Existing administrator player-management permissions remain unchanged.
+- Validation: three focused profile command/schema tests, targeted ESLint and TypeScript checks passed. No full suite, browser tests, build, cloud changes, commits or deployments performed. Deploy frontend/API together, then the owner can save their actual name in the new prompt.
+
 ## Post-login return to sign-in — 21 October 2026
 
 - Investigated only login/session/API transport. Azure's Functions-specific production settings contain the required connection/key/CA settings, `APP_URL=https://virtuosopool.app` and `WORK_EMAIL_DOMAINS=*`. A read-only Supabase check found the existing account invited, confirmed and previously signed in. No identities, credentials or tokens were printed.

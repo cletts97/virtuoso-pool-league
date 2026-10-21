@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useLeague } from './LeagueContext';
 import { Avatar, Confirm } from '../components/ui';
+import { ProfileSettings } from '../components/ProfileSettings';
 import { liveMode, authClient } from '../auth/client';
 
 const links = [
@@ -142,7 +143,7 @@ export function Layout() {
               {unread > 0 && <span />}
             </Link>
             <span className="topbar-divider" />
-            <Avatar id={user.id} />
+            {liveMode ? <ProfileSettings /> : <Avatar id={user.id} />}
             <span className="header-user">
               <strong>{user.name}</strong>
               <small>

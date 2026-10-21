@@ -8,6 +8,7 @@ const score = z.strictObject({
 });
 const fields = { fixtureId: id, reason: text.max(300) };
 export const commandSchema = z.discriminatedUnion('type', [
+  z.strictObject({ type: z.literal('updateProfile'), name: text.max(70) }),
   z.strictObject({ type: z.literal('submit'), fixtureId: id, score }),
   z.strictObject({
     type: z.literal('review'),

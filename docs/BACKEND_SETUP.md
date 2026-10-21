@@ -67,6 +67,8 @@ For an isolated frontend demo, leave `VITE_DATA_MODE=mock` and run `npm run dev`
 
 ## Auth and email configuration before rollout
 
+Supabase portal invitations may omit name metadata; the database then creates a profile named `Invited colleague`. In API mode, that account is prompted to choose a display name after login. Any active user can reopen the form using their header avatar. The validated self-service command changes only the authenticated user's name and related individual competition display names. It does not grant roles or league enrollment. App-issued invitations already provide the administrator-entered name.
+
 ### Production invitation acceptance URL — current setup
 
 Invitations now use **`https://virtuosopool.app/auth/accept-invite`**. This public React route reuses the verified invitation/password-setup flow: exchange the invitation with Supabase, choose and confirm a password of at least 12 characters, then sign in. Merely visiting the address without a valid invitation does not create an account. `/auth/callback` remains available for password recovery and older invitation links.
