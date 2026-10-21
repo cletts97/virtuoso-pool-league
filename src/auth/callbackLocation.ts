@@ -4,7 +4,7 @@ export function callbackLocation(location: {
   search: string;
   hash: string;
 }): string | undefined {
-  if (location.pathname === '/auth/callback') return;
+  if (['/auth/callback', '/auth/accept-invite'].includes(location.pathname)) return;
   const query = new URLSearchParams(location.search);
   const fragment = new URLSearchParams(location.hash.replace(/^#/, ''));
   const passwordFlow = (params: URLSearchParams) =>
@@ -14,5 +14,5 @@ export function callbackLocation(location: {
     (passwordFlow(fragment) && fragment.has('access_token')) ||
     fragment.has('error_description')
   )
-    return `/auth/callback${location.search}${location.hash}`;
+    return `/auth/${query.get('type') === 'invite' || fragment.get('type') === 'invite' ? 'accept-invite' : 'callback'}${location.search}${location.hash}`;
 }

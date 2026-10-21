@@ -52,6 +52,21 @@ For an isolated frontend demo, leave `VITE_DATA_MODE=mock` and run `npm run dev`
 
 ## Auth and email configuration before rollout
 
+### Production invitation acceptance URL — current setup
+
+Invitations now use **`https://virtuosopool.app/auth/accept-invite`**. This public React route reuses the verified invitation/password-setup flow: exchange the invitation with Supabase, choose and confirm a password of at least 12 characters, then sign in. Merely visiting the address without a valid invitation does not create an account. `/auth/callback` remains available for password recovery and older invitation links.
+
+In the hosted Supabase dashboard:
+
+1. Under **Authentication → URL Configuration**, set **Site URL** to `https://virtuosopool.app` and allow exactly `https://virtuosopool.app/auth/accept-invite` and `https://virtuosopool.app/auth/callback` in **Redirect URLs**. Keep only any other callbacks you actually use, such as local development addresses.
+2. Under **Authentication → Email Templates → Invite user**, copy the complete contents of `supabase/templates/invite.html`. Its fallback uses the Site URL plus `/auth/accept-invite`, so dashboard invitations also reach password setup. App-issued invitations explicitly supply that redirect. The template supports an approved alternate development origin through `RedirectTo`. The repository template is not installed in hosted Supabase automatically.
+3. Set the deployed API's **`APP_URL=https://virtuosopool.app`**. This setting is the origin only; the API appends `/auth/accept-invite` for invitations and `/auth/callback` for resets. Leave the local API's localhost origin in place for local development.
+4. Deploy an **API-mode** frontend and the API through the planned GitHub Actions workflow, and connect the domain with HTTPS before testing the link. Creating the page locally cannot make that public URL work before hosting. Send a fresh invitation to an approved recipient after deployment; previously issued links are not rewritten.
+
+Both custom token-hash links and Supabase's default access/refresh-token fragments are supported. The page verifies tokens with Supabase and removes credentials from the browser URL. Invitation/password-reset emails remain separate from future fixture-notification email. Hosted settings and templates have **not** been changed by this repository update.
+
+The older rollout notes below predate the independent-domain/SMTP decision. Use this section and the latest `IMPLEMENTATION_STATUS.md` checkpoint for the current invitation setup.
+
 ### First cloud connection from this workstation
 
 The cloud schema and the running application's data source are separate. A linked Supabase CLI project does not configure Vite or the API. As checked on 21 October 2026, this checkout had no frontend/API environment files and defaulted to mock mode. Ignored `.env.local` and `api/.env` files have now been prepared using the existing linked project URL, with credentials empty and mock mode retained until configuration is complete. No cloud connection has yet been validated.
@@ -109,7 +124,7 @@ Install the invitation and recovery templates from `supabase/templates/` in host
 
 ```html
 <!-- Invitation template -->
-<a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=invite">Accept invitation</a>
+<a href="{{ .SiteURL }}/auth/accept-invite?token_hash={{ .TokenHash }}&type=invite">Accept invitation</a>
 <!-- Password recovery template -->
 <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery">Reset password</a>
 ```

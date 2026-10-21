@@ -1,5 +1,12 @@
 # Implementation status — Virtuoso Pool League
 
+## Invitation acceptance route — 21 October 2026
+
+- Added public `/auth/accept-invite`, reusing the existing Supabase-verified password setup form (minimum 12 characters and confirmation). App-issued invitations now explicitly target this path; root invitation payloads route here too. `/auth/callback` remains supported for password recovery and older links. Credential removal preserves the current acceptance/callback path.
+- Updated `supabase/templates/invite.html` to fall back to the Site URL plus `/auth/accept-invite` when a dashboard invitation supplies no alternate redirect or supplies the Site URL itself. Explicit API/development redirects remain supported. Local callback allowlists include both paths on ports 5173 and 5174.
+- Hosted configuration is still operator work: Site URL `https://virtuosopool.app`; allow its exact `/auth/accept-invite` and `/auth/callback` URLs; install the repository's invite template in hosted Supabase; set the deployed API's `APP_URL` to the origin only. See the current production-invitation section in `docs/BACKEND_SETUP.md`. These repository changes do not change hosted Supabase settings or deploy the app. The public URL still requires hosting and working custom-domain HTTPS.
+- Validation: type checking, ESLint, **92 unit tests**, **8 local live browser tests**, API-mode production build and API packaging/runtime dependency installation passed. Browser tests verify the new invite URL, password mismatch validation, successful password setup/login, expired-link rejection with another account signed in, root implicit invitation compatibility, recovery and actual invitation/reset messages captured in local Mailpit. Disposable local Supabase was restarted without a reset to load its template/allowlist changes. Build reported the existing bundle-size advisory and local Node 24 versus packaged Node 22 engine warning. The 14 database integration tests were skipped by the unit command and not rerun for this route change. No real emails, cloud writes, commits, pushes or deployments were performed for this change.
+
 ## Resume checkpoint — 21 October 2026, paused before GitHub deployment
 
 The owner requested stopping here to review and commit the working tree. **Deployment should use GitHub Actions, not a manual CLI upload.** No commit, push or application deployment was performed. The earlier cloud/email setup notes below are historical and are superseded by this checkpoint.

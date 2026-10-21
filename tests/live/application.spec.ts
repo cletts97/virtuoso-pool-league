@@ -152,10 +152,14 @@ test('invitation callback sets a password and grants casual access', async ({ pa
   if (invitation.error) throw invitation.error;
   accounts.push({ id: invitation.data.user.id, name: 'Browser Invite', email, password });
   await page.goto(
-    `/auth/callback?token_hash=${invitation.data.properties.hashed_token}&type=invite`,
+    `/auth/accept-invite?token_hash=${invitation.data.properties.hashed_token}&type=invite`,
   );
   await page.getByRole('button', { name: 'Continue securely' }).click();
+  await expect(page).toHaveURL(/\/auth\/accept-invite$/);
   await page.getByLabel('New password', { exact: true }).fill(password);
+  await page.getByLabel('Confirm password', { exact: true }).fill(`${password}-different`);
+  await page.getByRole('button', { name: 'Save password and sign in' }).click();
+  await expect(page.getByRole('alert')).toHaveText('The passwords do not match.');
   await page.getByLabel('Confirm password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Save password and sign in' }).click();
   await expect(page.getByRole('heading', { name: 'Welcome to the league.' })).toBeVisible();
@@ -203,7 +207,7 @@ test('default Supabase root invitation links reach password setup', async ({ pag
   // Reproduce a Site URL fallback without changing the local Auth redirect allowlist.
   landing.pathname = '/';
   await page.goto(landing.toString());
-  await expect(page).toHaveURL(/\/auth\/callback/);
+  await expect(page).toHaveURL(/\/auth\/accept-invite/);
   await page.getByLabel('New password', { exact: true }).fill(account.password);
   await page.getByLabel('Confirm password', { exact: true }).fill(account.password);
   await page.getByRole('button', { name: 'Save password and sign in' }).click();
@@ -211,15 +215,17 @@ test('default Supabase root invitation links reach password setup', async ({ pag
   await login(page, accounts.length - 1);
 });
 
-test('an expired root link cannot reuse another signed-in account for password setup', async ({
-  page,
-}) => {
-  await login(page, 0);
-  await page.goto('/#error=access_denied&error_code=otp_expired&error_description=Expired');
-  await expect(page.getByRole('alert')).toContainText('invalid or expired');
-  await expect(page.getByLabel('New password', { exact: true })).toHaveCount(0);
-  await expect(page).toHaveURL(/\/auth\/callback$/);
-});
+for (const path of ['/', '/auth/accept-invite']) {
+  test(`an expired link at ${path} cannot reuse another signed-in account for password setup`, async ({
+    page,
+  }) => {
+    await login(page, 0);
+    await page.goto(`${path}#error=access_denied&error_code=otp_expired&error_description=Expired`);
+    await expect(page.getByRole('alert')).toContainText('invalid or expired');
+    await expect(page.getByLabel('New password', { exact: true })).toHaveCount(0);
+    await expect(page).toHaveURL(path === '/' ? /\/auth\/callback$/ : /\/auth\/accept-invite$/);
+  });
+}
 
 test('admin invitations and password-reset email are captured locally and their links work', async ({
   page,
@@ -243,6 +249,9 @@ test('admin invitations and password-reset email are captured locally and their 
       })
       .toBe(true);
     expect(new URL(link).origin).toBe('http://127.0.0.1:5174');
+    expect(new URL(link).pathname).toBe(
+      type === 'invite' ? '/auth/accept-invite' : '/auth/callback',
+    );
     return link;
   }
   await login(page, 0);
@@ -263,6 +272,7 @@ test('admin invitations and password-reset email are captured locally and their 
   accounts.push(account);
   await page.goto(await capturedLink('invite'));
   await page.getByRole('button', { name: 'Continue securely' }).click();
+  await expect(page).toHaveURL(/\/auth\/accept-invite$/);
   await page.getByLabel('New password', { exact: true }).fill(account.password);
   await page.getByLabel('Confirm password', { exact: true }).fill(account.password);
   await page.getByRole('button', { name: 'Save password and sign in' }).click();

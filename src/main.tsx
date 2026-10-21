@@ -35,6 +35,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="rules" element={<Rules />} />
             <Route path="login" element={<SignIn />} />
             <Route path="auth/callback" element={<AuthCallback />} />
+            <Route path="auth/accept-invite" element={<AuthCallback />} />
             <Route
               element={
                 <AuthGate>

@@ -2,6 +2,6 @@
 <html lang="en"><body style="font-family:Arial,sans-serif;color:#182231;line-height:1.6">
 <h1>Welcome to Virtuoso Pool League</h1>
 <p>Your colleague has invited you to join the league workspace. Set your password to book the table for a casual game or take part in the competition.</p>
-<p><a style="color:#b84c14" href="{{ if .RedirectTo }}{{ .RedirectTo }}{{ else }}{{ .SiteURL }}/auth/callback{{ end }}?token_hash={{ .TokenHash }}&amp;type=invite">Accept your invitation</a></p>
+<p><a style="color:#b84c14" href="{{ if and .RedirectTo (ne .RedirectTo .SiteURL) }}{{ .RedirectTo }}{{ else }}{{ .SiteURL }}/auth/accept-invite{{ end }}?token_hash={{ .TokenHash }}&amp;type=invite">Accept your invitation</a></p>
 <p>If you were not expecting this invitation, you can ignore this email.</p>
 </body></html>

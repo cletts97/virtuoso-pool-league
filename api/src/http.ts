@@ -80,7 +80,7 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
         );
         const { error } = await auth.auth.admin.inviteUserByEmail(email.trim().toLowerCase(), {
           data: { name },
-          redirectTo: `${config.appUrl.replace(/\/$/, '')}/auth/callback`,
+          redirectTo: `${config.appUrl.replace(/\/$/, '')}/auth/accept-invite`,
         });
         if (error)
           throw new ApiError(

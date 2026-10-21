@@ -132,7 +132,7 @@ export function AuthCallback() {
   });
   useEffect(() => {
     if (linkError) {
-      window.history.replaceState({}, '', '/auth/callback');
+      window.history.replaceState({}, '', window.location.pathname);
       return;
     }
     // An invitation/reset token must be exchanged even if another account is signed in.
@@ -140,7 +140,7 @@ export function AuthCallback() {
     let alive = true;
     // Default Supabase dashboard invitations use implicit fragments. Our SDK uses
     // PKCE for new flows, so explicitly verify/adopt this session and scrub its URL.
-    if (implicitSession) window.history.replaceState({}, '', '/auth/callback');
+    if (implicitSession) window.history.replaceState({}, '', window.location.pathname);
     void Promise.resolve()
       .then(async () => {
         const result = implicitSession
@@ -175,7 +175,7 @@ export function AuthCallback() {
       });
       if (error) throw error;
       setReady(true);
-      window.history.replaceState({}, '', '/auth/callback');
+      window.history.replaceState({}, '', window.location.pathname);
     } catch {
       setMessage('This link is invalid or expired. Request a new invitation or password reset.');
     } finally {
