@@ -4,6 +4,21 @@ The application has two explicit modes: browser-local **mock** mode and **api** 
 
 ## Environment variables
 
+### GitHub Actions production configuration
+
+The Azure-generated workflow originally supplied no frontend environment values and built the raw `api/` workspace. The 21 October authentication investigation found the deployed browser bundle had no configured cloud URL/public key and `/api/me` returned 404. The workflow now prepares the existing API-mode frontend/Functions artifacts on Node 22 and uploads them with both Azure build steps disabled.
+
+Before pushing the workflow changes, add these **repository Actions variables** in GitHub → Settings → Secrets and variables → Actions → Variables:
+
+- `VITE_SUPABASE_URL`: the cloud project URL.
+- `VITE_SUPABASE_PUBLISHABLE_KEY`: the project's public publishable/anon key, never its secret/service-role key.
+
+The workflow sets `VITE_DATA_MODE=api` and `VITE_PUBLIC_APP_URL=https://virtuosopool.app`. It retains the generated `AZURE_STATIC_WEB_APPS_API_TOKEN_DELIGHTFUL_WATER_0712DDB03` Actions secret. Missing public configuration fails the build. Ignored local environment files are not available on GitHub; the preparation script now supports CI variables without `.env.local`.
+
+Configure private server settings separately in **Azure Static Web App → Environment variables**, for the production environment: `DATABASE_URL`, `DATABASE_CA_CERT`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `APP_URL=https://virtuosopool.app`, and `WORK_EMAIL_DOMAINS=*`. Copy the private connection/key/certificate values from your local configuration without committing them. Set `ALLOW_AUTH_EMAIL=true` when ready for app-issued invitation/reset delivery through the configured Supabase SMTP. `PUBLIC_DISPLAY_ENABLED` is independent and can remain false pending public-data approval. Runtime Azure settings do not inject Vite build values into the static JavaScript; changing frontend configuration requires a new build/deployment.
+
+Mock mode remains useful for isolated local demos and tests; production must use API mode. The invitation page now explicitly explains when its build is in demo mode, instead of offering a verification action that cannot work. After deploying, `/login` should show real sign-in, and unauthenticated `/api/me` should return JSON with HTTP 401 (not 404). Then reopen a fresh invitation. No hosting settings were changed by this investigation, and authenticated cloud persistence is not verified until the deployed API works.
+
 Copy the root `.env.example` to `.env.local` for Vite. Copy `api/.env.example` to `api/.env` for the local HTTP runner. Both destination files are ignored. Restart the corresponding process after editing settings.
 
 | Variable                        | Location       | Purpose                                                                                                                                    |
@@ -16,7 +31,7 @@ Copy the root `.env.example` to `.env.local` for Vite. Copy `api/.env.example` t
 | `SUPABASE_URL`                  | API only       | The same Supabase project URL.                                                                                                             |
 | `SUPABASE_SECRET_KEY`           | API only       | Supabase secret key or legacy service-role key for Auth administration.                                                                    |
 | `APP_URL`                       | API only       | Canonical frontend origin for invitation/reset redirects. HTTPS outside localhost.                                                         |
-| `WORK_EMAIL_DOMAINS`            | API only       | Comma-separated exact domains. Use `virtuoso.tech`. Empty configuration denies access/invitations. Subdomains are not implicitly accepted. |
+| `WORK_EMAIL_DOMAINS`            | API only       | Use `*` for owner-approved any-domain invitation-only accounts, or comma-separated exact domains. Empty denies access/invitations. |
 | `ALLOW_AUTH_EMAIL`              | API only       | Default `false`; invitation/reset email requests are disabled until explicitly enabled after delivery configuration and approval.          |
 | `PUBLIC_DISPLAY_ENABLED`        | API only       | Default `false`; enable only after approving the allowlisted TV information for anonymous viewing.                                         |
 | `DATABASE_CA_CERT`              | API only       | Optional PEM CA certificate for the database connection; literal `\n` escapes are supported.                                               |

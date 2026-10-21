@@ -1,5 +1,13 @@
 # Implementation status — Virtuoso Pool League
 
+## Focused deployed-authentication investigation — 21 October 2026
+
+- Public read-only checks found `https://virtuosopool.app` serving a bundle without the configured cloud Supabase URL/public key, consistent with the reported Alex Morgan demo session. Unauthenticated `/api/me` returned 404. The Azure-generated workflow provided no Vite configuration and uploaded the raw API workspace instead of the prepared Functions artifact. Local ignored credentials do not populate GitHub or Azure automatically.
+- Updated the existing workflow to use Node 22, `npm ci`, and `npm run prepare:cloud`, with `VITE_DATA_MODE=api` and public URL/key from GitHub repository Actions variables. Deploys prebuilt `dist` and `.tools/azure-api`. Removed the workflow's unnecessary dependency-mutating OIDC install and use the script action's built-in `core`. Retained its deployment secret/identity-token flow and included the existing deployment secret for PR closure.
+- Cloud preparation now accepts CI environment values without requiring `.env.local`. Demo-mode invitation pages show an explicit configuration explanation and no verification button. Mock mode remains available for local development/testing.
+- Manual configuration still required: GitHub public build variables and existing deployment secret; Azure private production API settings; exact Supabase hosted callback allowlist/template. See `docs/BACKEND_SETUP.md` → GitHub Actions production configuration. Azure private settings and GitHub variable values were not inspected; no claim they are already configured. No invitation tokens were used, no emails sent, and no commits/deployments performed.
+- Validation: preparation-script syntax check, targeted ESLint, TypeScript checking, workflow YAML formatting/parsing through Prettier, and `git diff --check` passed. Full tests, browser tests and production builds were deliberately not run at the owner's request. The updated workflow still requires an actual GitHub run and deployed-host verification.
+
 ## Invitation acceptance route — 21 October 2026
 
 - Added public `/auth/accept-invite`, reusing the existing Supabase-verified password setup form (minimum 12 characters and confirmation). App-issued invitations now explicitly target this path; root invitation payloads route here too. `/auth/callback` remains supported for password recovery and older links. Credential removal preserves the current acceptance/callback path.

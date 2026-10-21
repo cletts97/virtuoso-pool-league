@@ -1,15 +1,18 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 import { spawnSync } from 'node:child_process';
 
 // Read PUBLIC frontend settings only. Private api/.env is never loaded into a build.
 const env = {
-  ...parseEnv(readFileSync('.env.local', 'utf8')),
+  ...(existsSync('.env.local') ? parseEnv(readFileSync('.env.local', 'utf8')) : {}),
   ...process.env,
   VITE_DATA_MODE: 'api',
 };
 for (const name of ['VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY']) {
-  if (!env[name]) throw new Error(`Set ${name} in .env.local before preparing the cloud build.`);
+  if (!env[name])
+    throw new Error(
+      `Set ${name} in the build environment or .env.local before preparing the cloud build.`,
+    );
 }
 if (new URL(env.VITE_SUPABASE_URL).protocol !== 'https:')
   throw new Error('The cloud build requires an HTTPS Supabase project URL.');

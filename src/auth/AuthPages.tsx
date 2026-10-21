@@ -165,6 +165,7 @@ export function AuthCallback() {
     };
   }, [token, linkError, implicitSession]);
   async function accept() {
+    if (!liveMode) return;
     setBusy(true);
     try {
       if (!token || !['invite', 'recovery'].includes(type ?? ''))
@@ -201,6 +202,22 @@ export function AuthCallback() {
       setBusy(false);
     }
   }
+  if (!liveMode)
+    return (
+      <main className="auth-page">
+        <div className="auth-card">
+          <h1>Invitations are unavailable in demo mode.</h1>
+          <p>
+            This application was built without live authentication enabled. Ask your administrator
+            to configure the Supabase build settings and redeploy in API mode, then reopen your
+            invitation.
+          </p>
+          <Link className="text-link" to="/login">
+            Back to sign in
+          </Link>
+        </div>
+      </main>
+    );
   return (
     <main className="auth-page">
       <div className="auth-card">
