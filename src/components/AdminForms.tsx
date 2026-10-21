@@ -57,7 +57,7 @@ export function PlayerForm({ player, onClose }: { player?: Player; onClose(): vo
           </label>
         )}
         <p className="field-help">
-          Deactivation removes demo sign-in and new-season eligibility. Existing fixtures and
+          Deactivation removes application access and new-season eligibility. Existing fixtures and
           history are preserved. Reactivate a player to let them confirm outstanding results.
         </p>
         <FormActions onClose={onClose} />

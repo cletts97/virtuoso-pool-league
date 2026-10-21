@@ -24,7 +24,7 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       auth = createClient(config.supabaseUrl, config.supabaseKey, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
-  const service = new LeagueService(pool, auth, config.emailDomains),
+    const service = new LeagueService(pool, auth, config.emailDomains),
       handler = createHandler(service, auth, config);
     const users: User[] = [],
       tokens: string[] = [],
@@ -39,16 +39,23 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       for (let i = 0; i < 5; i++) {
         const email = `vpl-test-${Date.now()}-${i}@virtuoso.tech`,
           password = `Test-only-${crypto.randomUUID()}`;
-      const result = await auth.auth.admin.generateLink({
-        type:'invite',
+        const result = await auth.auth.admin.generateLink({
+          type: 'invite',
           email,
-        options:{data: { name: `${prefix} ${i}`, role: 'admin' }},
+          options: { data: { name: `${prefix} ${i}`, role: 'admin' } },
         });
         if (result.error) throw result.error;
         users.push(result.data.user!);
         const login = createClient(config.supabaseUrl, process.env.SUPABASE_PUBLIC_KEY!, {
           auth: { persistSession: false, autoRefreshToken: false },
         });
+        const accepted = await login.auth.verifyOtp({
+          token_hash: result.data.properties.hashed_token,
+          type: 'invite',
+        });
+        if (accepted.error) throw accepted.error;
+        const setup = await login.auth.updateUser({ password });
+        if (setup.error) throw setup.error;
         const signed = await login.auth.signInWithPassword({ email, password });
         if (signed.error) throw signed.error;
         tokens.push(signed.data.session!.access_token);
@@ -91,6 +98,42 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       expect((await handler(request(tokens[0], 'test@evil.example'))).status).toBe(400);
       expect((await handler(request(tokens[0], 'test@virtuoso.tech'))).status).toBe(503);
     });
+    it('any-domain access still requires an invitation and an active profile', async () => {
+      const allDomains = new LeagueService(pool, auth, ['*']);
+      const client = createClient(config.supabaseUrl, process.env.SUPABASE_PUBLIC_KEY!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const invitation = await auth.auth.admin.generateLink({
+        type: 'invite',
+        email: `vpl-personal-${Date.now()}@example.net`,
+      });
+      if (invitation.error) throw invitation.error;
+      users.push(invitation.data.user);
+      const accepted = await client.auth.verifyOtp({
+        token_hash: invitation.data.properties.hashed_token,
+        type: 'invite',
+      });
+      if (accepted.error) throw accepted.error;
+      const token = accepted.data.session!.access_token;
+      const user = await allDomains.identity(token);
+      expect(user.id).toBe(invitation.data.user.id);
+      await expect(service.identity(token)).rejects.toThrow('confirmed invited account');
+      const profile = await allDomains.me(user);
+      expect(profile.role).toBe('colleague');
+      await pool.query('UPDATE public.profiles SET active=false WHERE id=$1', [profile.id]);
+      await expect(allDomains.load(user)).rejects.toThrow('inactive');
+
+      const email = `vpl-not-invited-${Date.now()}@example.net`;
+      const password = `Local-only-${crypto.randomUUID()}`;
+      const created = await auth.auth.admin.createUser({ email, password, email_confirm: true });
+      if (created.error) throw created.error;
+      users.push(created.data.user);
+      const login = await client.auth.signInWithPassword({ email, password });
+      if (login.error) throw login.error;
+      await expect(allDomains.identity(login.data.session!.access_token)).rejects.toThrow(
+        'confirmed invited account',
+      );
+    });
     it('rejects inactive accounts with still-valid tokens', async () => {
       await pool.query('UPDATE public.profiles SET active=false WHERE id=$1', [profiles[4]]);
       expect(
@@ -117,13 +160,54 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         participantIds: entries.map((p) => p.id),
         roundsPerWeek: 2,
       });
-      const accepted = await login.auth.verifyOtp({token_hash:result.data.properties.hashed_token,type:'invite'});
-      if(accepted.error)throw accepted.error;
-      const setup=await login.auth.updateUser({password});if(setup.error)throw setup.error;
       seasonId = next.selectedSeasonId;
       next = await command({ type: 'generate', seasonId });
       expect(next.fixtures.filter((f) => f.seasonId === seasonId)).toHaveLength(6);
       await expect(command({ type: 'generate', seasonId })).rejects.toThrow();
+    });
+    it('persists fixture adjustments, leave, notices and idempotent administrator reminders', async () => {
+      let state = await service.load(users[0]);
+      const fixture = state.fixtures.find((f) => f.seasonId === seasonId)!;
+      await command({
+        type: 'reschedule',
+        fixtureId: fixture.id,
+        dueDate: londonDate(),
+        reason: 'Local test catch-up',
+      });
+      state = await command({
+        type: 'postpone',
+        fixtureId: fixture.id,
+        dueDate: londonDate(),
+        reason: 'Agreed catch-up',
+      });
+      expect(state.fixtures.find((f) => f.id === fixture.id)!.history.map((h) => h.action)).toEqual(
+        ['rescheduled', 'postponed'],
+      );
+      await expect(service.reminders(users[1])).rejects.toThrow('Administrator');
+      expect((await service.reminders(users[0])).created).toBeGreaterThan(0);
+      expect((await service.reminders(users[0])).created).toBe(0);
+      await command({ type: 'announce', seasonId, title: 'Local notice', body: 'Catch-up week' });
+      state = await service.load(users[1]);
+      const notice = state.notifications.find((n) => n.seasonId === seasonId)!;
+      await command({ type: 'readNotifications', ids: [notice.id] }, users[1]);
+      expect(
+        (await service.load(users[1])).notifications.find((n) => n.id === notice.id)!.read,
+      ).toBe(true);
+      await command({
+        type: 'availability',
+        playerId: profiles[1],
+        from: '2027-02-01',
+        to: '2027-02-03',
+        reason: 'Annual leave',
+      });
+      state = await service.load(users[0]);
+      const leave = state.availability.find(
+        (a) => a.playerId === profiles[1] && a.from === '2027-02-01',
+      )!;
+      await command({ type: 'removeAvailability', id: leave.id });
+      expect((await service.load(users[0])).availability.some((a) => a.id === leave.id)).toBe(
+        false,
+      );
     });
     it('submits, rejects self/third-party approval, races two approvals, and appends exactly one approval event', async () => {
       let state = await service.load(users[0]);
@@ -161,7 +245,12 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
       const saved = (await service.load(users[0])).fixtures.find((x) => x.id === f.id)!;
       expect(saved.status).toBe('confirmed');
-      expect(saved.history.map((h) => h.action)).toEqual(['submitted', 'approved']);
+      expect(saved.history.map((h) => h.action)).toEqual([
+        'rescheduled',
+        'postponed',
+        'submitted',
+        'approved',
+      ]);
     });
     it('disputes and admin corrections retain history and update derived standings', async () => {
       let state = await service.load(users[0]);
@@ -298,10 +387,13 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       );
       expect(semis).toHaveLength(2);
       expect(semis.every((f) => f.bestOf === 5)).toBe(true);
+      expect(semis.map((f) => f.bracketSlot)).toEqual([1, 2]);
       for (const f of semis) await play(f.id);
       state = await service.load(users[0]);
       const final = state.fixtures.find((f) => f.seasonId === seasonId && f.stage === 'final')!;
       expect(final.bestOf).toBe(7);
+      expect(final.homeId).toBe(semis[0].homeId);
+      expect(final.awayId).toBe(semis[1].homeId);
       await play(final.id);
       state = await service.load(users[0]);
       expect(state.seasons.find((s) => s.id === seasonId)!.status).toBe('complete');

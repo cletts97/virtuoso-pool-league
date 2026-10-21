@@ -26,7 +26,8 @@ export class ApiLeagueRepository implements LeagueRepository, DisplayRepository 
   private apply(state: LeagueState): LeagueState {
     const key = `vpl.preferences.${state.currentUserId}`;
     try {
-      this.settings = JSON.parse(localStorage.getItem(key) ?? '{}');
+      const stored: unknown = JSON.parse(localStorage.getItem(key) ?? '{}');
+      this.settings = stored && typeof stored === 'object' ? stored : {};
     } catch {
       this.settings = {};
     }
@@ -45,16 +46,16 @@ export class ApiLeagueRepository implements LeagueRepository, DisplayRepository 
   }
   async execute(command: LeagueCommand) {
     if (!this.snapshot?.revision) throw new Error('Refresh the page before saving.');
-      const state = await authenticatedRequest<LeagueState>('/commands', {
-        command,
-        expectedRevision: this.snapshot!.revision,
-      });
-      if (command.type === 'createSeason')
-        localStorage.setItem(
-          `vpl.preferences.${state.currentUserId}`,
-          JSON.stringify({ ...this.settings, selectedSeasonId: state.selectedSeasonId }),
-        );
-      return this.apply(state);
+    const state = await authenticatedRequest<LeagueState>('/commands', {
+      command,
+      expectedRevision: this.snapshot!.revision,
+    });
+    if (command.type === 'createSeason')
+      localStorage.setItem(
+        `vpl.preferences.${state.currentUserId}`,
+        JSON.stringify({ ...this.settings, selectedSeasonId: state.selectedSeasonId }),
+      );
+    return this.apply(state);
   }
   async preferences(
     patch: Partial<Pick<LeagueState, 'currentUserId' | 'selectedSeasonId' | 'theme'>>,

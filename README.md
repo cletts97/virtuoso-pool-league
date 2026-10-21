@@ -1,6 +1,6 @@
 # Virtuoso Pool League
 
-A complete local-demo frontend for the Virtuoso office singles league. Built with React, strict TypeScript, Vite, Tailwind CSS, React Router, and Lucide icons. Uses the official Virtuoso logo and a navy/orange design with dark and light themes.
+A Virtuoso-branded office singles league, table booking calendar and TV dashboard. React, strict TypeScript, Vite and Tailwind power the frontend; the API uses Azure Functions, Supabase Auth and PostgreSQL. Both isolated mock mode and shared API mode are available. The existing cloud schema is unchanged. Cloud deployment and real email delivery have not been performed.
 
 ## Run locally
 
@@ -11,7 +11,9 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite, normally <http://127.0.0.1:5173>. No environment variables, accounts, database, or cloud resources are needed.
+Open the local URL printed by Vite, normally <http://127.0.0.1:5173>. This starts **mock mode** by default; no accounts or services are needed. For real shared data, configure the frontend and API settings in [.env.example](.env.example) and [api/.env.example](api/.env.example), then follow [Backend setup and deployment](docs/BACKEND_SETUP.md). Run `npm run dev:api` alongside `npm run dev` after configuration. The work-email domain is `virtuoso.tech`.
+
+For the first connection to the existing cloud project, follow [the workstation setup steps](docs/BACKEND_SETUP.md#first-cloud-connection-from-this-workstation). The guide also records the proposed Microsoft 365 shared-mailbox/Graph email integration, which still needs implementation and configuration.
 
 **On this Windows workspace:** Node was not on PATH, so a portable Node runtime was downloaded into the ignored `.tools/` directory. You can start immediately using:
 
@@ -50,37 +52,46 @@ The reset icon beside the demo switcher restores all sample data after confirmat
 - Admin player creation/editing/deactivation, season creation/settings, fixture generation and adjustments, leave records and clashes, overdue/postponed queues, dispute resolution, score corrections, and announcements.
 - In-app notifications for fixtures, approvals, confirmed results, disputes, postponements, and notices; read/unread state is per user.
 - Multiple seasons, historical standings and results, persistent theme preference, responsive navigation, keyboard-accessible forms and native modal dialogs.
+- Shared league/casual reservations, collision protection, owner/admin management, London-time opening hours, and casual colleagues without league membership.
+- Read-only `/display` TV dashboard, automatic refresh, current/next reservations, standings, results, fixtures and a locally generated booking QR code. Public access is explicitly enabled by the operator.
+- Public `/rules` playing-rules reference with all eight owner-supplied sections, a contents menu and the official WEPF/EPA PDF. Open it from the main navigation or the TV's Rules button; TV access uses larger reading text and links back to the display.
+- Invitation-only authentication, password setup/recovery, login/logout/session handling, server-resolved active roles, transactional writes and append-only result history in API mode. Mock mode retains its labelled identity switcher and reset.
 
 ## Project structure
 
 ```text
 src/
   app/          Application shell, context, state provider, error boundary
+  auth/         Supabase session gate, login, invitation and reset callback
   components/   Shared UI, match cards, standings table, administrative forms
-  pages/        Routed dashboard, standings, fixtures, profiles, playoffs, admin, inbox
+  pages/        League screens, booking calendar, read-only TV display
   domain/       Typed models and pure competition rules; unit tests
-  data/         Repository contract, mock adapter, command transitions, seed data; tests
+  data/         Repository contract, API/mock adapters, shared command transitions, seed data
   styles.css    Theme tokens and responsive component styling, alongside Tailwind
-tests/          Desktop and mobile Playwright workflow tests
+api/
+  src/          Functions/local adapters, verified identity, validation, transactional persistence
+  tests/        Security and disposable local Supabase integration tests
+supabase/       Deployed baseline migration, local Auth configuration and pgTAP tests
+tests/          Mock desktop/mobile and real local-API browser workflows
 public/
   brand/        Official Virtuoso logo files and source attribution
-  staticwebapp.config.json   Future Azure SWA SPA navigation fallback
-scripts/        Windows local development convenience launcher
+  staticwebapp.config.json   Azure SWA SPA fallback and Node API runtime
+scripts/        Development helpers, local integration runners, API artifact packaging
 ```
 
 `Participant` is a competition entry with a `kind` and a list of player IDs. A fixture references participants, rather than player IDs directly. This supports future two-person teams without changing the basic fixture or standings model. The current season creation UI deliberately offers singles only.
 
 ## Data architecture
 
-`LeagueRepository` in `src/data/contracts.ts` is the application boundary. Its local adapter loads a versioned snapshot, validates commands, persists the resulting state, and returns a new snapshot. Components request typed commands through `useLeague()`; they do not mutate stored fixtures or maintain independent copies of standings.
+`LeagueRepository` in `src/data/contracts.ts` is the application boundary. `browserRepository.ts` selects the API or local adapter using `VITE_DATA_MODE`. Components request typed commands through `useLeague()`; they do not mutate stored fixtures or maintain independent copies of standings. The API adapter sends the Supabase bearer token and last snapshot revision; it never sends an actor identity or role. PostgreSQL returns shared state, while only season/theme preferences remain browser-local.
 
-`src/data/commands.ts` applies transitions to a cloned snapshot. Failed commands leave the original state unchanged. It checks active-user identity, participant/admin permissions, score validity, and allowed status transitions. Notifications and audit revisions are generated with the command. `src/domain/rules.ts` owns scheduling, score validity, ranking, approval eligibility, and qualification logic.
+`src/data/commands.ts` applies transitions to a cloned snapshot in both modes. Failed commands leave the original state unchanged. It checks participant/admin permissions, score validity, and allowed transitions. The API independently verifies identity against Supabase and the active application profile before invoking it; browser-selected mock identity is not trusted. Notifications and audit revisions commit in the same database transaction. `src/domain/rules.ts` owns scheduling, scores, ranking, approvals and qualification; `src/domain/bookings.ts` owns time, overlap and reservation rules.
 
 `src/data/seed.ts` generates 12 fictional colleagues, a complete 66-match current schedule, 24 approved regular-season results, two pending results, one dispute, a postponement, leave, notifications, and a completed previous season with playoffs. Sample dates are relative to the first load/reset date, using the Europe/London calendar. No component contains a separate fixture or player dataset.
 
-Browser persistence retains the key `virtuoso-pool-league.v1` for compatibility; the snapshot schema is now version 2. The repository migrates version 1 saves in place, removing the former scoring configuration and updating the original seeded league notice. Fixtures, audit revisions, preferences, and already locked playoff seeds/champions are preserved. No reset is required. A new adapter instance reads the same state after refresh. Storage events refresh other open tabs. Invalid saved JSON is reported with an explicit reset recovery option; storage-write failures are reported, not presented as successful saves.
+Mock browser persistence retains the key `virtuoso-pool-league.v1` for compatibility; its schema is version **3**. Migrations preserve old results, audit history, preferences and finalized playoffs, remove obsolete scoring configuration, and add bookings plus a casual-only colleague. No reset is required. Storage events refresh other open mock tabs. Invalid saved JSON and failed writes are reported explicitly. API mode uses none of these sample records and never writes league data to localStorage.
 
-**This is demo-only persistence and authentication.** localStorage is user-editable and not suitable for real multi-user operation. It has no trusted authorization, transactions across clients, or concurrency guarantees. No personal data, secrets, credentials, or production access tokens should be stored in this demo. The demo switcher is not a production authentication mechanism.
+**Mock mode is demo-only persistence and identity.** Its user-editable localStorage cannot support real multi-user operation. API mode uses server authorization, database constraints, transaction locks and revision checks; conflicting edits require refreshing/reviewing. Supabase manages browser authentication sessions. Never copy live credentials into demo data.
 
 ## Documented defaults and lifecycle
 
@@ -97,15 +108,13 @@ Browser persistence retains the key `virtuoso-pool-league.v1` for compatibility;
 - Season start date, players, and round cadence lock at fixture publication. Names remain editable. Deactivating players preserves existing results/entries; reactivate them to confirm outstanding matches. The current admin cannot deactivate themself.
 - Multiple seasons may be in progress. The header chooses the viewed season; there is no automatic cross-season archival or deletion.
 
-## Future Azure / database integration
+## Backend and deployment
 
-1. **Azure Functions:** implement `LeagueRepository` using HTTP requests and inject it in `LeagueProvider.tsx`. Keep components and the pure rule functions. The current full-snapshot interface is intentionally sufficient for this small league; server-side commands should return the updated snapshot or invalidate/fetch it.
-2. **Authentication:** replace `currentUserId` preferences and the demo switcher with an authenticated session adapter. The server must derive actor identity from that session and load roles/memberships itself. Do not trust actor IDs, admin flags, or email links supplied by the client. The provider must reload data when the authenticated session changes.
-3. **PostgreSQL / Supabase:** persist players, participants and memberships, seasons and entries, fixtures, append-only result revisions, availability, announcements, and per-recipient notifications. Enforce unique season/pairing constraints, one current result per fixture, foreign keys, and transactionally checked transitions. Use optimistic concurrency or row locks and idempotency keys to prevent duplicate submissions/approvals. Keep database service credentials in Functions, never the frontend.
-4. **Notifications / Azure Communication Services Email:** `NotificationService` is a separate publishing contract. The demo implementation writes in-app records. A server implementation should atomically enqueue domain notifications in a durable outbox, then an email worker can deliver them with retries. Email links navigate to authenticated routes; they grant no authorization by themselves. Scheduled reminders are future server work.
-5. **Azure Static Web Apps:** `npm run build` emits `dist/`. `public/staticwebapp.config.json` provides SPA deep-link fallback and excludes `/api/*` and static assets. No deployment workflow, Azure resource, paid service, or credentials have been created. Configure the actual auth and API routes before production deployment.
+The API implements identity/profile mapping, shared league data, fixtures/results, approvals/disputes/corrections, seasons/playoffs, administration/leave, reservations, notifications and a sanitized display endpoint. Short writes are serialized and revision-checked; PostgreSQL independently enforces structural invariants and booking collisions. Clients poll shared data every 30 seconds and update immediately after their own writes.
 
-No environment variables are required in this iteration. Future public API base URLs may use a documented `VITE_API_BASE_URL`; such a value would be public. Database credentials, signing keys, and email credentials belong only in server-side application settings. All `.env` files are ignored.
+See [BACKEND_SETUP.md](docs/BACKEND_SETUP.md) for every environment variable, invitation-only Supabase settings, local startup, SMTP templates, first-admin bootstrap, API routes, concurrency decisions, and Azure artifact/upload instructions. `npm run package:api` prepares a runtime package; it does not deploy. Private credentials stay exclusively in API environment settings.
+
+In-app notifications are persisted. Due/overdue reminders can be created by an administrator without duplicate daily notices. ACS Email has a disabled delivery interface; real delivery/outbox processing and scheduled reminders remain deferred. Invitations/password resets are gated off by default until SMTP is configured, tested and approved. Qualification-critical deciders still need an agreed format and recorded resolution workflow; the application blocks qualification safely at such ties.
 
 ## Validation
 
@@ -114,11 +123,14 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run build:api
 npm run test:e2e
+npm run test:integration
+npm run test:live
 ```
 
 Playwright uses installed Google Chrome (`channel: chrome`) for desktop and a mobile viewport/touch emulation. Install Chrome before running these tests. This is mobile Chromium emulation, not a claim of testing on a physical iPhone or Safari. Tests use isolated browser contexts and do not alter your normal demo data. They cover navigation, page overflow, user switching, result submission/approval, persistence, disputes, season generation/byes, postponements, player management, leave, announcements, historical champions, themes, and access boundaries.
 
-The test configuration starts Vite automatically, or reuses an already running server on port 5173. On Windows, running `npm run dev` in one terminal before `npm run test:e2e` avoids platform-specific child-process teardown delays. Screenshots and traces are ignored under `.tools/screenshots/` and `test-results/`.
+The mock browser configuration starts/reuses Vite on 5173. Do not reuse an API-mode server for that suite. Local integration tests require running disposable Supabase; live browser tests start the API on 7071 and api-mode Vite on 5174. Stop a development API first. Helpers refuse cloud endpoints and capture local credentials in memory. Test records are retained for audit, test identities deactivated/deleted, and test bookings cancelled. Screenshots and traces are ignored under `.tools/screenshots/` and `test-results/`. Avoid source edits during browser runs.
 
 See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for current scope and intentionally deferred integrations, and [public/brand/README.md](public/brand/README.md) for verified branding sources.

@@ -1,5 +1,7 @@
 # Initial schema design and integration boundaries
 
+This records the original schema design. The integration addendum below and `docs/BACKEND_SETUP.md` describe the implemented API; earlier statements about deferred endpoints describe the original schema-only milestone.
+
 ## Basis and scope
 
 Based on the supplied `types.ts`, `contracts.ts`, and `bookings.ts`. These files describe model shapes, repository commands, and booking validation. They do not contain the full standings algorithm or the complete score-command implementation. This package therefore does not claim those unseen modules have been reviewed.
@@ -105,3 +107,7 @@ This migration grants only SELECT/INSERT on result history to the service role a
 The migration enforces structural/database constraints, not complete competition workflows. Invitation delivery and acceptance, password setup/reset, API token validation, role enforcement, atomic audited writes, full participant cardinality, season lifecycle, booking office-hour/horizon validation, and all public-response filtering still require implementation and testing.
 
 These boundaries are deliberate. Do not describe the application as production-ready merely because the migration applies successfully.
+
+# Integration addendum — 21 October 2026
+
+The deployed initial migration is unchanged. `api/src/state.ts` maps its tables to the existing frontend model; `persist.ts` writes parameterized changes and appends result events using the database fixture revision. `service.ts` supplies verified identity, active-profile authorization, transactions, snapshot concurrency checks and fixture locks. Both API and mock adapters reuse the existing command/domain logic. No browser role or selected identity is trusted by the API. See [BACKEND_SETUP.md](BACKEND_SETUP.md) for deployment, privacy, connection settings and known limitations. A qualification-decider record and an email outbox remain future additive migrations requiring separate approval before cloud application.

@@ -1,5 +1,7 @@
 # Next Codex task - validation only
 
+Historical milestone, now completed and superseded by the owner's backend-integration request. Read `IMPLEMENTATION_STATUS.md` and `docs/BACKEND_SETUP.md` for current work. The original instructions below are preserved as review history.
+
 Read AGENTS.md, PROJECT.md, docs/DATABASE_DESIGN.md and docs/DATABASE_SETUP.md. Review the new initial SQL migration against the existing domain models and booking rules.
 
 For this milestone only, validate the migration in a disposable LOCAL Supabase database and run its pgTAP tests and database linting. Inspect the Auth-to-profile trigger, database permissions, score checks, and overlapping-booking constraint. Fix only issues needed for this milestone and document changes.

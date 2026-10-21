@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Clock3, Trophy } from 'lucide-react';
+import { BookOpen, Clock3, Trophy } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useClock } from '../app/useClock';
 import { liveMode } from '../auth/client';
 import { browserRepository } from '../data/browserRepository';
@@ -48,7 +49,11 @@ export function Display() {
   const current = bookings.find((b) => Date.parse(b.startAt) <= now.getTime());
   const upcoming = bookings.filter((b) => Date.parse(b.startAt) > now.getTime());
   // Page long queues automatically; no reservation is hidden indefinitely.
-  const pageCount = Math.max(1, Math.ceil(upcoming.length / 3));
+  // Long names need more lines. Rotate fewer reservations instead of clipping their text.
+  const queueSize = upcoming.some((b) => b.owner.length + b.participants.join(' · ').length > 80)
+    ? 2
+    : 3;
+  const pageCount = Math.max(1, Math.ceil(upcoming.length / queueSize));
   const queuePage = Math.floor(now.getTime() / 15000) % pageCount;
   const config = data?.config;
   const open =
@@ -66,9 +71,15 @@ export function Display() {
             POOL LEAGUE <i /> THE TABLE LIVE
           </span>
         </div>
-        <div className="tv-clock">
-          <strong>{londonTime(now)}</strong>
-          <span>{bookingDayLabel(londonDate(now))} · London</span>
+        <div className="tv-header-actions">
+          <Link className="button secondary tv-rules-link" to="/rules?from=display">
+            <BookOpen size={20} />
+            Rules
+          </Link>
+          <div className="tv-clock">
+            <strong>{londonTime(now)}</strong>
+            <span>{bookingDayLabel(londonDate(now))} · London</span>
+          </div>
         </div>
       </header>
       <div className="tv-grid">
@@ -83,7 +94,7 @@ export function Display() {
                   ? 'READY FOR A GAME'
                   : 'OUTSIDE OFFICE HOURS'}
           </div>
-          <h1>
+          <h1 className={current && current.owner.length > 28 ? 'tv-long-name' : undefined}>
             {!data
               ? 'Getting the table ready…'
               : stale
@@ -156,7 +167,7 @@ export function Display() {
               {data?.standings.map((r) => (
                 <tr key={r.id} className={r.qualifying ? 'tv-qualified' : ''}>
                   <td>{r.position}</td>
-                  <td>{r.name}</td>
+                  <td className={r.name.length > 28 ? 'tv-long-name' : undefined}>{r.name}</td>
                   <td>{r.played}</td>
                   <td>{r.won}</td>
                   <td>{r.lost}</td>
@@ -186,7 +197,7 @@ export function Display() {
             </h2>
             <span>Today{pageCount > 1 ? ` · ${queuePage + 1}/${pageCount}` : ''}</span>
           </div>
-          {upcoming.slice(queuePage * 3, queuePage * 3 + 3).map((b) => (
+          {upcoming.slice(queuePage * queueSize, queuePage * queueSize + queueSize).map((b) => (
             <div className="tv-booking-row" key={b.id}>
               <strong>{londonTime(b.startAt)}</strong>
               <div>

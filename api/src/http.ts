@@ -4,11 +4,7 @@ import type { ApiConfig } from './config';
 import { ApiError, requireCondition } from './errors';
 import { inviteSchema, requestSchema, resetSchema } from './validation';
 import type { LeagueService } from './service';
-
-export function allowedEmail(email: string, domains: string[]): boolean {
-  const domain = email.trim().toLowerCase().split('@')[1];
-  return !!domain && domains.includes(domain);
-}
+import { allowedEmail } from './access';
 export function createHandler(service: LeagueService, auth: SupabaseClient, config: ApiConfig) {
   return async function handle(request: Request): Promise<Response> {
     const headers = {
@@ -40,7 +36,7 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
           503,
           'Password email delivery is not enabled. Contact your administrator.',
         );
-        // Generic result avoids disclosing whether a work account exists.
+        // Generic result avoids disclosing whether an invited account exists.
         if (allowedEmail(email, config.emailDomains)) {
           const { error } = await auth.auth.resetPasswordForEmail(email, {
             redirectTo: `${config.appUrl.replace(/\/$/, '')}/auth/callback`,
@@ -75,7 +71,7 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
         requireCondition(
           allowedEmail(email, config.emailDomains),
           400,
-          'Use an approved work-email domain.',
+          'Use an email address permitted by this league.',
         );
         requireCondition(
           config.allowAuthEmail,

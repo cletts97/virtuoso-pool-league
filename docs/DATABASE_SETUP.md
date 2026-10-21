@@ -1,5 +1,9 @@
 # Database setup and invitation-only access
 
+## Current integration status (21 October 2026)
+
+The initial schema has been deployed by the owner and remains the baseline. Local database lint and all 57 pgTAP checks passed. The application now has API-backed repositories, Supabase Auth, protected Functions handlers and local database/browser integration tests; see [BACKEND_SETUP.md](BACKEND_SETUP.md) for the current runbook. The sections below retain the original migration procedure for reference; do not reapply the deployed migration or reset the cloud project.
+
 ## 1. Preserve the current app
 
 Keep the working frontend in Git. Review staged files for secrets before committing. This package does not change any React code, application dependencies, or your current browser demo data.
@@ -23,7 +27,7 @@ if (-not (Test-Path .\supabase\config.toml)) {
 
 ## 3. Verify in a disposable local environment FIRST
 
-The SQL and test file were authored and statically inspected, but were **not executed against PostgreSQL** in the authoring environment. There was no available PostgreSQL/Docker runtime. A clean application build does not validate SQL migrations.
+The initial authoring environment had no PostgreSQL runtime. Subsequent disposable local Supabase validation passed database lint and all 57 automated database checks. A clean application build alone does not validate SQL migrations.
 
 The local Supabase stack requires a supported Docker-compatible container runtime. With that running, use the following commands from this repository:
 
@@ -38,7 +42,7 @@ Stop at the first error and retain its output. Do not proceed to a cloud push un
 
 The draft pgTAP tests check table access grants/RLS flags, non-admin defaults, valid scores, normal self-approval rejection, duplicate fixture prevention, regular-season totals, append-only result history, and booking constraints. These are structural tests, not complete integration/security tests.
 
-Additional tests required before rollout:
+Additional integration checks (now covered by the local API/browser suites; repeat smoke checks on the deployed environment before rollout):
 
 - Invite a LOCAL test account through Supabase Auth and verify one linked profile is created with role `colleague`, not `admin`.
 - Check the local invite acceptance/password-setting flow and sign-in.
@@ -50,7 +54,7 @@ Additional tests required before rollout:
 - Verify the actual backend checks the opposing participant, rather than merely comparing submitter/reviewer IDs.
 - Verify public TV responses contain no email addresses, availability reasons, or private notifications.
 
-The test script inserts temporary records and rolls back. Run it on a disposable local database, not the live project. Do not use a cloud database reset or repair migration history to hide unexplained errors.
+The pgTAP SQL tests insert temporary records and roll back. The newer API/browser integration suites retain audit history and deactivate their disposable identities. Run all of these on a disposable local database, not the live project. Do not use a cloud database reset or repair migration history to hide unexplained errors.
 
 ## 4. Configure the hosted project's invitation-only Auth settings
 
@@ -65,7 +69,7 @@ In the Supabase dashboard, under Authentication's sign-in/provider settings:
 
 These are Auth service settings, not application table definitions. The SQL migration does not change them. Local `[auth] enable_signup = false` and email-confirmation configuration are separate from the hosted project's settings.
 
-An administrator will invite colleagues through the dashboard initially, or later through a protected application endpoint using the server-side Auth admin API. The future endpoint must verify the inviter's application admin role and restrict invitations to the approved work-email domain. This migration does not hard-code or enforce a domain allowlist in `auth.users`.
+An operator bootstraps the first invited administrator through Supabase. Subsequent invitations can use the protected application endpoint, which checks the active admin role, `WORK_EMAIL_DOMAINS=virtuoso.tech`, and the explicit email-delivery flag. The migration does not hard-code a domain allowlist in `auth.users`; the API verifies the domain on protected access too.
 
 Do not add colleagues as Supabase organization/project administrators just so they can play pool. Their accounts belong in this project's **Authentication > Users**, not the developer-management team.
 
@@ -73,7 +77,7 @@ Do not add colleagues as Supabase organization/project administrators just so th
 
 Configure custom SMTP before sending real colleague invitations. Supabase's default email service is for limited testing and restricts recipients to authorized project-team addresses. Do not work around this by giving players infrastructure access or disabling verification.
 
-The application still needs an invitation acceptance/auth callback route and a password-setting screen. Configure the correct site URL and narrowly scoped redirect allowlist once those routes exist. Do not send rollout invitations before the app can complete the flow.
+The application includes `/auth/callback` and password setup/reset screens, validated with local generated links. Configure the correct site URL, narrowly scoped redirect allowlist and templates as described in BACKEND_SETUP.md. Actual hosted SMTP delivery still needs approved-recipient testing before rollout invitations.
 
 Auth invitations, verification, and reset emails must work before rollout. Fixture/reminder emails can remain a later milestone.
 
@@ -98,9 +102,9 @@ npx.cmd supabase db push
 
 Do not also paste the initial migration into the dashboard SQL editor: that bypasses migration history and can make a later CLI push fail with duplicate objects. Once a migration has been applied, make subsequent changes in a new migration rather than editing the deployed file.
 
-Applying the schema does not alter the React app. It continues to use its current mock repository until an API adapter is implemented.
+Applying the schema does not switch the React app's mode. Set `VITE_DATA_MODE=api` with the documented public configuration and run the configured API to use shared data.
 
-## 6. Bootstrap the first application administrator later
+## 6. Bootstrap the first application administrator
 
 No account automatically becomes an app administrator, including the person who owns the Supabase project. After creating/accepting your own invitation, verify the account's UUID and confirmed work email in the Auth dashboard.
 
@@ -119,9 +123,9 @@ RETURNING p.id, p.name, p.role;
 
 Expect exactly one returned row. The application must never expose arbitrary self-service role assignment. User-editable Auth metadata is not a trusted role source.
 
-## 7. Keep the next coding milestone small
+## 7. Integration milestones
 
-After the schema is verified/deployed, implement real sign-in and a single authenticated `GET /api/me` endpoint. Prove the verified Auth user maps to the correct active profile before connecting fixtures, scores, or bookings.
+Real sign-in, `GET /api/me`, the shared snapshot API and transactional commands are implemented. Identity mapping, active/deleted users, result approval, bookings and playoff progression are validated locally. See IMPLEMENTATION_STATUS.md for exact checks and remaining deployment/SMTP/product scope.
 
 Subsequent write operations must validate the user, enforce permissions, and commit related changes atomically. A schema alone is not a secure multi-user backend.
 

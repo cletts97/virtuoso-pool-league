@@ -120,8 +120,8 @@ function progressPlayoffs(state: LeagueState, season: Season) {
   }
 }
 
-/** All transitions validate at the service boundary as well as in the UI.
- * This is demo authorization only. Reuse the pure rules on the future server. */
+/** Shared transitions run in both adapters. The API supplies the verified actor;
+ * browser-only mock identity is not a security boundary. */
 export function executeCommand(
   source: LeagueState,
   command: LeagueCommand,
@@ -135,7 +135,7 @@ export function executeCommand(
     return executeBookingCommand(source, command);
   const state = structuredClone(source);
   const actor = state.players.find((p) => p.id === state.currentUserId);
-  invariant(actor?.active, 'Select an active demo user.');
+  invariant(actor?.active, 'An active account is required.');
   if ('fixtureId' in command) {
     const fixture = state.fixtures.find((f) => f.id === command.fixtureId);
     invariant(fixture, 'Match not found.');

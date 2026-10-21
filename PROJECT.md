@@ -17,7 +17,7 @@ The application should be visually polished, intuitive, mobile-friendly, and enj
 - Database: PostgreSQL (Supabase)
 - Source control: GitHub
 - Email notifications: Azure Communication Services Email
-- Authentication: To be decided during initial architecture planning
+- Authentication: Supabase Auth, invitation-only work-email/password accounts (no Microsoft Entra integration)
 
 Keep operating costs as close to zero as reasonably possible.
 
@@ -137,6 +137,7 @@ Email links must not bypass authentication or authorization.
 7. Administration — player management, season management, fixtures, and disputes.
 8. Table Bookings — calendar, availability, booking creation and management.
 9. Office HUD — dedicated full-screen TV dashboard.
+10. Rules — public playing-rules reference, with the owner-supplied WEPF-based summary and official EPA PDF source, accessible from the app and TV dashboard.
 
 ## Pool Table Booking System
 
@@ -183,6 +184,7 @@ The application will include a dedicated, read-only dashboard designed to run co
 - Large, readable text and clear visual hierarchy.
 - Automatically refresh displayed information.
 - No administrative controls or account management options.
+- Include a Rules link and a clear route back from the rules reference; no sign-in is required to read it.
 - No requirement for a personal user account to remain signed in, provided the displayed information is approved for unauthenticated viewing.
 - Do not expose email addresses or sensitive account information.
 
@@ -320,7 +322,7 @@ Implementation details may evolve, but material changes to league rules or archi
 
 The initial complete frontend runs locally with mock identity, a typed repository/service layer, and browser-local persistence.
 
-Database, real authentication, Azure Functions, email delivery, and deployment remain later integrations.
+API mode now uses Supabase Auth and the existing PostgreSQL schema through Azure Functions; isolated mock mode remains available. Real email delivery and hosted deployment require separate configuration, testing and owner approval.
 
 The frontend includes administration, approval workflows, historical seasons, and playoffs without provisioning cloud services.
 

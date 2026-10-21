@@ -2633,17 +2633,17 @@ a.bracket-match:hover {
     font-size: 7px;
     white-space: nowrap;
   }
-  .sidebar nav > a:nth-child(3) > span {
+  .sidebar nav > a[href='/fixtures'] > span {
     font-size: 0;
   }
-  .sidebar nav > a:nth-child(3) > span::after {
+  .sidebar nav > a[href='/fixtures'] > span::after {
     content: 'Fixtures';
     font-size: 7px;
   }
-  .sidebar nav > a:nth-child(6) > span {
+  .sidebar nav > a[href='/notifications'] > span {
     font-size: 0;
   }
-  .sidebar nav > a:nth-child(6) > span::after {
+  .sidebar nav > a[href='/notifications'] > span::after {
     content: 'Inbox';
     font-size: 7px;
   }
@@ -3324,13 +3324,13 @@ a.bracket-match:hover {
     font-size: 10px;
   }
   .sidebar nav > a > span,
-  .sidebar nav > a:nth-child(3) > span::after,
-  .sidebar nav > a:nth-child(6) > span::after,
+  .sidebar nav > a[href='/fixtures'] > span::after,
+  .sidebar nav > a[href='/notifications'] > span::after,
   .sidebar nav > a:last-child[href='/admin'] > span::after {
     font-size: 9px;
   }
-  .sidebar nav > a:nth-child(3) > span,
-  .sidebar nav > a:nth-child(6) > span,
+  .sidebar nav > a[href='/fixtures'] > span,
+  .sidebar nav > a[href='/notifications'] > span,
   .sidebar nav > a:last-child[href='/admin'] > span {
     font-size: 0;
   }

@@ -15,6 +15,7 @@ import { Avatar, Badge, Empty, Modal, PageHeading, Section } from '../components
 import type { Score } from '../domain/types';
 import { bookingDayLabel, bookingEnd, londonDate, londonTime } from '../domain/bookings';
 import { useClock } from '../app/useClock';
+import { liveMode } from '../auth/client';
 
 export function MatchDetails() {
   const { id } = useParams();
@@ -194,7 +195,9 @@ export function MatchDetails() {
           <p className="match-message">
             Submitted by {state.players.find((p) => p.id === match.submittedBy)?.name}. Only the
             opposing player can confirm it.{' '}
-            {match.submittedBy === user.id && 'Switch demo users to review as your opponent.'}
+            {!liveMode &&
+              match.submittedBy === user.id &&
+              'Switch demo users to review as your opponent.'}
           </p>
         )}
         {match.status === 'disputed' && (
@@ -212,8 +215,9 @@ export function MatchDetails() {
         )}
         {!participant && !admin && open && (
           <p className="match-message">
-            Players arrange their own matches. Sign in as a participant using the demo switcher to
-            submit a result.
+            {liveMode
+              ? 'Only the players in this match can submit a result.'
+              : 'Players arrange their own matches. Sign in as a participant using the demo switcher to submit a result.'}
           </p>
         )}
       </section>

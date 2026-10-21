@@ -1,93 +1,94 @@
-# Frontend implementation status
+# Implementation status — Virtuoso Pool League
 
-## Backend integration — in progress (20 October 2026)
+## Resume checkpoint — 21 October 2026, paused before GitHub deployment
 
-- Reviewed AGENTS, PROJECT, README, implementation status, all database design/setup/review documents, the deployed initial SQL migration, and all pgTAP tests. The old validation-only review task is superseded by the explicit backend-integration request. The deployed migration is unchanged.
-- Reconciled interrupted booking work: repaired TV result-card layout; the earlier booking selector/setup fixes are present. All 14 booking browser cases have now passed across the main run and a targeted rerun after Vite warmed its dependency cache. A final full regression run remains pending.
-- Added explicit API/mock modes, Supabase sign-in/password/callback screens, session gates, API repository, and live-mode removal of demo identity/reset controls.
-- Added Azure Functions HTTP adapter, local HTTP runner using the same handlers, PostgreSQL mapping, parameterized transactional writes, active-profile checks, strict request validation, concurrency revision guards, sanitized public display, and account enrollment/invitation controls. No cloud calls or schema changes.
-- Server serializes short writes with a transaction-scoped advisory lock, additionally locks linked fixtures, and commits results/events/notifications/playoffs together. Existing pure competition and booking rules remain authoritative.
-- Local Docker was started by the owner. Local Supabase is running; integration tests exposed a configuration distinction: global signup must be disabled while the email provider remains enabled. Local settings are being verified accordingly. Invitation domain is configurable, with `virtuoso.tech` agreed by the owner. Real email remains disabled by default.
-- Next: finish local Auth/database/concurrency tests, live-browser workflows, code cleanup, deployment/configuration documentation, and final regression validation. Do not interpret file presence as validated completion.
+The owner requested stopping here to review and commit the working tree. **Deployment should use GitHub Actions, not a manual CLI upload.** No commit, push or application deployment was performed. The earlier cloud/email setup notes below are historical and are superseded by this checkpoint.
 
-## Current milestone — table bookings and office display (in progress, 20 October 2026)
+- Owner supplied credentials in ignored `.env.local` and `api/.env`, and the Supabase root CA in ignored `.tools/supabase-root-ca.crt`. Read-only cloud PostgreSQL connectivity with verified TLS and Supabase Auth administration connectivity both succeeded. Cloud had one profile and no seasons at that check. No cloud schema or application data was changed. Local frontend defaults to mock mode; the future hosted build must use API mode.
+- Owner configured custom SMTP in Supabase and reported successful invitation delivery. The earlier Microsoft Graph proposal is obsolete. Independent application domain: `virtuosopool.app`. SMTP credentials remain in Supabase. Hosted invitation acceptance and password recovery still need end-to-end verification.
+- Approved access policy is **any email domain, invitation-only**. API identity and invitation validation now support `WORK_EMAIL_DOMAINS=*`; exact domain lists still work and an empty list denies access. Invited/confirmed identity and active database profile checks remain mandatory. Private local configuration and the API example use `*`. Remaining older work-domain references in PROJECT.md, README.md and setup documentation need reconciliation before rollout.
+- Fixed default Supabase invitation/recovery links arriving at the app root: route to `/auth/callback` before the SDK consumes the link, explicitly verify implicit sessions, remove credentials from the browser URL, and reject expired links even if another account is signed in. Token-hash callbacks remain supported. The exposed invitation session must be revoked by the owner; revocation has not been confirmed. Never retain token-bearing invitation URLs in documentation or logs.
+- Validation after the application changes: type checking, ESLint, **92 unit tests**, **14 disposable-local Supabase integration tests**, and **7 live browser tests** passed. The live tests include personal-email invitations, root invitation links, expired links, password recovery, shared bookings and two-session approval; all generated test emails stayed in local Mailpit. The 40-test mock browser suite was not rerun in this checkpoint. Production API-mode build and API packaging passed before the latest any-domain changes and should be rerun before deployment.
+- `npm run prepare:cloud` prepares API-mode static assets and packaged Functions without deploying. It currently requires the ignored `.env.local` file; adapt it to accept CI environment variables without that file before using it in GitHub Actions. No `.github` workflow exists yet.
+- Authorized Azure subscription is **Virtuoso Pool League**, `84d8806a-4ef3-4ba0-89ae-a14b353c7655`, available through **Az PowerShell**. Do not use the older Azure CLI subscription ending `ae4c`. Created resource group `rg-virtuoso-pool-league` in `westeurope`. Static Web App creation failed because `Microsoft.Web` was not registered; registration was requested. No Static Web App exists and no deployment token was obtained. No paid resource was created.
+- Next: owner reviews/commits/pushes; create/select a **Free** Static Web App in the authorized subscription; add one GitHub Actions workflow for this repository's bundled frontend/API; configure public build variables and the deployment token in GitHub, private API settings in Azure; deploy and verify the actual Functions host. Keep private Supabase/database keys out of GitHub frontend variables and source control. Configure exact hosted Supabase callback URLs/templates, domain DNS/TLS, and the first verified administrator. Auth-email and public-display API flags remain disabled pending rollout checks/approval. Do not run disposable tests against cloud data.
 
-- Reviewed the new PROJECT.md booking/HUD requirements and existing service boundaries.
-- Added booking models, centralized time/overlap/ownership rules, mock commands, schema 3 migration, and a casual-only demo colleague without a league entry.
-- Added the booking calendar, owner/admin reservation forms, configurable opening hours, dashboard availability, and fixture booking links.
-- Added a separate read-only `/display` route and allowlisted display repository view, local QR generation, automatic refresh, queue paging, and London-time countdowns.
-- Now validating desktop/mobile/TV layouts, booking workflows, DST transitions, migration, permissions, and existing league regression coverage. Check results will be recorded when executed.
-- Database, real authentication, shared booking concurrency, Azure and email remain deferred. Existing qualification-decider work is unchanged.
+Updated 21 October 2026. This file supersedes the earlier frontend-only status. The latest work prepares cloud connectivity and investigates real invitation delivery, following completion of the Rules/TV milestone. No commit, push, cloud deployment, cloud migration, actual-colleague invitation or paid infrastructure has been performed by this development work.
 
-## Previous milestone — win-based standings (20 October 2026)
+## Current milestone: cloud connection and email setup — awaiting configuration
 
-Scope: align the existing frontend with the updated PROJECT.md; retain the current architecture and stop after this milestone.
+- Verified that this checkout had no frontend/API environment files or relevant process settings; the running default is mock mode. A linked Supabase CLI project does not connect the application automatically.
+- Prepared Git-ignored `.env.local` and `api/.env`, using the existing linked project URL. Public publishable key, server secret key and PostgreSQL connection URI remain empty. Mock mode and disabled email/public display flags are retained until configuration is ready. No cloud connection has been tested.
+- Owner confirms no Azure Static Web App exists yet. They have not set up Resend, prefer avoiding new corporate DNS records, and can administer Microsoft 365/create a shared mailbox.
+- Recommended email route: signed Supabase Send Email Hook through the existing Azure Functions API to Microsoft Graph, sending from a dedicated shared mailbox with Exchange Application RBAC scoped to that mailbox. This requires new backend implementation and testing; it is **not already supported**. Supabase remains the user identity provider. Mailbox address and service configuration are outstanding. Resend SMTP instructions are retained as an unselected alternative.
+- Added cloud-first setup instructions and researched email options in `docs/BACKEND_SETUP.md`. No tenant changes, outbound emails or hosted deployment performed. Only local configuration/documentation changed; no application tests were rerun for this setup work. Git ignore coverage and whitespace validation were checked.
+- Next: fill the three missing configuration values locally (never in chat), validate cloud connectivity, implement/test the selected email bridge, configure the sender and restricted service identity, then deploy and test a specifically approved owner's invitation before general onboarding. Do not run disposable local integration suites against cloud data.
 
-- Removed scoring fields from the season configuration and derived standings model. Standings now rank confirmed regular-season results by wins, frame difference, frames won, applicable head-to-head, then immutable participant ID for display.
-- Documented head-to-head applicability: exactly two players tied on the first three criteria, with their direct result confirmed in the selected regular season. Multi-player or unplayed ties use stable display order without a cyclic pairwise sort.
-- Full league table now uses Pos, Player, P, W, L, F, A, +/-, Win %, with tooltips/descriptions. Updated dashboard, player cards/profiles, administration, seeded notices, and workflow copy.
-- Highlighting distinguishes provisional positions from actual locked qualifiers, including historical corrections that change the table after seeds lock.
-- Added a version 1 → 2 localStorage migration that preserves results, history, preferences and finalized playoffs; existing browser data does not need resetting.
-- Added a qualification guard: unresolved ties spanning fourth/fifth place cannot be finalized automatically or by an admin override. Final match approvals still persist. The UI explains that a decider is required.
-- Match formats remain BO3 / BO5 / BO7. No new dependencies, backend integrations or infrastructure.
-- Milestone complete and stopped at the requested boundary. Validation on 20 October 2026: strict type checking, lint (no warnings), all 55 unit/service tests, all 22 desktop/mobile browser tests, production build, and `git diff --check` passed. Reviewed updated desktop/mobile standings screenshots.
-- Browser regression coverage verifies the exact table columns, sorting, provisional/confirmed qualifier labels, no scoring references on primary screens, legacy-save migration, result approval/persistence, and the existing administrative/playoff workflows.
-- No backend integration, dependency installation, commit, push or deployment was performed in this milestone.
+## Previous milestone: Rules page and 1080p TV readability — complete
 
-## Recommended next milestone — administrator-approved qualification deciders
+- Public `/rules` contains all eight sections and 47 bullet points supplied by the owner, with a section contents menu and the official WEPF/EPA PDF link. Playing-rules copy does not change competition scoring or match workflows.
+- Rules is linked from the main navigation and a clearly labelled TV header button. `/rules?from=display` uses larger reading text on wide screens and provides return links to the TV. The reference works without authentication or loading private league data.
+- Retained Virtuoso branding and the existing design system, with responsive layouts down to 320px.
+- Adjusted TV card proportions, line heights, column sizing and name wrapping. Removed participant-text clipping, sized long player names appropriately, and rotate fewer upcoming bookings when names need more lines. All reservations still appear through automatic queue pagination.
+- Validation actually performed for this milestone: strict type checking, ESLint, **86 unit tests**, **40 desktop/mobile browser tests**, production frontend build and `git diff --check` passed. The 13 database integration tests remain intentionally skipped by the unit command; database/live API tests were not rerun for these presentation-only changes.
+- Browser tests verify all rule sections, app/TV round trips, public access without demo initialization, mobile width containment, larger TV rule text, and every TV card's text bounds at **1920×1080** with long names, multiple participants, queue rotation and outside-office-hours state. Reviewed TV and rules screenshots, including a 320px phone layout. Physical TV/browser-zoom validation remains an owner check.
+- No outstanding implementation work for this request. Hosted rollout and earlier deferred features remain listed below.
 
-The revised requirement for an administrative decider is not yet implemented as a playable/recordable workflow. This milestone detects and safely blocks unresolved cutoff ties; it does not fabricate a qualifying order or let a free-text finalization reason override the result.
+## Previous milestone: backend integration and validation
 
-Next: agree the decider format and procedure for multi-player ties, then add scheduling, result recording/approval, an auditable resolution record, and qualification from that resolution. Decider results must not inflate regular-season records. This is a business-rule decision to settle before implementation.
+The local backend-integration milestone is complete and validated. Supabase Auth, protected HTTP handlers, transactional persistence, an API repository and live UI workflows are implemented. Hosted rollout and external configuration are still required; this is not a claim that the application has been deployed or tested on Azure.
 
-## Remaining original requirements and follow-up work
+### Delivered
 
-- Core singles frontend workflows are implemented: schedules/byes, submissions/approvals/disputes/corrections, players, availability, notifications, historical seasons and playoffs. These remain mock-backed.
-- Qualification decider management is the immediate gap introduced by the revised ranking rules.
-- An individually abandoned fixture can be rescheduled/postponed; closing unresolved fixtures currently happens through whole-season finalization. A dedicated per-fixture abandonment decision/audit workflow remains a later admin enhancement.
-- Doubles team/competition management UI remains deferred; the data model supports team entries.
-- Automatic ongoing upcoming/overdue reminders remain deferred; seeded reminders and action-triggered in-app notices work, but there is no background scheduler.
-- Real database, API, authentication, email, hosting deployment, broader browser/accessibility verification, and formal SVG/font assets remain deferred as detailed below.
+- Preserved existing Virtuoso-branded React screens and completed the interrupted booking/TV layout work. The TV remains a separate read-only route, with a restricted response model and stale-data feedback.
+- Explicit `VITE_DATA_MODE=mock|api`, preserving isolated demo switching/reset. API mode removes these controls and stores league data in PostgreSQL; localStorage holds only UI preferences and the Supabase-managed browser session.
+- Invitation-only Supabase work-email/password login, logout, session refresh, callback/password setup and recovery. Exact work-domain allowlist defaults in the example to the owner-approved `virtuoso.tech`. Invited/confirmed Auth users must map to an active application profile on every protected request.
+- API identity uses `getUser`, never a client-selected role/user ID. Inactive and deleted accounts are denied. Auth metadata cannot elevate roles. Public build configuration rejects privileged Supabase keys.
+- Azure Functions v4 HTTP entry point and local HTTP adapter share handlers. Strict payload schemas, sanitized errors, no-store responses, parameterized database access, verified remote TLS and bounded connection pooling.
+- Existing shared domain commands persist players/entries, seasons, round-robin fixtures, result submission/opponent approval/disputes/corrections, append-only history, postponements, leave, announcements, notifications, bookings and playoffs.
+- Short write transactions use an advisory lock, relevant fixture locks and snapshot revision checks. Stale/concurrent writes fail with review/refresh guidance; results, audit events and related changes commit together. Existing constraints independently protect scores, pairings and booking collisions.
+- League standings remain derived only from confirmed regular-season results: W, frame difference, frames won, applicable head-to-head, then stable participant ID for display. No points column/system. Formats remain BO3/BO5/BO7.
+- Bracket slots retain first-versus-fourth and second-versus-third ordering after UUID database mapping. Confirmed semifinals advance to a final and approved champion.
+- Admin invitation form, colleague enrollment, existing player/season/fixture/leave/configuration controls. Casual-only colleagues can book without a league entry. Account deactivation preserves history; Auth deletion remains an operator action.
+- Persisted per-user in-app notifications plus administrator-triggered due/overdue reminders, deduplicated per fixture/user/London day. No background scheduler.
+- Public `/api/display` is explicitly gated; returns only approved TV fields, with no email, role, availability reason, notification or audit record. Main app and display poll shared data every 30 seconds; edits update immediately.
+- Local invitation/recovery email templates and captured-email browser tests pass, including the application send buttons and delivered links. Real Auth email is disabled by default until configured/tested/approved. ACS notification email has an explicit disabled delivery interface.
+- API artifact packaging preserves locked runtime dependencies and copies no local settings or secrets. README, environment examples and `docs/BACKEND_SETUP.md` cover local operation, first-admin bootstrap and manual Azure deployment preparation.
 
-## Implemented
+### Validation actually performed
 
-- Complete navigable React/TypeScript/Vite application with responsive dark and light themes and verified Virtuoso branding.
-- Dashboard that follows the selected player and season, calculated league table, sortable statistics, qualification indicators, and clickable player profiles.
-- Round-robin fixtures grouped by rounds; odd-player byes; player/round/status filters; match details and full result history.
-- Legal score controls, opponent-only approval, disputes, admin resolution, result corrections, and append-only score/action audit records.
-- Postponement and rescheduling with reasons and notifications; overdue fixtures never produce automatic defeats.
-- Player directory, profile statistics/form, season performance, match histories, upcoming fixtures, and cross-season head-to-head records.
-- Provisional/finalized playoff bracket, first-versus-fourth and second-versus-third seeding, semifinal/final workflows, and champion presentation.
-- Player management; draft season creation/settings; schedule publication; recorded leave and clash review; overdue/postponed/disputed queues; league announcements.
-- Multiple seasons, historical standings/results/champions, per-user in-app inbox, mock identity switching, localStorage persistence, and confirmed demo reset.
-- Pure domain rules, typed repository/notification contracts, centralized command validation, and realistic internally consistent seed data.
-- Unit/service tests and desktop/mobile browser workflow tests. See the final handoff for commands actually executed and their results.
+- Strict type checking and ESLint passed after integration changes. The production build also runs TypeScript checking.
+- 86 unit/security/domain/service tests passed. The 13 database integration tests are intentionally skipped in the ordinary unit command and run separately.
+- All 13 local Supabase integration tests passed on Node 24 and again on Node 22.16 (matching the deployment major runtime). Covers real tokens, metadata-role rejection, inactive/deleted accounts, invitation gates, publication, admin changes, reminders, concurrent approvals, audit preservation, casual and linked-fixture booking conflicts, private-data filtering, playoffs and generated-link invitation/recovery.
+- All **five live browser tests passed on Node 22**: shared casual booking/TV/logout, administrator enrollment/publication and two-session approval, invitation acceptance while another account is signed in, password recovery, and actual invitation/reset delivery into local Mailpit with working links. No external emails were sent.
+- All **36 mock desktop/mobile browser tests passed in the final clean run**. Earlier source-edit interruptions and shared test-artifact collisions were reconciled; the live suite now uses a separate ignored output directory.
+- Local database lint reported no schema errors and all **57 pgTAP database checks passed again on 21 October**. The deployed SQL migration remains unchanged.
+- API build and artifact packaging passed. Installing the generated artifact’s locked runtime dependencies passed with zero audit vulnerabilities. Its Functions entry imports successfully on Node 22 in the SDK's test mode; this does not validate the actual Functions host.
+- Mock and API-mode frontend production builds passed. The API-mode build was checked on Node 22 with local public configuration. It emits a non-blocking bundle-size warning (approximately 603 kB JS, 174 kB gzip); route splitting is an optional future performance improvement, not a deployment blocker for this office app.
+- Reviewed TV, live bookings and small-phone booking screenshots. Fixed the mobile booking navigation label that inherited the old inbox position. Cards, queue, standings, results, forms and QR code retain the existing visual design.
+- `git diff --check` passed. Temporary frontend/API test servers were stopped; the disposable local Supabase stack remains running. Local test emails stay in its mail capture service.
 
-## Validation performed on 19 October 2026
+## Remaining work / deployment blockers
 
-- Strict TypeScript check passed (`npm run typecheck`).
-- ESLint passed without warnings (`npm run lint`).
-- 39 unit/service tests passed (`npm test`).
-- 18 Playwright desktop/mobile workflow tests passed (`npm run test:e2e`). Includes full playoff progression to champion, modal errors, keyboard tabs, persistence, and 320/390/768/1024/1440-pixel layout checks.
-- Production build passed (`npm run build`).
-- Dependency installation audit reported zero vulnerabilities after upgrading the toolchain.
-- Desktop dark/light, league-table, playoff, and mobile screenshots were generated and inspected. Browser tests reported no JavaScript page errors or horizontal page overflow on the inspected routes.
-- `git diff --check` passed. No commits, pushes, deployments, or cloud resources were created.
+1. **Recommended next milestone: controlled hosted rollout.** Configure secrets, the first invited administrator and database connectivity, then validate the real Azure Functions host and two-device workflows. No hosted environment or credentials were used here; local HTTP tests do not prove Azure networking/startup. Provisioning/deployment still needs explicit owner approval.
+2. Configure hosted Supabase invitation-only settings, approved callback origins and templates, custom SMTP, and approved-recipient delivery testing. `ALLOW_AUTH_EMAIL` stays false until approved; no actual colleagues have been invited. Public TV data also needs operator approval before `PUBLIC_DISPLAY_ENABLED=true`.
+3. Qualification-critical decider procedure remains an unresolved product decision. Current code safely blocks an unresolved tie across fourth/fifth place. Agree single-/multi-player tie procedure before implementing scheduling, approval and an auditable resolution, likely via an additive migration. Do not silently award qualification using display order.
+4. Real ACS Email/outbox/retries and automatic reminder scheduling remain deferred. A durable outbox requires a separately approved migration; managed SWA Free Functions are HTTP-only. No background scheduler or real fixture email is claimed implemented.
+5. Existing enhancements still deferred: dedicated per-fixture abandonment decisions, doubles management UI, rollback/reseeding after downstream playoff play, physical-device/Safari validation and a formal accessibility audit. Official web PNG logos are present; a formal SVG/font brand package is optional follow-up.
 
-## Deliberately deferred
+## Resume / run commands
 
-- **Production authentication and authorization:** provider choice remains undecided. The demo selector and local service guards are not security controls for real users.
-- **Database and API:** no Azure Functions, PostgreSQL/Supabase schema/migrations, or database connection yet. Server validation, database constraints, transactional approval, concurrency and idempotency are required before real multi-user use.
-- **Email:** no outgoing email or background reminder scheduler. In-app notifications work; the notification contract provides the future server integration point.
-- **Deployment:** no Azure resources, deployment, CI/CD publishing, or Git commit/push. Static Web Apps fallback configuration is prepared only.
-- **Doubles UI:** the participant model supports teams, but creating/managing doubles competitions is not exposed. Do not interpret the model as a validated doubles product.
-- **Arbitrary playoff rollback:** corrections preserve finalized seeds. Winner changes are blocked once downstream play has started; reseeding or replaying an already played final requires a future explicit administrative rollback workflow.
-- **Broader browser/accessibility certification:** automated browser coverage is Chrome desktop and mobile emulation. Physical device/Safari testing and a formal accessibility audit remain appropriate before production use.
-- **Formal brand package:** official web PNGs are included. SVG variants, definitive brand rules, and approved fonts can replace these when supplied.
+- Mock frontend: `npm ci`, then `npm run dev` (or existing Windows `scripts/dev.ps1`).
+- API development: configure root `.env.local` and `api/.env` from examples, start local Supabase, then `npm run dev:api` and `npm run dev` in separate terminals. See `docs/BACKEND_SETUP.md`.
+- Checks: `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e`, `npm run test:integration`, `npm run test:live`, `npm run build`, `npm run package:api`.
+- API runtime artifact: `npm ci --omit=dev --prefix .tools/azure-api --workspaces=false` after packaging. No deployment is performed by either command.
+- Local DB: `npx supabase db lint --local --schema public,vpl_private --level error --fail-on error`, then `npx supabase test db --local`.
+- Live browser helper owns 7071 and 5174. Mock browser tests use 5173. Do not reuse an api-mode Vite server for mock tests or edit source during a browser run. Local integration suites retain audited test records, deactivate/delete test identities and cancel reservations; they never reset or call the cloud database.
 
-## Demo constraints
+## Important decisions and baseline
 
-- Data is stored only in this browser. Clearing site storage removes it. Cross-tab refresh is supported; concurrent multi-user writes are not.
-- Initial sample season dates are relative to the first load/reset date. Demo names and records are fictional.
-- Competition rules are fixed to the agreed wins/frames ranking, match formats, and top-four qualification. Draft-season cadence and dates are configurable. Existing fixture dates can be adjusted individually.
-- A full reset discards all demo changes. Explicit regular-season finalization closes unresolved matches without awarding wins or losses and does not have a selective undo.
+- Initial migration `20261020000100_initial_schema.sql` is the deployed baseline and was not edited. No extra migration has been needed for this integration. Reviewed the full project/agent/database documents and pgTAP schema tests before implementation; the old database-review validation-only scope was superseded by the explicit integration request.
+- Full snapshots and serialized short writes are intentional for approximately 10–14 office users. The conservative revision check may reject a change after unrelated state changes; users review fresh state instead of silent last-writer-wins overwrites.
+- Table reservations are independent of standings and fixture due dates. No automatic loss for leave, lateness or postponement. Times are persisted consistently and shown in Europe/London.
+- Mock schema version 3 preserves existing demo data through migrations. Browser-local persistence is not a multi-user database and mock identity is not authentication.
+- Previous completed milestones: initial singles frontend; wins/frames ranking correction; booking calendar and TV HUD. Their core workflows remain intact. The original unit/browser suites are retained and extended.

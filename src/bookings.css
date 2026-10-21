@@ -5,6 +5,15 @@
   align-items: center;
   margin-bottom: 24px;
 }
+@media (max-width: 600px) {
+  .sidebar nav > a[href='/bookings'] > span {
+    font-size: 0;
+  }
+  .sidebar nav > a[href='/bookings'] > span::after {
+    content: 'Bookings';
+    font-size: 9px;
+  }
+}
 .booking-toolbar p {
   color: var(--muted);
   font-size: 13px;
@@ -259,6 +268,16 @@
   display: grid;
   text-align: right;
 }
+.tv-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+}
+.tv-rules-link {
+  font-size: 0.75em;
+  min-height: 44px;
+  padding: 12px 20px;
+}
 .tv-clock strong {
   font-size: 2.4em;
   line-height: 1.1;
@@ -271,17 +290,17 @@
 }
 .tv-grid {
   display: grid;
-  grid-template-columns: 1fr 1.1fr 0.85fr;
-  grid-template-rows: 37vh 39vh;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 0.85fr);
+  grid-template-rows: 41vh 35vh;
   gap: 1.5vw;
 }
 .tv-current {
   position: relative;
-  overflow: hidden;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   border-radius: 16px;
-  padding: 1.7vw;
+  padding: 1.35vw;
   background: radial-gradient(ellipse at bottom right, #61412c66, transparent 75%), #18222e;
   border: 1px solid #ff79384a;
 }
@@ -292,8 +311,12 @@
 .tv-current h1 {
   font-size: clamp(25px, 2.9vw, 64px);
   margin-top: 1.4vh;
-  line-height: 1.1;
+  line-height: 1.2;
   letter-spacing: -1px;
+  overflow-wrap: anywhere;
+}
+.tv-current h1.tv-long-name {
+  font-size: clamp(24px, 2vw, 44px);
 }
 .tv-game-type {
   color: var(--accent);
@@ -314,8 +337,8 @@
   margin-top: auto;
 }
 .tv-countdown strong {
-  font-size: 3.8em;
-  line-height: 1.1;
+  font-size: 3em;
+  line-height: 1.2;
   color: var(--accent);
 }
 .tv-countdown span {
@@ -367,6 +390,7 @@
 }
 .tv-section-title h2 {
   font-size: 1.05em;
+  line-height: 1.25;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -374,16 +398,28 @@
 .tv-section-title > span {
   color: var(--muted);
   font-size: 0.65em;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
 }
 .tv-standings {
   grid-column: 2;
   grid-row: 1;
+}
+.tv-standings .tv-section-title {
+  margin-bottom: 1vh;
 }
 .tv-standings table {
   width: 100%;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
   font-size: 0.9em;
+  table-layout: fixed;
+}
+.tv-standings th:first-child {
+  width: 9%;
+}
+.tv-standings th:nth-child(2) {
+  width: 51%;
 }
 .tv-standings th {
   text-align: right;
@@ -398,17 +434,20 @@
 }
 .tv-standings td {
   line-height: 1.2;
-  padding: 0.68vh 0.4vw;
+  padding: 0.35vh 0.4vw;
   text-align: right;
   border-bottom: 1px solid #ffffff0b;
 }
 .tv-standings td:nth-child(2) {
   font-weight: 550;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .tv-standings td:nth-child(4) {
   color: var(--accent);
   font-weight: 700;
+}
+.tv-standings td.tv-long-name {
+  font-size: 0.85em;
 }
 .tv-standings .tv-qualified td:first-child {
   color: var(--accent);
@@ -417,7 +456,7 @@
 .tv-legend {
   color: var(--muted);
   font-size: 0.6em;
-  margin-top: 1.1vh;
+  margin-top: 0.65vh;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -436,10 +475,15 @@
   color: var(--accent);
   font-size: 1.2em;
   font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.tv-booking-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .tv-booking-row h3 {
   font-size: 0.95em;
-  line-height: 1.2;
+  line-height: 1.35;
 }
 .tv-booking-row p {
   line-height: 1.35;
@@ -451,8 +495,6 @@
   color: var(--muted);
   font-size: 0.65em;
   line-height: 1.3;
-  max-height: 2.6em;
-  overflow: hidden;
 }
 .tv-empty {
   color: var(--muted);
@@ -463,7 +505,7 @@
   grid-column: 1 / 3;
   grid-row: 2;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   column-gap: 2vw;
 }
 .tv-results > .tv-section-title {
@@ -483,6 +525,9 @@
 }
 .tv-result > span {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
 }
 .tv-result > span:last-child {
   text-align: right;
@@ -522,6 +567,8 @@
 }
 .tv-fixture strong {
   font-size: 0.85em;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
 }
 .tv-fixture strong span {
   color: var(--accent);
@@ -530,6 +577,7 @@
 .tv-fixture small {
   color: var(--muted);
   font-size: 0.7em;
+  line-height: 1.4;
 }
 .tv-qr {
   grid-column: 3;
@@ -546,8 +594,9 @@
   padding: 1vw;
 }
 .tv-qr svg {
-  width: min(12vw, 20vh);
-  height: min(12vw, 20vh);
+  width: min(11vw, 17vh);
+  height: min(11vw, 17vh);
+  flex-shrink: 0;
   border-radius: 8px;
 }
 .tv-qr h2 {
@@ -639,6 +688,15 @@
   }
   .tv-clock span {
     font-size: 9px;
+  }
+  .tv-header-actions {
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .tv-rules-link {
+    padding: 8px 12px;
+    font-size: 13px;
   }
   .tv-grid {
     display: flex;

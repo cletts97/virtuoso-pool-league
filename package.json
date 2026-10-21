@@ -10,6 +10,8 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
     "build:api": "npm run build --workspace api",
+    "package:api": "npm run build:api && node scripts/package-api.mjs",
+    "prepare:cloud": "node scripts/prepare-cloud.mjs",
     "dev:api": "npm run build:api && npm run dev --workspace api",
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc -b",
@@ -17,6 +19,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:integration": "node scripts/test-local-backend.mjs",
+    "test:live": "node scripts/test-live-ui.mjs",
     "format": "prettier --write src tests *.ts *.json *.js README.md IMPLEMENTATION_STATUS.md"
   },
   "dependencies": {
@@ -48,5 +52,8 @@
     "typescript-eslint": "^8.32.0",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }

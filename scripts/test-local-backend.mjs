@@ -1,9 +1,13 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 // Capture local secrets in memory; never print CLI status or write credentials to tracked files.
-const raw = execFileSync(process.execPath, ['node_modules/supabase/dist/supabase.js', 'status', '--output', 'json'], {
-  encoding: 'utf8',
-  stdio: ['ignore', 'pipe', 'pipe'],
-});
+const raw = execFileSync(
+  process.execPath,
+  ['node_modules/supabase/dist/supabase.js', 'status', '--output', 'json'],
+  {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  },
+);
 const local = JSON.parse(raw.slice(raw.indexOf('{')));
 if (!['127.0.0.1', 'localhost'].includes(new URL(local.API_URL).hostname))
   throw new Error('Local tests refuse a cloud Supabase endpoint.');

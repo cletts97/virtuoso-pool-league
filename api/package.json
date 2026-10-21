@@ -1,6 +1,20 @@
 {
-  "name": "@virtuoso-pool-league/api", "version": "0.1.0", "private": true,
-  "main": "dist/functions.cjs", "engines": { "node": ">=22" },
-  "scripts": { "build": "node build.mjs", "start": "func start", "dev": "node --env-file-if-exists=.env dist/dev.cjs" },
-  "dependencies": { "@azure/functions": "^4.0.0", "@supabase/supabase-js": "^2.0.0", "pg": "^8.0.0", "zod": "^4.0.0" }
+  "name": "@virtuoso-pool-league/api",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/functions.cjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "func start",
+    "dev": "node --env-file-if-exists=.env dist/dev.cjs"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "@supabase/supabase-js": "^2.0.0",
+    "pg": "^8.0.0",
+    "zod": "^4.0.0"
+  }
 }

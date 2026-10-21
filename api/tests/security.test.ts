@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { allowedEmail } from '../src/http';
+import { allowedEmail } from '../src/access';
 import { commandSchema, requestSchema } from '../src/validation';
 import { privateSnapshot } from '../src/state';
 import { createSeed } from '../../src/data/seed';
@@ -13,6 +13,13 @@ describe('API security boundary', () => {
     ])
       expect(allowedEmail(email, ['virtuoso.tech'])).toBe(false);
     expect(allowedEmail('name@virtuoso.tech', [])).toBe(false);
+  });
+  it('allows valid personal addresses only when any-domain access is explicitly configured', () => {
+    expect(allowedEmail('name@outlook.com', ['*'])).toBe(true);
+    expect(allowedEmail(' name@VIRTUOSO.TECH ', ['virtuoso.tech'])).toBe(true);
+    expect(allowedEmail('name@outlook.com', ['virtuoso.tech'])).toBe(false);
+    for (const email of ['', 'not-an-email', 'a@b@outlook.com', 'name@'])
+      expect(allowedEmail(email, ['*'])).toBe(false);
   });
   it('rejects client identity, unknown commands, arbitrary roles and missing concurrency tokens', () => {
     expect(

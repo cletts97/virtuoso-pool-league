@@ -58,12 +58,12 @@ export function SignIn() {
         <h1>{reset ? 'Back in the game.' : 'Welcome to the league.'}</h1>
         <p>
           {reset
-            ? 'Request a password reset for your invited work account.'
-            : 'Sign in with your invited work email. Casual players are welcome too.'}
+            ? 'Request a password reset for your invited account.'
+            : 'Sign in with your invited email address. Casual players are welcome too.'}
         </p>
         <form className="form-stack" onSubmit={(e) => void submit(e)}>
           <label>
-            Work email
+            Email address
             <input
               required
               type="email"
@@ -117,11 +117,37 @@ export function AuthCallback() {
   const navigate = useNavigate();
   const [token] = useState(() => new URLSearchParams(window.location.search).get('token_hash'));
   const [type] = useState(() => new URLSearchParams(window.location.search).get('type'));
+  const [implicitSession] = useState(() => {
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    if (!fragment.has('access_token') && !fragment.has('refresh_token')) return;
+    return {
+      access_token: fragment.get('access_token') ?? '',
+      refresh_token: fragment.get('refresh_token') ?? '',
+    };
+  });
+  const [linkError] = useState(() => {
+    const query = new URLSearchParams(window.location.search);
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    return query.has('error') || fragment.has('error') || fragment.has('error_description');
+  });
   useEffect(() => {
-    if (!liveMode) return;
+    if (linkError) {
+      window.history.replaceState({}, '', '/auth/callback');
+      return;
+    }
+    // An invitation/reset token must be exchanged even if another account is signed in.
+    if (!liveMode || token) return;
     let alive = true;
+    // Default Supabase dashboard invitations use implicit fragments. Our SDK uses
+    // PKCE for new flows, so explicitly verify/adopt this session and scrub its URL.
+    if (implicitSession) window.history.replaceState({}, '', '/auth/callback');
     void Promise.resolve()
-      .then(() => authClient().auth.getSession())
+      .then(async () => {
+        const result = implicitSession
+          ? await authClient().auth.setSession(implicitSession)
+          : await authClient().auth.getSession();
+        return { data: { session: result.data.session }, error: result.error };
+      })
       .then(({ data, error }) => {
         if (alive) {
           setReady(!!data.session);
@@ -137,7 +163,7 @@ export function AuthCallback() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [token, linkError, implicitSession]);
   async function accept() {
     setBusy(true);
     try {
@@ -181,9 +207,11 @@ export function AuthCallback() {
         <img src="/brand/virtuoso-white.png" alt="Virtuoso" />
         <h1>Set your password.</h1>
         <p>Choose a password of at least 12 characters for your Virtuoso Pool League account.</p>
-        {message && (
+        {(linkError || message) && (
           <p role="alert" className="form-error">
-            {message}
+            {linkError
+              ? 'This link is invalid or expired. Request a new invitation or password reset.'
+              : message}
           </p>
         )}
         {ready ? (

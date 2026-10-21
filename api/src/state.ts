@@ -24,7 +24,7 @@ export async function readState(client: PoolClient, actorId = ''): Promise<Leagu
     submitted_by AS "submittedBy",note,revision::integer,bracket_slot AS "bracketSlot",
     coalesce((SELECT json_agg(json_build_object('id',e.id,'actorId',actor_id,'action',action,'at',occurred_at,'reason',reason,
       'score',CASE WHEN e.home_score IS NULL THEN NULL ELSE json_build_object('home',e.home_score,'away',e.away_score) END) ORDER BY fixture_revision) FROM public.result_events e WHERE fixture_id=f.id),'[]') AS history
-    FROM public.fixtures f ORDER BY season_id,round,id`);
+    FROM public.fixtures f ORDER BY season_id,round,bracket_slot NULLS LAST,id`);
   const bookings = await rows<
     LeagueState['bookings'][number]
   >(`SELECT id,owner_id AS "ownerId",kind,fixture_id AS "fixtureId",start_at AS "startAt",duration,status,created_at AS "createdAt",updated_at AS "updatedAt",revision::integer,

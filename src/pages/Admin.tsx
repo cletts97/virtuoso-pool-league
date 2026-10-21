@@ -38,7 +38,9 @@ export function Admin() {
   if (user.role !== 'admin')
     return (
       <Empty title="Administrator access required">
-        Switch to Alex Morgan (Admin) in the development demo switcher to manage the league.
+        {liveMode
+          ? 'Your account does not have permission to manage the league.'
+          : 'Switch to Alex Morgan (Admin) in the development demo switcher to manage the league.'}
       </Empty>
     );
   const fixtures = state.fixtures.filter((f) => f.seasonId === season.id);

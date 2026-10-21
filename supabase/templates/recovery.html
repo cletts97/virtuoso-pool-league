@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en"><body style="font-family:Arial,sans-serif;color:#182231;line-height:1.6">
+<h1>Back in the game</h1>
+<p>Use this link to choose a new password for your Virtuoso Pool League account.</p>
+<p><a style="color:#b84c14" href="{{ if .RedirectTo }}{{ .RedirectTo }}{{ else }}{{ .SiteURL }}/auth/callback{{ end }}?token_hash={{ .TokenHash }}&amp;type=recovery">Reset your password</a></p>
+<p>If you did not request this change, ignore this email. Your password will stay the same.</p>
+</body></html>

@@ -14,6 +14,7 @@ import {
   RotateCcw,
   ChevronDown,
   CalendarClock,
+  BookOpen,
 } from 'lucide-react';
 import { useLeague } from './LeagueContext';
 import { Avatar, Confirm } from '../components/ui';
@@ -26,6 +27,7 @@ const links = [
   { to: '/players', label: 'Players', icon: Users },
   { to: '/playoffs', label: 'Playoffs', icon: GitBranch },
   { to: '/bookings', label: 'Table bookings', icon: CalendarClock },
+  { to: '/rules', label: 'Rules', icon: BookOpen },
 ];
 export function Layout() {
   const { state, season, preferences, reset } = useLeague();

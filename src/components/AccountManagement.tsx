@@ -81,7 +81,7 @@ export function AccountManagement() {
               />
             </label>
             <label>
-              Work email
+              Email address
               <input
                 required
                 type="email"

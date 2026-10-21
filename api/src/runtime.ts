@@ -8,4 +8,8 @@ const auth = createClient(config.supabaseUrl, config.supabaseKey, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
 export const pool = createPool(config);
-export const handleApi = createHandler(new LeagueService(pool, auth, config.emailDomains), auth, config);
+export const handleApi = createHandler(
+  new LeagueService(pool, auth, config.emailDomains),
+  auth,
+  config,
+);

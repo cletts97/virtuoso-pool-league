@@ -9,6 +9,7 @@ import { normalizeNewIds, persistChanges } from './persist';
 import { privateSnapshot, readState } from './state';
 import { ApiError, requireCondition } from './errors';
 import type { ApiCommand } from './validation';
+import { allowedEmail } from './access';
 
 export class LeagueService {
   constructor(
@@ -19,8 +20,11 @@ export class LeagueService {
   async identity(token: string): Promise<User> {
     const { data, error } = await this.auth.auth.getUser(token);
     requireCondition(
-      !error && data.user && data.user.email_confirmed_at && data.user.invited_at &&
-        this.emailDomains.includes(data.user.email?.split('@')[1]?.toLowerCase() ?? ''),
+      !error &&
+        data.user &&
+        data.user.email_confirmed_at &&
+        data.user.invited_at &&
+        allowedEmail(data.user.email ?? '', this.emailDomains),
       401,
       'Sign in with a confirmed invited account.',
     );
@@ -87,56 +91,56 @@ export class LeagueService {
         'The league has changed since you loaded it. Refresh and review the latest information before saving again.',
       );
       let next: LeagueState;
-        const playerActions = [
-          'submit',
-          'review',
-          'postpone',
-          'saveBooking',
-          'cancelBooking',
-          'readNotifications',
-        ];
+      const playerActions = [
+        'submit',
+        'review',
+        'postpone',
+        'saveBooking',
+        'cancelBooking',
+        'readNotifications',
+      ];
+      requireCondition(
+        actor.role === 'admin' || playerActions.includes(command.type),
+        403,
+        'Administrator access required.',
+      );
+      if (command.type === 'submit' || command.type === 'review' || command.type === 'postpone') {
+        const f = before.fixtures.find((f) => f.id === command.fixtureId);
         requireCondition(
-          actor.role === 'admin' || playerActions.includes(command.type),
+          f &&
+            ((actor.role === 'admin' && command.type === 'postpone') ||
+              isParticipant(f, actor.id, before.participants)),
           403,
-          'Administrator access required.',
+          'Only a match participant can perform this action.',
         );
-        if (command.type === 'submit' || command.type === 'review' || command.type === 'postpone') {
-          const f = before.fixtures.find((f) => f.id === command.fixtureId);
-          requireCondition(
-            f &&
-              ((actor.role === 'admin' && command.type === 'postpone') ||
-                isParticipant(f, actor.id, before.participants)),
-            403,
-            'Only a match participant can perform this action.',
-          );
-        }
-        if ((command.type === 'saveBooking' && command.id) || command.type === 'cancelBooking') {
-          const id = 'id' in command ? command.id : undefined;
-          const b = before.bookings.find((b) => b.id === id);
-          requireCondition(
-            b && (b.ownerId === actor.id || actor.role === 'admin'),
-            403,
-            'Only the owner or an administrator can manage this booking.',
-          );
-        }
-        if (command.type === 'generate') {
-          const season = before.seasons.find((s) => s.id === command.seasonId);
-          const members = before.participants
-            .filter((p) => season?.participantIds.includes(p.id))
-            .flatMap((p) => p.playerIds);
-          requireCondition(
-            season?.format === 'singles' &&
-              members.length === season.participantIds.length &&
-              new Set(members).size === members.length,
-            400,
-            'Each singles entry must represent one distinct player.',
-          );
-        }
-        try {
-          next = executeCommand(before, command);
-        } catch (e) {
-          throw new ApiError(400, e instanceof Error ? e.message : 'Invalid command.');
-        }
+      }
+      if ((command.type === 'saveBooking' && command.id) || command.type === 'cancelBooking') {
+        const id = 'id' in command ? command.id : undefined;
+        const b = before.bookings.find((b) => b.id === id);
+        requireCondition(
+          b && (b.ownerId === actor.id || actor.role === 'admin'),
+          403,
+          'Only the owner or an administrator can manage this booking.',
+        );
+      }
+      if (command.type === 'generate') {
+        const season = before.seasons.find((s) => s.id === command.seasonId);
+        const members = before.participants
+          .filter((p) => season?.participantIds.includes(p.id))
+          .flatMap((p) => p.playerIds);
+        requireCondition(
+          season?.format === 'singles' &&
+            members.length === season.participantIds.length &&
+            new Set(members).size === members.length,
+          400,
+          'Each singles entry must represent one distinct player.',
+        );
+      }
+      try {
+        next = executeCommand(before, command);
+      } catch (e) {
+        throw new ApiError(400, e instanceof Error ? e.message : 'Invalid command.');
+      }
       normalizeNewIds(before, next);
       await persistChanges(client, before, next);
       const saved = await readState(client, actor.id);
