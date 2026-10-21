@@ -150,6 +150,8 @@ The first administrator is a controlled bootstrap data change after verifying th
 
 ## API and consistency
 
+Application bearer tokens travel in `X-VPL-Authorization` because the SWA managed Functions proxy can replace the standard `Authorization` header with a platform token. The API prefers the app-specific header and fully verifies its token with Supabase; a standard bearer header remains supported for local clients. Neither header grants access without verified identity and an active database profile. See [Azure's token-overwrite issue](https://github.com/Azure/static-web-apps/issues/158). A successful Supabase login followed by an API 401 causes local sign-out and can appear as a login redirect loop; deploy the corresponding frontend and API transport changes together.
+
 | Route                         | Access / behavior                                                                                               |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `GET /api/me`                 | Verified active account; returns its application profile.                                                       |

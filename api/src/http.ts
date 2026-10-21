@@ -49,7 +49,10 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
             'If this address has an invited account, a password reset email will arrive shortly.',
         });
       }
-      const authorization = request.headers.get('Authorization');
+      // SWA uses Authorization for its own Functions-host token. Prefer our explicit
+      // application header; either source still requires full Supabase verification.
+      const authorization =
+        request.headers.get('X-VPL-Authorization') ?? request.headers.get('Authorization');
       requireCondition(
         authorization && authorization.startsWith('Bearer ') && authorization.length < 8192,
         401,

@@ -8,7 +8,8 @@ export async function authenticatedRequest<T>(path: string, body?: unknown): Pro
   const response = await fetch(`/api${path}`, {
     method: body ? 'POST' : 'GET',
     headers: {
-      Authorization: `Bearer ${data.session.access_token}`,
+      // SWA's managed Functions proxy can replace the standard Authorization header.
+      'X-VPL-Authorization': `Bearer ${data.session.access_token}`,
       ...(body ? { 'Content-Type': 'application/json' } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,

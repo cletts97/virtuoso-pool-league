@@ -1,5 +1,12 @@
 # Implementation status — Virtuoso Pool League
 
+## Post-login return to sign-in — 21 October 2026
+
+- Investigated only login/session/API transport. Azure's Functions-specific production settings contain the required connection/key/CA settings, `APP_URL=https://virtuosopool.app` and `WORK_EMAIL_DOMAINS=*`. A read-only Supabase check found the existing account invited, confirmed and previously signed in. No identities, credentials or tokens were printed.
+- Anonymous public `/api/me` and `/api/state` requests return the identity-verification 401 rather than the handler's missing-bearer response. This strongly indicates the SWA managed proxy injects its own Authorization bearer, consistent with Azure/static-web-apps issues #158 and #275. A valid frontend Supabase token sent through that same standard header can be overwritten. The frontend signs out on API 401, explaining the apparent redirect/login loop. Successful Supabase sign-in alone does not prove application API access.
+- Changed frontend requests to send `X-VPL-Authorization`; API prefers it over standard Authorization and still verifies the supplied token through Supabase and resolves the active database profile. Standard bearer fallback remains for existing local clients. Invalid custom credentials cannot fall back to another supplied token. No permissions were relaxed.
+- Three focused HTTP regression tests passed: proxy-token precedence, standard bearer compatibility and invalid-token rejection. Targeted ESLint and TypeScript checking passed. No full test suite, browser tests, production build, cloud write, email, commit, push or deployment was performed. A GitHub deployment of both frontend/API is required to verify the fix on the real host; the owner's existing account/password can be reused.
+
 ## Focused deployed-authentication investigation — 21 October 2026
 
 - Public read-only checks found `https://virtuosopool.app` serving a bundle without the configured cloud Supabase URL/public key, consistent with the reported Alex Morgan demo session. Unauthenticated `/api/me` returned 404. The Azure-generated workflow provided no Vite configuration and uploaded the raw API workspace instead of the prepared Functions artifact. Local ignored credentials do not populate GitHub or Azure automatically.
