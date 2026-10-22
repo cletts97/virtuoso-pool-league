@@ -1,6 +1,7 @@
 import {
   addDays,
   canApprove,
+  dateOnly,
   invariant,
   isParticipant,
   qualifiedIds,
@@ -302,6 +303,96 @@ export function executeCommand(
   }
   requireAdmin(actor);
   switch (command.type) {
+    case 'addSeasonPlayer': {
+      const season = state.seasons.find((s) => s.id === command.seasonId);
+      invariant(
+        season?.status === 'regular' &&
+          season.format === 'singles' &&
+          !season.qualifiers.length &&
+          !season.finalizedReason &&
+          !state.fixtures.some((f) => f.seasonId === season.id && f.stage !== 'regular'),
+        'Players can only be added during an unfinalized singles regular season.',
+      );
+      invariant(season.participantIds.length < 40, 'A season supports up to 40 players.');
+      validateDate(command.dueDate);
+      invariant(command.dueDate >= dateOnly(), 'Choose a catch-up deadline of today or later.');
+      const player = state.players.find((p) => p.id === command.playerId);
+      invariant(player?.active, 'Choose an active colleague.');
+      const opponents = season.participantIds.map((pid) =>
+        state.participants.find((p) => p.id === pid)!,
+      );
+      invariant(
+        opponents.every((p) => p?.kind === 'individual' && p.playerIds.length === 1),
+        'This action supports individual season participants only.',
+      );
+      invariant(
+        !opponents.some((p) => p.playerIds.includes(player.id)),
+        'This player is already in the season.',
+      );
+      let entrant = state.participants.find(
+        (p) => p.kind === 'individual' && p.playerIds.length === 1 && p.playerIds[0] === player.id,
+      );
+      if (!entrant) {
+        entrant = { id: id(), name: player.name, kind: 'individual', playerIds: [player.id] };
+        state.participants.push(entrant);
+      }
+      const firstRound =
+        Math.max(0, ...state.fixtures.filter((f) => f.seasonId === season.id).map((f) => f.round)) +
+        1;
+      for (const [index, opponent] of opponents.entries()) {
+        invariant(
+          !state.fixtures.some(
+            (f) =>
+              f.seasonId === season.id &&
+              [f.homeId, f.awayId].includes(entrant.id) &&
+              [f.homeId, f.awayId].includes(opponent.id),
+          ),
+          'This pairing already has a fixture.',
+        );
+        const memberIds = [player.id, ...opponent.playerIds];
+        let dueDate = command.dueDate;
+        let leave = state.availability.filter(
+          (a) => memberIds.includes(a.playerId) && a.from <= dueDate && a.to >= dueDate,
+        );
+        while (leave.length) {
+          dueDate = addDays(
+            leave
+              .map((a) => a.to)
+              .sort()
+              .at(-1)!,
+            3,
+          );
+          leave = state.availability.filter(
+            (a) => memberIds.includes(a.playerId) && a.from <= dueDate && a.to >= dueDate,
+          );
+        }
+        const fixture: Fixture = {
+          id: id(),
+          seasonId: season.id,
+          stage: 'regular',
+          bestOf: 3,
+          round: firstRound + index,
+          homeId: index % 2 ? opponent.id : entrant.id,
+          awayId: index % 2 ? entrant.id : opponent.id,
+          dueDate,
+          status: 'postponed',
+          history: [],
+          note: `Catch-up fixture: ${player.name} joined the season late.${dueDate !== command.dueDate ? ' Deadline adjusted around recorded leave.' : ''}`,
+        };
+        audit(fixture, actor.id, 'postponed', fixture.note);
+        state.fixtures.push(fixture);
+        notifications.publish(state, memberIds, {
+          seasonId: season.id,
+          fixtureId: fixture.id,
+          kind: 'postponement',
+          title: 'New catch-up fixture',
+          body: `${player.name} v ${opponent.name} · Due ${dueDate}. A player joined the season late.`,
+        });
+      }
+      season.participantIds.push(entrant.id);
+      if (player.role === 'colleague') player.role = 'player';
+      break;
+    }
     case 'enrolPlayer': {
       const player = state.players.find((p) => p.id === command.id);
       invariant(player?.active, 'Choose an active colleague.');

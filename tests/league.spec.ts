@@ -1,6 +1,44 @@
 import { test, expect } from '@playwright/test';
 import type { LeagueState } from '../src/domain/types';
 
+test('administrator adds a late player without changing existing matches', async ({ page }) => {
+  await page.goto('/admin');
+  const before = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState,
+  );
+  const season = before.seasons.find((s) => s.id === before.selectedSeasonId)!;
+  await page.getByRole('button', { name: 'Add player to season', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Player', exact: true })).toBeEnabled();
+  await page
+    .getByLabel('Catch-up deadline')
+    .fill(new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10));
+  await page
+    .getByRole('button', {
+      name: `Add player and ${season.participantIds.length} fixtures`,
+      exact: true,
+    })
+    .click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const after = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState,
+  );
+  expect(after.fixtures.slice(0, before.fixtures.length)).toEqual(before.fixtures);
+  expect(after.fixtures.slice(before.fixtures.length)).toHaveLength(season.participantIds.length);
+  expect(after.fixtures.slice(before.fixtures.length).every((f) => f.status === 'postponed')).toBe(
+    true,
+  );
+  expect(after.seasons.find((s) => s.id === season.id)!.participantIds).toHaveLength(
+    season.participantIds.length + 1,
+  );
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'League administration' })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!).fixtures.length,
+    ),
+  ).toBe(after.fixtures.length);
+});
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Welcome, Alex.' })).toBeVisible();

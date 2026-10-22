@@ -164,10 +164,14 @@ describe('approval, qualification and status', () => {
     const old = state.seasons[1];
     expect(qualifiedIds(old, state.fixtures)).toEqual(old.qualifiers);
   });
-  it('never turns a postponed match into an automatic defeat or overdue match', () => {
+  it('shows overdue scheduled/postponed matches without changing their result or stored status', () => {
     const fixture = generateRoundRobin(makeSeason(4))[0];
     expect(matchStatus(fixture, '2026-12-01')).toBe('overdue');
-    expect(matchStatus({ ...fixture, status: 'postponed' }, '2026-12-01')).toBe('postponed');
+    const postponed = { ...fixture, status: 'postponed' as const };
+    expect(matchStatus(postponed, '2026-12-01')).toBe('overdue');
+    expect(postponed.status).toBe('postponed');
+    expect(postponed.score).toBeUndefined();
+    expect(matchStatus(postponed, fixture.dueDate)).toBe('postponed');
     expect(matchStatus(fixture, fixture.dueDate)).toBe('scheduled');
   });
 });

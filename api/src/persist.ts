@@ -72,8 +72,8 @@ export async function persistChanges(
           ? { finalized_at: new Date().toISOString(), finalized_by: next.currentUserId }
           : {}),
       });
-    if (!old)
-      for (const [i, id] of s.participantIds.entries())
+    for (const [i, id] of s.participantIds.entries())
+      if (!old?.participantIds.includes(id))
         await client.query(
           'INSERT INTO public.season_participants(season_id,participant_id,entry_order) VALUES($1,$2,$3)',
           [s.id, id, i],

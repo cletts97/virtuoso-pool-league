@@ -166,8 +166,9 @@ export function SeasonForm({ edit = false, onClose }: { edit?: boolean; onClose(
           </fieldset>
         )}
         <p className="field-help">
-          Singles round-robin · Best of 3 · Top 4 playoffs. Scheduling settings and entries lock
-          when fixtures are generated. An odd number of players receives rotating byes.
+          Singles round-robin · Best of 3 · Top 4 playoffs. Scheduling settings lock when fixtures
+          are generated. Administrators can add players during the regular season. An odd number of
+          players receives rotating byes in the initial schedule.
         </p>
         <FormActions onClose={onClose} label={edit ? 'Save settings' : 'Create draft season'} />
       </form>

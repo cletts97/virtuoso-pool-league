@@ -152,6 +152,12 @@ The first administrator is a controlled bootstrap data change after verifying th
 
 ## API and consistency
 
+### Add a player during the regular season
+
+As an administrator, open **Administration → Season & configuration → Add player to season**. Choose an active account not already in that season and a catch-up deadline (default today plus 14 days), then confirm the displayed fixture count. The command creates/reuses the singles entry and appends one best-of-three match against each existing participant, in new catch-up rounds. It preserves every existing fixture/result/date and sends in-app catch-up notices. Recorded leave can move individual deadlines later.
+
+New matches are postponed until their catch-up deadline, then displayed as overdue without an automatic loss. This deadline behaviour also applies to other postponed fixtures. Late additions are rejected once playoffs/qualification are finalized, for inactive or duplicate entrants, or beyond 40 participants. The existing advisory lock and revision check prevent concurrent duplicate additions. Season membership, new fixtures, audit events and notifications commit in the same transaction using existing grants/schema; no migration or additional setting is needed. Deploy frontend/API changes together.
+
 ### Anonymous browsing
 
 The main application now supports a public, read-only mode without an Auth account. `GET /api/public-state` returns an explicitly allowlisted snapshot: published/historical seasons and participants, fixtures, confirmed scores, published announcements and reserved table bookings for today through seven days ahead. Draft seasons, cancelled reservation history, account roles/departments, private photo URLs, availability records, notifications, result-submit identities and audit reasons are excluded. A non-account visitor presentation record keeps the existing UI reusable; it is inactive and grants no access.

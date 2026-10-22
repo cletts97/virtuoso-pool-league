@@ -63,6 +63,47 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       }
       await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[0]]);
     }, 60000);
+    it('adds a late player atomically and rejects concurrent duplicate joins', async () => {
+      const created = await command({
+        type: 'createSeason',
+        name: `${prefix} late entry`,
+        startDate: londonDate(new Date()),
+        roundsPerWeek: 2,
+        participantIds: profiles.slice(0, 4),
+      });
+      const lateSeason = created.seasons.find((s) => s.name === `${prefix} late entry`)!;
+      const published = await command({ type: 'generate', seasonId: lateSeason.id });
+      const oldMatches = published.fixtures.filter((f) => f.seasonId === lateSeason.id);
+      const lateCommand = {
+        type: 'addSeasonPlayer' as const,
+        seasonId: lateSeason.id,
+        playerId: profiles[4],
+        dueDate: addDays(londonDate(new Date()), 14),
+      };
+      await expect(command(lateCommand, users[1])).rejects.toThrow('Administrator');
+      const revision = (await service.load(users[0])).revision!;
+      const results = await Promise.allSettled([
+        service.execute(users[0], lateCommand, revision),
+        service.execute(users[0], lateCommand, revision),
+      ]);
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(results.filter((r) => r.status === 'rejected')).toHaveLength(1);
+      const saved = await service.load(users[0]);
+      const matches = saved.fixtures.filter((f) => f.seasonId === lateSeason.id);
+      expect(matches).toHaveLength(10);
+      expect(matches.filter((f) => oldMatches.some((old) => old.id === f.id))).toEqual(oldMatches);
+      expect(matches.filter((f) => f.status === 'postponed')).toHaveLength(4);
+      expect(saved.seasons.find((s) => s.id === lateSeason.id)!.participantIds).toHaveLength(5);
+      expect(
+        (
+          await pool.query(
+            'SELECT count(*)::integer AS count FROM public.season_participants WHERE season_id=$1',
+            [lateSeason.id],
+          )
+        ).rows[0].count,
+      ).toBe(5);
+      await expect(command(lateCommand)).rejects.toThrow('already');
+    });
     afterAll(async () => {
       // Preserve audit history; deactivate test identities and release test reservations.
       if (profiles.length)

@@ -87,6 +87,14 @@ Display standings using the following columns:
 - Where players have played different numbers of matches, display their actual records without awarding artificial points or penalties.
 - Do not introduce a points column, points calculation, or points-based tiebreaker.
 
+### Mid-season additions
+
+- Administrators may add an active account to a singles season while its regular season remains unfinalized. Closed seasons and seasons with playoff fixtures/locked qualifiers do not allow additions.
+- Create or reuse the individual's competition entry, and append one best-of-three fixture against every existing participant. Preserve all existing fixtures, results, rounds and dates. Reject duplicate enrollment/pairings.
+- Append separate catch-up rounds after the current rounds. These backlog fixtures share an administrator-selected deadline (default two weeks from today), rather than regenerating the normal two-rounds-per-week schedule.
+- Mark the new fixtures postponed and extend individual deadlines around recorded leave. Scheduled and postponed fixtures display as overdue after their agreed deadline; the stored result is unchanged and no loss is awarded automatically.
+- The new participant starts with zero played/wins/losses. Only approved results affect standings; all new regular-season fixtures must be resolved before normal automatic playoff qualification.
+
 ### Annual Leave and Postponements
 
 - Allow administrators to record player unavailability.

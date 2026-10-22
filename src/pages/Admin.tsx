@@ -25,12 +25,20 @@ import {
 import { MatchCard } from '../components/MatchCard';
 import type { Player } from '../domain/types';
 import { QualificationNotice } from '../components/QualificationNotice';
+import { AddSeasonPlayerForm } from '../components/AddSeasonPlayerForm';
 
 export function Admin() {
   const { state, season, run, preferences, busy } = useLeague();
   const [tab, setTab] = useState('overview');
   const [modal, setModal] = useState<
-    'player' | 'season' | 'settings' | 'leave' | 'finalize' | 'announcement' | 'generate'
+    | 'player'
+    | 'season'
+    | 'settings'
+    | 'leave'
+    | 'finalize'
+    | 'announcement'
+    | 'generate'
+    | 'latePlayer'
   >();
   const [editing, setEditing] = useState<Player>();
   const [removeLeave, setRemoveLeave] = useState<string>();
@@ -149,6 +157,14 @@ export function Admin() {
                           </button>
                         )}
                         {season.status === 'regular' && (
+                          <button
+                            className="button secondary"
+                            onClick={() => setModal('latePlayer')}
+                          >
+                            <Plus size={15} /> Add player to season
+                          </button>
+                        )}
+                        {season.status === 'regular' && (
                           <button className="button secondary" onClick={() => setModal('finalize')}>
                             <ShieldCheck size={15} />
                             Finalize regular season
@@ -231,9 +247,7 @@ export function Admin() {
               <div className="notice-card">
                 <div className="eyebrow">COMPETITION FORMATS</div>
                 <h3>Singles league</h3>
-                <p>
-                  This league uses singles matches. Doubles competitions are not available yet.
-                </p>
+                <p>This league uses singles matches. Doubles competitions are not available yet.</p>
               </div>
             </div>
           </div>
@@ -402,6 +416,7 @@ export function Admin() {
       {modal === 'player' && <PlayerForm player={editing} onClose={close} />}{' '}
       {modal === 'season' && <SeasonForm onClose={close} />}{' '}
       {modal === 'settings' && <SeasonForm edit onClose={close} />}{' '}
+      {modal === 'latePlayer' && <AddSeasonPlayerForm onClose={close} />}{' '}
       {modal === 'leave' && <LeaveForm onClose={close} />}{' '}
       {modal === 'finalize' && <FinalizeForm onClose={close} />}{' '}
       {modal === 'announcement' && <AnnouncementForm onClose={close} />}{' '}

@@ -216,7 +216,9 @@ export function requireAdmin(player: Player) {
   invariant(player.role === 'admin' && player.active, 'Administrator access is required.');
 }
 export function matchStatus(fixture: Fixture, today = dateOnly()): string {
-  return fixture.status === 'scheduled' && fixture.dueDate < today ? 'overdue' : fixture.status;
+  return ['scheduled', 'postponed'].includes(fixture.status) && fixture.dueDate < today
+    ? 'overdue'
+    : fixture.status;
 }
 export function winner(fixture: Fixture): string | undefined {
   return fixture.status === 'confirmed' && fixture.score

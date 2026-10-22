@@ -4,6 +4,7 @@ import type { BookingCommand } from './bookingCommands';
 export type LeagueCommand =
   | { type: 'updateProfile'; name: string }
   | { type: 'enrolPlayer'; id: string }
+  | { type: 'addSeasonPlayer'; seasonId: string; playerId: string; dueDate: string }
   | BookingCommand
   | { type: 'submit'; fixtureId: string; score: Score }
   | { type: 'review'; fixtureId: string; approve: boolean; reason: string }

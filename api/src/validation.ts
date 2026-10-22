@@ -21,6 +21,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('reschedule'), ...fields, dueDate: date }),
   z.strictObject({ type: z.literal('finalize'), seasonId: id, reason: text.max(300) }),
   z.strictObject({ type: z.literal('generate'), seasonId: id }),
+  z.strictObject({ type: z.literal('addSeasonPlayer'), seasonId: id, playerId: id, dueDate: date }),
   z.strictObject({
     type: z.literal('createSeason'),
     name: text.max(80),

@@ -25,7 +25,12 @@ const env = {
 };
 const result = spawnSync(
   process.execPath,
-  ['node_modules/vitest/vitest.mjs', 'run', 'api/tests/integration.test.ts'],
+  [
+    'node_modules/vitest/vitest.mjs',
+    'run',
+    'api/tests/integration.test.ts',
+    ...process.argv.slice(2),
+  ],
   { env, stdio: 'inherit' },
 );
 process.exitCode = result.status ?? 1;

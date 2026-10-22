@@ -1,5 +1,13 @@
 # Implementation status — Virtuoso Pool League
 
+## Mid-season player additions — 22 October 2026
+
+- Added administrator-only **Administration → Season & configuration → Add player to season** for an unfinalized singles regular season. Select any active account not already entered and a deadline of today or later, default two weeks ahead. The form previews the number of new matches before submission.
+- Creates/reuses the individual entry and appends one BO3 catch-up fixture per existing participant in separate rounds after the current schedule. Existing fixtures, results, round numbers and dates remain untouched. New entrants have zero statistics until approved results. New fixtures have postponed status, an administrator audit event and per-player in-app notices. Individual deadlines move around recorded leave. Sequential additions include matches against earlier late entrants without duplicate pairings.
+- Scheduled **and postponed** matches now display as overdue after their agreed deadline. This is a display-only status calculation, never an automatic defeat or stored result change. Updated the previous test that kept postponed fixtures visually postponed indefinitely.
+- Rejects inactive/duplicate entrants, non-admin commands, past deadlines, finalized/closed/playoff seasons, non-singles entries and seasons over 40 players. PostgreSQL persistence now inserts appended season-membership rows for existing seasons inside the same locked/revision-checked transaction as fixtures, audit and notifications. No schema migration, grant change or new setting is required.
+- Validation: **26 focused domain tests**, targeted ESLint, TypeScript and whitespace checks passed. **One local Supabase integration test passed** for real membership/fixture persistence, unchanged existing fixtures, ordinary-user denial and simultaneous duplicate-addition rejection (14 unrelated integration tests skipped). **One focused desktop browser test passed** for the admin form, new fixtures, unchanged matches and refresh persistence. Full suites/production builds were not run. No cloud schema/data change, real emails, commit, push or deployment performed.
+
 ## Plain-language application copy — 22 October 2026
 
 - Replaced promotional/dramatic wording across dashboard, standings, players, playoffs, bookings, fixtures, match details, TV, administration, sign-in/reset screens, shared navigation/footer, loading and empty states. Examples: “Every frame counts” → “League table”, “Who will own the table?” → “Winner not confirmed”, and “The table is set…” → a description of standings, fixtures, results and bookings. Demo seed notification copy was simplified; existing user-authored/persisted announcements were not edited.
