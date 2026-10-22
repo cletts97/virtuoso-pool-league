@@ -4,6 +4,7 @@ import type { LeagueState } from '../src/domain/types';
 test('dashboard and TV combine casual and league results with clear public statuses', async ({
   page,
 }) => {
+  await page.clock.install({ time: new Date('2026-10-20T09:00:00Z') });
   await page.goto('/');
   await page.evaluate(() => {
     const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
@@ -145,6 +146,12 @@ test('short desktop viewports contain the TV QR tile and administrator sidebar f
     }
     await page.goto('/display');
     await expect(page.locator('.tv-qr svg')).toBeVisible();
+    await expect(page.locator('.tv-table .tv-current')).toBeVisible();
+    await expect(page.locator('.tv-table .tv-queue')).toBeVisible();
+    await expect(page.locator('.tv-standings tbody tr')).toHaveCount(height < 850 ? 10 : 12);
+    expect(
+      await page.locator('.tv-standings').evaluate((tile) => tile.clientHeight),
+    ).toBeGreaterThan(await page.locator('.tv-table').evaluate((tile) => tile.clientHeight));
     await expect(page.locator('.rule-reminders h3')).toHaveCount(8);
     await expect(page.getByRole('img', { name: /Pool rack:/ })).toBeVisible();
     expect(
@@ -188,7 +195,16 @@ test('short desktop viewports contain the TV QR tile and administrator sidebar f
         .evaluateAll((cards) =>
           cards
             .filter((card) => card.scrollHeight > card.clientHeight + 1)
-            .map((card) => card.className),
+            .map((card) => ({
+              name: card.className,
+              height: card.clientHeight,
+              content: card.scrollHeight,
+              children: Array.from(card.children).map((c) => ({
+                name: c.className,
+                height: c.clientHeight,
+                content: c.scrollHeight,
+              })),
+            })),
         ),
       `TV cards do not overflow at ${width}x${height}`,
     ).toEqual([]);

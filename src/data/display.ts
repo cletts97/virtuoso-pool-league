@@ -67,20 +67,18 @@ export function displaySnapshot(state: LeagueState, now = new Date()): DisplaySn
     }),
     season: season ? { name: season.name, locked: season.qualifiers.length > 0 } : undefined,
     standings: season
-      ? standings(season, fixtures)
-          .slice(0, 5)
-          .map((r) => ({
-            id: r.participantId,
-            name: participantName(state, r.participantId),
-            position: r.position,
-            played: r.played,
-            won: r.won,
-            lost: r.lost,
-            difference: r.difference,
-            qualifying: season.qualifiers.length
-              ? season.qualifiers.includes(r.participantId)
-              : r.position <= 4,
-          }))
+      ? standings(season, fixtures).map((r) => ({
+          id: r.participantId,
+          name: participantName(state, r.participantId),
+          position: r.position,
+          played: r.played,
+          won: r.won,
+          lost: r.lost,
+          difference: r.difference,
+          qualifying: season.qualifiers.length
+            ? season.qualifiers.includes(r.participantId)
+            : r.position <= 4,
+        }))
       : [],
     results: recentResults(state, 6),
     fixtures: fixtures

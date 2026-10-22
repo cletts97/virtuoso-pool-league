@@ -234,12 +234,14 @@ The HUD should prominently display:
    - Time remaining in the current reservation.
 
 2. **Upcoming Bookings**
+   - Share one tile with current availability; retain booking owners, participants, countdown and opening hours.
    - Remaining reservations for the current day.
    - Upcoming players or booking owners.
    - Start times and durations.
    - Clear indication when the table is available.
 
 3. **League Standings**
+   - Use a taller tile spanning both main display rows. Return the full standings rather than just five players; show the normal 12–14-player league at 1080p and rotate smaller pages on shorter screens or with long names.
    - Top-ranked players.
    - Matches played, wins and losses.
    - Frame difference where space allows.

@@ -315,6 +315,7 @@ describe('booking persistence and TV read model', () => {
     state.currentUserId = 'colleague-01';
     expect(displaySnapshot(state, now)).toEqual(before);
     expect(before.season?.name).toBe('Autumn League 2026');
+    expect(before.standings).toHaveLength(12);
     expect(before.bookings).toHaveLength(3);
     const json = JSON.stringify(before);
     for (const key of [

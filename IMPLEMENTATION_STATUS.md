@@ -1,5 +1,12 @@
 # Implementation status — Virtuoso Pool League
 
+## TV standings and combined bookings layout — 22 October 2026
+
+- Standings now occupy the left column across both main rows. Removed the five-player cap from the shared TV projection, allowing the full normal 12–14-player league at 1080p. Short displays and long names use bounded pages rotating every 15 seconds, with page indicators and actual rank numbers. Ranking, public-data allowlisting and qualification rules are unchanged.
+- Combined current availability and the upcoming-bookings queue into a single tile at the top right. Preserved opening hours, owner/participant names, countdown, stale-data handling and queue rotation. Recent results, upcoming fixtures, booking QR and all eight rules remain visible; results/fixtures rotate in smaller pages to fit their narrower tile.
+- Uses the owner's replacement `public/images/rack_layout.png` without editing it. White logo and legacy-browser fallbacks are preserved. Frontend and API should be deployed together because the full standings projection is shared with the API.
+- Validation: 28 focused booking/domain tests and four desktop browser checks passed, covering full standings, merged-card layout, mixed result statuses, long names, replacement image, legacy CSS fallback and four full-HD/short viewport sizes. Reviewed full-HD and short-screen screenshots. TypeScript and targeted ESLint passed. No full suite/build, database changes, actual LG-device test, commit, push or deployment performed.
+
 ## Booking durations and expanded TV rules — 22 October 2026
 
 - New and edited bookings allow only 15 or 30 minutes (default 30), enforced in shared mock/server business rules and the HTTP command schema. Both selectors use the shared duration list. Historical 60-minute records remain readable/cancellable; editing one defaults to 30 minutes without changing it until saved. No database migration is required: the existing SQL constraint remains compatible with historical records.

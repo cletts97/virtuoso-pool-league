@@ -64,13 +64,21 @@ export function Display() {
       : 3;
   const pageCount = Math.max(1, Math.ceil(upcoming.length / queueSize));
   const queuePage = Math.floor(now.getTime() / 15000) % pageCount;
-  const resultSize =
-    compact || data?.results.some((r) => r.home.length + r.away.length > 80) ? 2 : 3;
+  const resultSize = data?.results.some((r) => r.home.length + r.away.length > 80) ? 1 : 2;
   const resultPages = Math.max(1, Math.ceil((data?.results.length ?? 0) / resultSize));
   const resultPage = Math.floor(now.getTime() / 15000) % resultPages;
-  const fixtureSize = compact ? 2 : 3;
+  const fixtureSize = data?.fixtures.some((f) => f.home.length + f.away.length > 80) ? 1 : 2;
   const fixturePages = Math.max(1, Math.ceil((data?.fixtures.length ?? 0) / fixtureSize));
   const fixturePage = Math.floor(now.getTime() / 15000) % fixturePages;
+  const standingSize = data?.standings.some((r) => r.name.length > 28)
+    ? compact
+      ? 8
+      : 12
+    : compact
+      ? 10
+      : 14;
+  const standingPages = Math.max(1, Math.ceil((data?.standings.length ?? 0) / standingSize));
+  const standingPage = Math.floor(now.getTime() / 15000) % standingPages;
   const config = data?.config;
   const open =
     config &&
@@ -102,65 +110,97 @@ export function Display() {
         </div>
       </header>
       <div className="tv-grid">
-        <section className={`tv-current ${current ? 'occupied' : ''}`}>
-          <div className="eyebrow">
-            <span className="live-dot" />
-            {stale
-              ? 'UPDATES INTERRUPTED'
-              : current
-                ? 'ON THE TABLE'
-                : open
-                  ? 'TABLE AVAILABLE'
-                  : 'OUTSIDE OFFICE HOURS'}
-          </div>
-          <h1 className={current && current.owner.length > 28 ? 'tv-long-name' : undefined}>
-            {!data
-              ? 'Loading table information…'
-              : stale
-                ? 'Checking availability…'
+        <section className="tv-table" aria-label="Table availability and bookings">
+          <section className={`tv-current ${current ? 'occupied' : ''}`}>
+            <div className="eyebrow">
+              <span className="live-dot" />
+              {stale
+                ? 'UPDATES INTERRUPTED'
                 : current
-                  ? current.owner
+                  ? 'ON THE TABLE'
                   : open
-                    ? 'The table is free.'
-                    : 'Outside office hours'}
-          </h1>
-          {current ? (
-            <>
-              <p className="tv-game-type">
-                {current.kind === 'league' ? 'League match' : 'Casual game'}
-              </p>
-              {current.participants.length > 0 && (
-                <p className="tv-participants">
-                  {current.participants.join(current.kind === 'league' ? ' v ' : ' · ')}
+                    ? 'TABLE AVAILABLE'
+                    : 'OUTSIDE OFFICE HOURS'}
+            </div>
+            <h1 className={current && current.owner.length > 28 ? 'tv-long-name' : undefined}>
+              {!data
+                ? 'Loading table information…'
+                : stale
+                  ? 'Checking availability…'
+                  : current
+                    ? current.owner
+                    : open
+                      ? 'The table is free.'
+                      : 'Outside office hours'}
+            </h1>
+            {current ? (
+              <>
+                <p className="tv-game-type">
+                  {current.kind === 'league' ? 'League match' : 'Casual game'}
                 </p>
-              )}
-              <div className="tv-countdown">
-                <strong>
-                  {Math.max(0, Math.ceil((Date.parse(current.endAt) - now.getTime()) / 60000))}
-                </strong>
-                <span>
-                  minutes remaining
-                  <br />
-                  {londonTime(current.startAt)}–{londonTime(current.endAt)}
-                </span>
+                {current.participants.length > 0 && (
+                  <p className="tv-participants">
+                    {current.participants.join(current.kind === 'league' ? ' v ' : ' · ')}
+                  </p>
+                )}
+                <div className="tv-countdown">
+                  <strong>
+                    {Math.max(0, Math.ceil((Date.parse(current.endAt) - now.getTime()) / 60000))}
+                  </strong>
+                  <span>
+                    minutes remaining
+                    <br />
+                    {londonTime(current.startAt)}–{londonTime(current.endAt)}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <p>
+                  {upcoming[0]
+                    ? `Next reservation at ${londonTime(upcoming[0].startAt)}`
+                    : 'No more reservations today.'}
+                </p>
+                <div className="tv-free-ball" aria-hidden="true">
+                  8
+                </div>
+              </>
+            )}
+            <div className="tv-current-foot">
+              {config
+                ? `Office hours ${config.opensAt}–${config.closesAt}`
+                : 'Loading office hours'}
+              <span>Shared office pool table</span>
+            </div>
+          </section>
+          <section className="tv-queue" aria-label="Upcoming table bookings">
+            <div className="tv-section-title">
+              <h2>
+                <Clock3 size={22} />
+                Next on the table
+              </h2>
+              <span>Today{pageCount > 1 ? ` · ${queuePage + 1}/${pageCount}` : ''}</span>
+            </div>
+            {upcoming.slice(queuePage * queueSize, queuePage * queueSize + queueSize).map((b) => (
+              <div className="tv-booking-row" key={b.id}>
+                <strong>{londonTime(b.startAt)}</strong>
+                <div>
+                  <h3>{b.owner}</h3>
+                  <p>
+                    {b.kind === 'league' ? 'League match' : 'Casual game'} · {b.duration} min
+                  </p>
+                  {!!b.participants.length && <small>{b.participants.join(' · ')}</small>}
+                </div>
               </div>
-            </>
-          ) : (
-            <>
-              <p>
-                {upcoming[0]
-                  ? `Next reservation at ${londonTime(upcoming[0].startAt)}`
-                  : 'No more reservations today.'}
+            ))}
+            {!upcoming.length && (
+              <p className="tv-empty">
+                No more bookings today.
+                <br />
+                Scan the code to book the table.
               </p>
-              <div className="tv-free-ball" aria-hidden="true">
-                8
-              </div>
-            </>
-          )}
-          <div className="tv-current-foot">
-            {config ? `Office hours ${config.opensAt}–${config.closesAt}` : 'Loading office hours'}
-            <span>Shared office pool table</span>
-          </div>
+            )}
+          </section>
         </section>
         <section className="tv-panel tv-standings">
           <div className="tv-section-title">
@@ -168,7 +208,10 @@ export function Display() {
               <Trophy size={22} />
               League standings
             </h2>
-            <span>{data?.season?.name ?? 'No published season'}</span>
+            <span>
+              {data?.season?.name ?? 'No published season'}
+              {standingPages > 1 ? ` · ${standingPage + 1}/${standingPages}` : ''}
+            </span>
           </div>
           <table>
             <caption className="sr-only">League standings</caption>
@@ -183,19 +226,21 @@ export function Display() {
               </tr>
             </thead>
             <tbody>
-              {data?.standings.map((r) => (
-                <tr key={r.id} className={r.qualifying ? 'tv-qualified' : ''}>
-                  <td>{r.position}</td>
-                  <td className={r.name.length > 28 ? 'tv-long-name' : undefined}>{r.name}</td>
-                  <td>{r.played}</td>
-                  <td>{r.won}</td>
-                  <td>{r.lost}</td>
-                  <td>
-                    {r.difference > 0 ? '+' : ''}
-                    {r.difference}
-                  </td>
-                </tr>
-              ))}
+              {data?.standings
+                .slice(standingPage * standingSize, (standingPage + 1) * standingSize)
+                .map((r) => (
+                  <tr key={r.id} className={r.qualifying ? 'tv-qualified' : ''}>
+                    <td>{r.position}</td>
+                    <td className={r.name.length > 28 ? 'tv-long-name' : undefined}>{r.name}</td>
+                    <td>{r.played}</td>
+                    <td>{r.won}</td>
+                    <td>{r.lost}</td>
+                    <td>
+                      {r.difference > 0 ? '+' : ''}
+                      {r.difference}
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
           {!data?.standings.length && (
@@ -207,34 +252,6 @@ export function Display() {
               ? 'Confirmed playoff qualifiers'
               : 'Top four · Provisional qualification'}
           </p>
-        </section>
-        <section className="tv-panel tv-queue">
-          <div className="tv-section-title">
-            <h2>
-              <Clock3 size={22} />
-              Next on the table
-            </h2>
-            <span>Today{pageCount > 1 ? ` · ${queuePage + 1}/${pageCount}` : ''}</span>
-          </div>
-          {upcoming.slice(queuePage * queueSize, queuePage * queueSize + queueSize).map((b) => (
-            <div className="tv-booking-row" key={b.id}>
-              <strong>{londonTime(b.startAt)}</strong>
-              <div>
-                <h3>{b.owner}</h3>
-                <p>
-                  {b.kind === 'league' ? 'League match' : 'Casual game'} · {b.duration} min
-                </p>
-                {!!b.participants.length && <small>{b.participants.join(' · ')}</small>}
-              </div>
-            </div>
-          ))}
-          {!upcoming.length && (
-            <p className="tv-empty">
-              No more bookings today.
-              <br />
-              Scan the code to book the table.
-            </p>
-          )}
         </section>
         <section className="tv-panel tv-results">
           <div className="tv-result-column">
