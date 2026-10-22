@@ -797,6 +797,20 @@
   flex-direction: column;
   min-width: 0;
 }
+.tv-result-entry {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.tv-result-entry .tv-result {
+  flex: initial;
+}
+.tv-result-entry .recent-result-meta {
+  font-size: 0.6em;
+  margin: 0.4vh 0;
+}
 .auth-page {
   min-height: 100vh;
   display: grid;

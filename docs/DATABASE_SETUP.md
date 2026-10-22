@@ -1,6 +1,6 @@
 # Database setup and invitation-only access
 
-For the additive casual-results migration and its production rollout, see [Casual results setup](CASUAL_RESULTS.md). The original schema below remains deployed; do not reapply it.
+For additive migrations and production rollout, see [Casual results setup](CASUAL_RESULTS.md) and [Result-email setup](RESULT_EMAILS.md). The original schema below remains deployed; do not reapply it.
 
 
 ## Current integration status (21 October 2026)

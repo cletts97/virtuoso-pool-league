@@ -1,6 +1,60 @@
 import { expect, test } from '@playwright/test';
 import type { LeagueState } from '../src/domain/types';
 
+test('dashboard and TV combine casual and league results with clear public statuses', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    const f = state.fixtures.find((f) => f.status === 'pending')!;
+    f.history.push({
+      id: 'latest-league',
+      actorId: 'p01',
+      at: '2098-01-01T12:00:00Z',
+      action: 'submitted',
+    });
+    state.casualResults = [
+      {
+        id: crypto.randomUUID(),
+        homePlayerIds: ['p01', 'p02'],
+        awayPlayerIds: ['p03', 'p04'],
+        playedOn: '2026-01-01',
+        bestOf: 3,
+        score: { home: 2, away: 1 },
+        status: 'disputed',
+        submittedBy: 'p01',
+        history: [
+          {
+            id: 'casual-dispute',
+            actorId: 'p03',
+            at: '2099-01-01T12:00:00Z',
+            action: 'disputed',
+            reason: 'PRIVATE_DISPUTE_REASON',
+          },
+        ],
+      },
+    ];
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(state));
+  });
+  await page.reload();
+  const results = page.locator('.result-list');
+  await expect(results).toContainText('Casual doubles');
+  await expect(results).toContainText('Disputed');
+  await expect(results).toContainText('League singles');
+  await expect(results).toContainText('Pending confirmation');
+  await expect(results).not.toContainText('PRIVATE_DISPUTE_REASON');
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/display');
+  await expect(page.locator('.tv-results')).toContainText('Casual doubles');
+  await expect(page.locator('.tv-results')).toContainText('Disputed');
+  await expect(page.locator('.tv-results')).toContainText('Pending confirmation');
+  await expect(page.locator('.tv-results')).not.toContainText('PRIVATE_DISPUTE_REASON');
+  expect(
+    await page.locator('.tv-results').evaluate((el) => el.scrollHeight <= el.clientHeight + 1),
+  ).toBe(true);
+});
+
 test('TV font and spacing fallbacks work without theme variables or flex gap', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-10-22T09:05:00Z') });
   for (const height of [1080, 900]) {

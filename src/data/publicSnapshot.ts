@@ -1,6 +1,7 @@
 import type { LeagueState, Player } from '../domain/types';
 import { addDays, playedDate } from '../domain/rules';
 import { londonDate } from '../domain/bookings';
+import { recentResults } from '../domain/recentResults';
 
 export const PUBLIC_VISITOR_ID = 'public-visitor';
 
@@ -82,6 +83,9 @@ export function publicSnapshot(source: LeagueState, now = new Date()): LeagueSta
       history: [],
     }));
   const visiblePlayers = new Set([
+    ...recentResults(source, 6)
+      .filter((r) => r.kind === 'casual')
+      .flatMap((r) => [r.homeAvatarId, r.awayAvatarId]),
     ...casualResults.flatMap((r) => [...r.homePlayerIds, ...r.awayPlayerIds]),
     ...participants.flatMap((p) => p.playerIds),
     ...bookings.flatMap((b) => [b.ownerId, ...b.guestIds]),
@@ -110,6 +114,7 @@ export function publicSnapshot(source: LeagueState, now = new Date()): LeagueSta
     casualResults,
     casualResultsEnabled: source.casualResultsEnabled,
     readOnly: true,
+    recentResults: recentResults(source, 6),
     currentUserId: PUBLIC_VISITOR_ID,
     selectedSeasonId: seasons[0]?.id ?? '',
     theme: 'dark',

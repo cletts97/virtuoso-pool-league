@@ -7,6 +7,8 @@ import { createHandler } from '../src/http';
 import type { ApiCommand } from '../src/validation';
 import { availableSlots, londonDate } from '../../src/domain/bookings';
 import { addDays, standings } from '../../src/domain/rules';
+import { ResultEmailQueue } from '../src/resultEmails';
+import type { EmailMessage } from '../src/email';
 
 describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
   'disposable LOCAL Supabase integration',
@@ -63,6 +65,73 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       }
       await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[0]]);
     }, 60000);
+    it('durably retries score emails without rolling back submissions or sending stale duplicates', async () => {
+      const accepted: EmailMessage[] = [];
+      let fail = true;
+      const queue = new ResultEmailQueue(
+        pool,
+        auth,
+        {
+          send: async (message) => {
+            if (fail) throw new Error('Fake provider outage');
+            accepted.push(message);
+          },
+        },
+        true,
+        config.appUrl,
+        config.emailDomains,
+      );
+      const enabledService = new LeagueService(pool, auth, config.emailDomains, queue);
+      const resultId = crypto.randomUUID();
+      const result = {
+        id: resultId,
+        homePlayerIds: [profiles[1], profiles[3]],
+        awayPlayerIds: [profiles[2], profiles[4]],
+        playedOn: '2026-01-01',
+        bestOf: 3 as const,
+        score: { home: 2, away: 1 },
+      };
+      let state = await service.load(users[1]);
+      await enabledService.execute(users[1], { type: 'submitCasual', result }, state.revision!);
+      expect(
+        (await service.load(users[1])).casualResults!.find((r) => r.id === resultId)!.status,
+      ).toBe('pending');
+      expect((await queue.status()).pending).toBe(2);
+      fail = false;
+      await pool.query(
+        'UPDATE public.result_email_outbox SET next_attempt_at=now() WHERE match_id=$1',
+        [resultId],
+      );
+      const retried = await Promise.all([queue.flush(), queue.flush()]);
+      expect(retried.reduce((n, r) => n + r.sent, 0)).toBe(2);
+      expect(accepted).toHaveLength(2);
+      expect(new Set(accepted.map((m) => m.idempotencyKey)).size).toBe(2);
+      await queue.flush();
+      expect(accepted).toHaveLength(2);
+      const staleId = crypto.randomUUID();
+      fail = true;
+      state = await service.load(users[1]);
+      await enabledService.execute(
+        users[1],
+        { type: 'submitCasual', result: { ...result, id: staleId } },
+        state.revision!,
+      );
+      await command({ type: 'reviewCasual', id: staleId, approve: true, reason: '' }, users[2]);
+      fail = false;
+      await pool.query(
+        'UPDATE public.result_email_outbox SET next_attempt_at=now() WHERE match_id=$1',
+        [staleId],
+      );
+      expect((await queue.flush()).skipped).toBe(2);
+      expect(accepted).toHaveLength(2);
+      await expect(enabledService.resultEmailStatus(users[1], true)).rejects.toThrow(
+        'Administrator',
+      );
+      const grants = await pool.query(
+        "SELECT has_table_privilege('anon','public.result_email_outbox','SELECT') AS anon,has_table_privilege('authenticated','public.result_email_outbox','INSERT') AS client",
+      );
+      expect(grants.rows[0]).toEqual({ anon: false, client: false });
+    });
     it('manages draft enrollment, deletion and early ending without changing the schema', async () => {
       let state = await command({
         type: 'createSeason',

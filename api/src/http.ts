@@ -73,6 +73,11 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
       }
       if (request.method === 'POST' && path === '/admin/reminders')
         return json(await service.reminders(user));
+      if (
+        (request.method === 'GET' || request.method === 'POST') &&
+        path === '/admin/result-emails'
+      )
+        return json(await service.resultEmailStatus(user, request.method === 'POST'));
       if (request.method === 'POST' && path === '/admin/invitations') {
         const actor = await service.me(user);
         requireCondition(actor.role === 'admin', 403, 'Administrator access required.');

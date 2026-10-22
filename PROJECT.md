@@ -140,8 +140,8 @@ Display standings using the following columns:
 - Administrators may resolve/correct or void results with a reason. Preserve revisions; voided games cannot be reopened. Only confirmed results affect casual statistics.
 - Include disputed casual results in the administration dispute count and Fixtures & disputes queue across all dates, independent of the selected league season, with direct resolution.
 - Head-to-head compares exact singles players or doubles teams across all dates, independent of member/side order. Keep league records separate. Multiple real games on the same date are allowed.
-- Public visitors see confirmed scores/players without audit identities, history or reasons. Pending/disputed/voided games are visible only to participants and administrators.
-- Show pending opposing approvals on the dashboard and casual page. Existing season-scoped notifications/emails are unchanged; no casual emails are sent.
+- Public casual history shows confirmed scores/players without audit identities, history or reasons. Pending/disputed/voided full game records remain restricted to participants/admins; the separate public recent-results feed may show their names, score and status only.
+- Show pending opposing approvals on the dashboard and casual page. When separately enabled, Resend sends opposing players a protected review link for new submissions/resubmissions through a durable server-only outbox.
 
 ## Email Notifications
 
@@ -155,9 +155,11 @@ The application should eventually support:
 
 Email links must not bypass authentication or authorization.
 
+Score-review email uses the existing Resend provider via its API, separately configured from Supabase Auth SMTP. Queue jobs atomically with submissions, deliver after commit, deduplicate/retry with bounded leases/backoff and recheck current identity/eligibility before sending. No automatic real email or paid resource provisioning during development. See `docs/RESULT_EMAILS.md` for operator enablement and manual retry behaviour; ACS remains a future adapter option.
+
 ## Application Pages
 
-Visitors may browse the dashboard, published seasons, standings, player profiles, fixtures/results, playoffs, rules and upcoming table reservations without signing in. Sign-in is required for all changes, booking/cancellation, result actions, personal notifications, profile editing and administration. Anonymous data must be explicitly allowlisted: exclude draft seasons, unapproved scores, private account details, leave records, audit notes and private profile-photo URLs. The TV can navigate to the main public dashboard without an account.
+Visitors may browse the dashboard, published seasons, standings, player profiles, fixtures/results, playoffs, rules and upcoming table reservations without signing in. Sign-in is required for all changes, booking/cancellation, result actions, personal notifications, profile editing and administration. Anonymous data must be explicitly allowlisted: exclude draft seasons, private account details, leave records, audit notes and private profile-photo URLs. Unapproved full records remain filtered; the recent-results feed explicitly publishes names, scores and statuses for league/casual submissions, with clear unconfirmed labels. The TV can navigate to the main public dashboard without an account.
 
 1. Dashboard — current standings, upcoming fixtures, recent results, and league highlights.
 2. League Table — rankings, wins, losses, frame difference, and player statistics.
@@ -243,7 +245,7 @@ The HUD should prominently display:
    - Do not display league points.
 
 4. **Recent Results**
-   - Recently completed and approved matches.
+   - Recent league and casual submissions, including pending/confirmed/disputed and cancelled/voided scores, labelled by type and status. Exclude unpublished draft fixtures and games with no recorded score.
    - Player names and frame scores.
 
 5. **Upcoming League Fixtures**

@@ -12,12 +12,14 @@ import type { ApiCommand } from './validation';
 import { allowedEmail } from './access';
 import { AvatarStorage } from './avatars';
 import { publicSnapshot } from '../../src/data/publicSnapshot';
+import type { ResultEmailQueue } from './resultEmails';
 
 export class LeagueService {
   constructor(
     private pool: Pool,
     private auth: SupabaseClient,
     private emailDomains: string[],
+    private resultEmails?: ResultEmailQueue,
   ) {}
   async identity(token: string): Promise<User> {
     const { data, error } = await this.auth.auth.getUser(token);
@@ -157,11 +159,35 @@ export class LeagueService {
       }
       normalizeNewIds(before, next);
       await persistChanges(client, before, next);
+      await this.resultEmails?.enqueue(client, before, next);
       const saved = await readState(client, actor.id);
       saved.selectedSeasonId = next.selectedSeasonId;
       return privateSnapshot(saved);
     }, true);
+    // Scores are already committed. Provider failure must never turn a saved score into an error.
+    if (this.resultEmails?.enabled)
+      try {
+        await this.resultEmails.flush();
+      } catch {
+        console.warn('Result email delivery deferred; check the administrator email queue.');
+      }
     return new AvatarStorage(this.auth).decorate(state);
+  }
+  async resultEmailStatus(user: User, send = false) {
+    const actor = await this.me(user);
+    requireCondition(actor.role === 'admin', 403, 'Administrator access required.');
+    if (!this.resultEmails) return { enabled: false, ready: false, pending: 0, failed: 0, sent: 0 };
+    const status = await this.resultEmails.status();
+    if (send) {
+      requireCondition(
+        status.enabled && status.ready,
+        400,
+        'Configure result email delivery and apply its migration first.',
+      );
+      await this.resultEmails.flush();
+      return this.resultEmails.status();
+    }
+    return status;
   }
   async reminders(user: User) {
     return this.transaction(async (client) => {

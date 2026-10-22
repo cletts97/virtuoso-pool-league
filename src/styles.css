@@ -134,6 +134,21 @@ p {
 .muted {
   color: var(--muted);
 }
+.recent-result-meta {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.result-entry > .recent-result-meta {
+  padding: 0 20px 10px;
+}
+.recent-result-meta [data-status='confirmed'] {
+  color: var(--green);
+}
+.recent-result-meta [data-status='pending'],
+.recent-result-meta [data-status='disputed'] {
+  color: var(--accent);
+}
 .accent {
   color: var(--accent);
 }

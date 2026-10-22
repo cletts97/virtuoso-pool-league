@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { PoolClient } from 'pg';
 import type { LeagueState } from '../../src/domain/types';
+import { recentResults } from '../../src/domain/recentResults';
 
 export async function readState(client: PoolClient, actorId = ''): Promise<LeagueState> {
   const rows = async <T>(sql: string) =>
@@ -84,6 +85,7 @@ export function privateSnapshot(state: LeagueState): LeagueState {
   const actor = state.players.find((p) => p.id === state.currentUserId)!;
   return {
     ...state,
+    recentResults: recentResults(state, 6),
     casualResults: (state.casualResults ?? []).filter(
       (r) =>
         actor.role === 'admin' ||

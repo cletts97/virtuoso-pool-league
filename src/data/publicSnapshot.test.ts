@@ -43,7 +43,7 @@ describe('anonymous league snapshot', () => {
     expect(standings(season, result.fixtures)).toEqual(standings(season, state.fixtures));
   });
 
-  it('shows upcoming reservations but never pending scores or cancelled booking records', () => {
+  it('filters full pending fixture scores and cancelled booking records', () => {
     const state = createSeed('2026-10-22');
     const fixture = state.fixtures.find((f) => f.status === 'pending')!;
     const result = publicSnapshot(state, new Date('2026-10-22T12:00:00Z'));

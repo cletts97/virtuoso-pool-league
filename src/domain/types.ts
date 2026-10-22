@@ -92,6 +92,7 @@ export interface Announcement {
   createdAt: string;
 }
 export interface LeagueState {
+  recentResults?: import('./recentResults').RecentResult[];
   casualResults?: CasualResult[];
   /** False until the optional casual-results database migration is applied. */
   casualResultsEnabled?: boolean;

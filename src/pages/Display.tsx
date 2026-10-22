@@ -1,3 +1,4 @@
+import { resultLabel, resultStatus } from '../domain/recentResults';
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { BookOpen, Clock3, Trophy } from 'lucide-react';
@@ -56,6 +57,9 @@ export function Display() {
     : 3;
   const pageCount = Math.max(1, Math.ceil(upcoming.length / queueSize));
   const queuePage = Math.floor(now.getTime() / 15000) % pageCount;
+  const resultSize = data?.results.some((r) => r.home.length + r.away.length > 80) ? 2 : 3;
+  const resultPages = Math.max(1, Math.ceil((data?.results.length ?? 0) / resultSize));
+  const resultPage = Math.floor(now.getTime() / 15000) % resultPages;
   const config = data?.config;
   const open =
     config &&
@@ -225,20 +229,27 @@ export function Display() {
           <div className="tv-result-column">
             <div className="tv-section-title">
               <h2>Recent results</h2>
-              <span>Approved results</span>
+              <span>League & casual · Unconfirmed scores may change</span>
             </div>
-            {data?.results.map((r) => (
-              <div className="tv-result" key={r.id}>
-                <span>{r.home}</span>
-                <strong>
-                  {r.homeScore}
-                  <i>:</i>
-                  {r.awayScore}
-                </strong>
-                <span>{r.away}</span>
-              </div>
-            ))}
-            {!data?.results.length && <p className="tv-empty">No confirmed results yet.</p>}
+            {data?.results
+              .slice(resultPage * resultSize, (resultPage + 1) * resultSize)
+              .map((r) => (
+                <div className="tv-result-entry" key={r.kind + r.id}>
+                  <div className="tv-result">
+                    <span>{r.home}</span>
+                    <strong>
+                      {r.homeScore}
+                      <i>:</i>
+                      {r.awayScore}
+                    </strong>
+                    <span>{r.away}</span>
+                  </div>
+                  <small className="recent-result-meta">
+                    {resultLabel(r)} · <span data-status={r.status}>{resultStatus(r)}</span>
+                  </small>
+                </div>
+              ))}
+            {!data?.results.length && <p className="tv-empty">No results submitted yet.</p>}
           </div>
           <div className="tv-result-column">
             <h2 className="tv-fixtures-title">Upcoming fixtures</h2>

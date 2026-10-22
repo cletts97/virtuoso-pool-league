@@ -15,6 +15,7 @@ import { CasualResultForm } from '../components/CasualResultForm';
 import '../casual.css';
 import { canAddSeasonPlayer, seasonDeletionBlock } from '../domain/seasonManagement';
 import { SeasonLifecycleForm } from '../components/SeasonLifecycleForm';
+import { ResultEmailStatus } from '../components/ResultEmailStatus';
 
 export function Admin() {
   const { state, season, run, preferences, busy } = useLeague();
@@ -124,6 +125,7 @@ export function Admin() {
         ))}
       </div>
       <QualificationNotice />
+      {tab === 'overview' && liveMode && <ResultEmailStatus />}
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'overview' && (
           <div className="dashboard-columns">

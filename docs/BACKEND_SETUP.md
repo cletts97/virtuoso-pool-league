@@ -199,11 +199,11 @@ The full-snapshot repository suits this small office league. Reads are consisten
 
 Clients refresh every 30 seconds (paused while an edit dialog is open); successful writes update immediately. TV reads refresh every 30 seconds and show stale-data feedback on failure. This is periodic shared data, not WebSocket push. Standings reuse the same wins/frames/head-to-head rules from confirmed results; there is no points system. The baseline schema is unchanged and no new migration is required for these integrations.
 
-## Notifications and future ACS Email
+## Notifications and score-review email
 
 Domain actions create persisted in-app notices for publication, pending approval, disputes, confirmations, postponements and league announcements. Administrators can create due/overdue reminders repeatedly without duplicating that day's notices. Reminders are currently **manual**; there is no background timer/scheduler.
 
-`api/src/email.ts` defines the delivery boundary and a disabled implementation that fails explicitly. Real Azure Communication Services Email delivery, durable outbox/retry processing and automatic scheduling remain deferred. A durable outbox requires a separately reviewed migration before cloud application. Future server-only settings will include an ACS connection string/endpoint credential and verified sender address; these settings are not read by the current implementation. No paid email resources are provisioned and no fixture emails are sent. Auth invitation/reset SMTP configuration is separate from that future notification transport.
+Score-review emails now use Resend through the `EmailDelivery` boundary, with a durable outbox, leased/revision-aware delivery and bounded retries. Enable only after applying the additive queue migration and setting private Azure API variables described in [Result-email setup](RESULT_EMAILS.md). Supabase Auth SMTP remains separate. No real emails or paid resources were provisioned during development. Retries run after command requests or through the administrator queue button; there is no background scheduler. ACS remains a future transport option.
 
 ## Azure Static Web Apps Free deployment preparation
 

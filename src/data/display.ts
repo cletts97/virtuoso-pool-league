@@ -1,6 +1,7 @@
+import { recentResults, type RecentResult } from '../domain/recentResults';
 import type { BookingConfig, LeagueState } from '../domain/types';
 import { bookingEnd, isBookableFixture, todaysBookings } from '../domain/bookings';
-import { participantName, playedDate, standings } from '../domain/rules';
+import { participantName, standings } from '../domain/rules';
 
 export interface DisplayBooking {
   id: string;
@@ -26,7 +27,7 @@ export interface DisplaySnapshot {
     difference: number;
     qualifying: boolean;
   }[];
-  results: { id: string; home: string; away: string; homeScore: number; awayScore: number }[];
+  results: RecentResult[];
   fixtures: { id: string; home: string; away: string; dueDate: string; bookedAt?: string }[];
 }
 export interface DisplayRepository {
@@ -81,17 +82,7 @@ export function displaySnapshot(state: LeagueState, now = new Date()): DisplaySn
               : r.position <= 4,
           }))
       : [],
-    results: fixtures
-      .filter((f) => f.status === 'confirmed' && f.score)
-      .sort((a, b) => playedDate(b).localeCompare(playedDate(a)))
-      .slice(0, 3)
-      .map((f) => ({
-        id: f.id,
-        home: participantName(state, f.homeId),
-        away: participantName(state, f.awayId),
-        homeScore: f.score!.home,
-        awayScore: f.score!.away,
-      })),
+    results: recentResults(state, 6),
     fixtures: fixtures
       .filter((f) => isBookableFixture(f, state))
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.id.localeCompare(b.id))

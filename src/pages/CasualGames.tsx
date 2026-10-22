@@ -7,10 +7,15 @@ import type { CasualResult } from '../domain/types';
 import { Avatar, Badge, Empty, Modal, PageHeading, Section } from '../components/ui';
 import { CasualResultForm, TeamPicker } from '../components/CasualResultForm';
 import '../casual.css';
+import { recentResults, resultLabel, resultStatus } from '../domain/recentResults';
 
 export function CasualGames() {
   const { state, run, busy } = useLeague();
   const [params] = useSearchParams();
+  const linkedResultId = params.get('result');
+  const linkedPreview = recentResults(state, 6).find(
+    (r) => r.kind === 'casual' && r.id === linkedResultId,
+  );
   const user = state.players.find((p) => p.id === state.currentUserId)!;
   const players = state.players.filter(
     (p) =>
@@ -44,6 +49,7 @@ export function CasualGames() {
     .filter(
       (r) =>
         (filter === 'all' || r.status === filter) &&
+        (!linkedResultId || r.id === linkedResultId) &&
         (!playerFilter || [...r.homePlayerIds, ...r.awayPlayerIds].includes(playerFilter)),
     )
     .sort((a, b) => b.playedOn.localeCompare(a.playedOn) || b.id.localeCompare(a.id));
@@ -55,7 +61,11 @@ export function CasualGames() {
         description="Record friendly games and compare singles or doubles records. Separate from the league, across all dates."
         action={
           state.readOnly ? (
-            <Link className="button primary" to="/login">
+            <Link
+              className="button primary"
+              to="/login"
+              state={{ from: linkedResultId ? `/casual?result=${linkedResultId}` : '/casual' }}
+            >
               Sign in to record a game
             </Link>
           ) : (
@@ -70,6 +80,23 @@ export function CasualGames() {
           )
         }
       />
+      {linkedResultId && (
+        <Link className="text-link" to="/casual">
+          View all casual games
+        </Link>
+      )}
+      {linkedPreview && !results.some((r) => r.id === linkedResultId) && (
+        <div className="notice-card">
+          <h3>
+            {linkedPreview.home} {linkedPreview.homeScore} – {linkedPreview.awayScore}{' '}
+            {linkedPreview.away}
+          </h3>
+          <p>
+            {resultLabel(linkedPreview)} · {resultStatus(linkedPreview)}. Only participating players
+            or an administrator can review this result.
+          </p>
+        </div>
+      )}
       {state.casualResultsEnabled === false && (
         <p className="action-banner">
           Casual results are not available yet. Please contact the administrator.

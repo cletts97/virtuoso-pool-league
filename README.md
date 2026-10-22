@@ -57,6 +57,8 @@ In **Administration → Season & configuration**, **Add player to season** works
 
 ## Casual results
 
+Score-review email and the combined public league/casual recent-results feed are documented in [Result emails](docs/RESULT_EMAILS.md). Emails require the additive outbox migration and private Resend settings in Azure; Supabase Auth SMTP alone does not enable match emails.
+
 The new **Casual games** page supports singles/doubles submissions, opposing confirmation, disputes and separate head-to-head records. Production requires the additive database migration described in [Casual results setup](docs/CASUAL_RESULTS.md); no cloud migration has been applied automatically.
 
 ## Application features

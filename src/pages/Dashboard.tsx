@@ -1,3 +1,4 @@
+import { recentResults, resultLabel, resultStatus } from '../domain/recentResults';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -10,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLeague } from '../app/LeagueContext';
-import { canApprove, isParticipant, participantName, playedDate, standings } from '../domain/rules';
+import { canApprove, isParticipant, participantName, standings } from '../domain/rules';
 import { Avatar, Badge, Empty, PageHeading, Section, Stat } from '../components/ui';
 import { MatchCard } from '../components/MatchCard';
 import { StandingsTable } from '../components/StandingsTable';
@@ -26,9 +27,7 @@ export function Dashboard() {
   const table = standings(season, fixtures),
     leader = table[0];
   const confirmed = fixtures.filter((f) => f.status === 'confirmed');
-  const recent = seasonFixtures
-    .filter((f) => f.status === 'confirmed')
-    .sort((a, b) => playedDate(b).localeCompare(playedDate(a)));
+  const recent = recentResults(state);
   const upcoming = seasonFixtures
     .filter((f) => ['scheduled', 'postponed'].includes(f.status))
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
@@ -190,28 +189,36 @@ export function Dashboard() {
           </Section>
           <Section
             title="Recent results"
-            subtitle="The latest confirmed results."
-            link={{ to: '/fixtures?status=confirmed', label: 'All results' }}
+            subtitle="Latest league and casual scores · Unconfirmed scores may change."
+            link={{ to: '/casual', label: 'Casual history' }}
           >
             <div className="result-list">
-              {recent.slice(0, 3).map((f) => (
-                <Link key={f.id} to={`/fixtures/${f.id}`} className="result-row">
-                  <div>
-                    <Avatar id={f.homeId} />
-                    <span>{participantName(state, f.homeId)}</span>
-                  </div>
-                  <strong>
-                    {f.score?.home}
-                    <span>:</span>
-                    {f.score?.away}
-                  </strong>
-                  <div>
-                    <span>{participantName(state, f.awayId)}</span>
-                    <Avatar id={f.awayId} />
-                  </div>
-                </Link>
+              {recent.map((r) => (
+                <div className="result-entry" key={r.kind + r.id}>
+                  <Link
+                    to={r.kind === 'league' ? '/fixtures/' + r.id : '/casual?result=' + r.id}
+                    className="result-row"
+                  >
+                    <div>
+                      <Avatar id={r.homeAvatarId} />
+                      <span>{r.home}</span>
+                    </div>
+                    <strong>
+                      {r.homeScore}
+                      <span>:</span>
+                      {r.awayScore}
+                    </strong>
+                    <div>
+                      <span>{r.away}</span>
+                      <Avatar id={r.awayAvatarId} />
+                    </div>
+                  </Link>
+                  <p className="recent-result-meta">
+                    {resultLabel(r)} · <span data-status={r.status}>{resultStatus(r)}</span>
+                  </p>
+                </div>
               ))}
-              {!recent.length && <Empty title="No confirmed results yet" />}
+              {!recent.length && <Empty title="No results submitted yet" />}
             </div>
           </Section>
         </div>

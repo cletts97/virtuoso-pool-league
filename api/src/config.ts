@@ -7,6 +7,9 @@ export interface ApiConfig {
   allowAuthEmail: boolean;
   publicDisplay: boolean;
   databaseCa?: string;
+  allowResultEmail: boolean;
+  resendKey?: string;
+  resultEmailFrom?: string;
 }
 export function readConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   const required = (name: string) => {
@@ -16,6 +19,13 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   };
   const supabaseUrl = required('SUPABASE_URL');
   const appUrl = required('APP_URL');
+  const allowResultEmail = env.ALLOW_RESULT_EMAIL === 'true';
+  if (allowResultEmail) {
+    required('RESEND_API_KEY');
+    const from = required('RESULT_EMAIL_FROM');
+    if (/[\r\n]/.test(from) || !/^[^<>\s@]+@[^<>\s@]+\.[^<>\s@]+$/.test(from))
+      throw new Error('RESULT_EMAIL_FROM must be a verified sender email address.');
+  }
   for (const value of [supabaseUrl, appUrl]) {
     const url = new URL(value);
     if (
@@ -36,5 +46,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     allowAuthEmail: env.ALLOW_AUTH_EMAIL === 'true',
     publicDisplay: env.PUBLIC_DISPLAY_ENABLED === 'true',
     databaseCa: env.DATABASE_CA_CERT,
+    allowResultEmail,
+    resendKey: env.RESEND_API_KEY,
+    resultEmailFrom: env.RESULT_EMAIL_FROM,
   };
 }
