@@ -4,7 +4,8 @@
   --font-sans: 'Segoe UI', 'Inter', Arial, sans-serif;
 }
 :root {
-  font-family: var(--font-sans);
+  /* Tailwind's layered @theme is ignored by older TV engines. */
+  font-family: var(--font-sans, 'Segoe UI', Arial, sans-serif);
   color: #edf0f5;
   background: #0c121c;
   font-synthesis: none;
@@ -45,6 +46,18 @@
 }
 * {
   box-sizing: border-box;
+}
+/* Keep accessible labels visually hidden even without Tailwind's cascade layers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 body {
   margin: 0;

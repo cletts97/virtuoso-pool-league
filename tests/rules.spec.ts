@@ -1,6 +1,68 @@
 import { expect, test } from '@playwright/test';
 import type { LeagueState } from '../src/domain/types';
 
+test('TV font and spacing fallbacks work without theme variables or flex gap', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-10-22T09:05:00Z') });
+  for (const height of [1080, 900]) {
+    await page.setViewportSize({ width: 1920, height });
+    await page.goto('/display');
+    await expect(page.locator('.tv-booking-row').first()).toBeVisible();
+    // Simulate the missing CSS features; this is not an emulation of the webOS engine.
+    await expect(page.locator('html')).not.toHaveClass(/no-flex-gap/);
+    await page.evaluate(() => {
+      document.documentElement.classList.add('no-flex-gap');
+      document.documentElement.style.setProperty('--font-sans', 'initial');
+      document.querySelectorAll('.tv-display *').forEach((element) => {
+        if (
+          element instanceof HTMLElement &&
+          /^(inline-)?flex$/.test(getComputedStyle(element).display)
+        )
+          element.style.gap = '0px';
+      });
+    });
+    expect(
+      await page.locator('.tv-display').evaluate((el) => getComputedStyle(el).fontFamily),
+    ).toContain('Arial');
+    expect(await page.locator('body').evaluate((el) => getComputedStyle(el).fontFamily)).toContain(
+      'Arial',
+    );
+    expect(
+      await page.locator('caption').evaluate((el) => el.getBoundingClientRect().width),
+    ).toBeLessThanOrEqual(1);
+    expect(
+      await page.locator('.tv-current .eyebrow').evaluate((el) => {
+        const dot = el.querySelector('.live-dot')!.getBoundingClientRect();
+        const text = [...el.childNodes].find(
+          (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+        )!;
+        const range = document.createRange();
+        range.selectNodeContents(text);
+        return range.getBoundingClientRect().left - dot.right;
+      }),
+    ).toBeGreaterThanOrEqual(7);
+    expect(
+      await page
+        .locator('.tv-booking-row')
+        .first()
+        .evaluate(
+          (el) =>
+            el.querySelector('div')!.getBoundingClientRect().left -
+            el.querySelector('strong')!.getBoundingClientRect().right,
+        ),
+    ).toBeGreaterThanOrEqual(8);
+    expect(
+      await page
+        .locator('.tv-grid > *')
+        .evaluateAll((cards) =>
+          cards
+            .filter((card) => card.scrollHeight > card.clientHeight + 1)
+            .map((card) => card.className),
+        ),
+    ).toEqual([]);
+    await page.screenshot({ path: `.tools/screenshots/display-css-fallback-${height}.png` });
+  }
+});
+
 test('short desktop viewports contain the TV QR tile and administrator sidebar footer', async ({
   page,
 }) => {

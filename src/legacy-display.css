@@ -1,0 +1,74 @@
+/* Only engines without flex gap receive these spacing fallbacks. */
+.no-flex-gap .tv-display {
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+}
+.no-flex-gap .tv-display h1,
+.no-flex-gap .tv-display h2,
+.no-flex-gap .tv-display h3,
+.no-flex-gap .tv-display strong {
+  font-weight: 700;
+}
+.no-flex-gap .tv-brand i {
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+.no-flex-gap .tv-header-actions > * + * {
+  margin-left: 2vw;
+}
+.no-flex-gap .tv-current .live-dot,
+.no-flex-gap .tv-section-title h2 > svg,
+.no-flex-gap .rule-reminders h2 > svg {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.no-flex-gap .tv-rules-link > svg {
+  margin-right: 9px;
+}
+.no-flex-gap .tv-legend > .qualification-dot {
+  margin-right: 7px;
+}
+.no-flex-gap .tv-booking-row > strong {
+  margin-right: 0.9vw;
+}
+.no-flex-gap .tv-countdown > strong {
+  margin-right: 16px;
+}
+.no-flex-gap .tv-result > strong {
+  margin: 0 0.8vw;
+}
+.no-flex-gap .tv-section-title > span {
+  margin-top: 0.5vh;
+}
+.no-flex-gap .tv-fixture > small {
+  margin-top: 6px;
+}
+.no-flex-gap .tv-qr > div {
+  margin-top: 1.4vh;
+}
+/* Older grid implementations use the original grid-gap property names. */
+.no-flex-gap .tv-grid {
+  grid-gap: 1vw;
+}
+.no-flex-gap .tv-results {
+  grid-column-gap: 2vw;
+}
+.no-flex-gap .tv-display .rule-reminders ol {
+  grid-gap: 1vw;
+}
+@media (min-width: 701px) and (max-height: 950px) {
+  .no-flex-gap .tv-qr > div {
+    margin-top: 0;
+  }
+}
+@media (max-width: 700px) {
+  .no-flex-gap .tv-header-actions > * + * {
+    margin-left: 12px;
+  }
+  .no-flex-gap .tv-grid > * + * {
+    margin-top: 16px;
+  }
+  .no-flex-gap .tv-display .rule-reminders ol {
+    grid-gap: 16px;
+  }
+}

@@ -20,9 +20,13 @@ import { AuthGate } from './auth/AuthGate';
 import { AuthLanding } from './auth/AuthLanding';
 import { SignIn, AuthCallback } from './auth/AuthPages';
 import { Empty } from './components/ui';
+import { applyBrowserCompatibility } from './app/browserCompatibility';
 import './styles.css';
 import './bookings.css';
 import './rules.css';
+import './legacy-display.css';
+
+applyBrowserCompatibility();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

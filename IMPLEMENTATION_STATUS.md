@@ -1,5 +1,11 @@
 # Implementation status — Virtuoso Pool League
 
+## Older TV font and spacing fallbacks — 22 October 2026
+
+- Fixed the root font's dependency on Tailwind's layered theme by providing a direct sans-serif fallback. Added an unlayered accessible-label style so older engines visually hide the standings caption, and explicit reminder-list padding/margins to replace missing base resets.
+- A small startup measurement detects actual flex-gap support (CSS.supports alone cannot distinguish grid and flex support). Only browsers missing it receive the `no-flex-gap` class: TV Arial/sans-serif typography with standard bold weights, explicit margins between status dots/icons/text, booking times/names, header actions and other flex content, plus original grid-gap aliases. Modern browsers retain their existing TV styles.
+- Validation: TypeScript, targeted ESLint and whitespace checks passed. Three focused desktop browser tests passed: simulated missing theme/flex-gap support at 1920×1080 and 1920×900, existing four-viewport TV/QR/sidebar containment, and 1080p long names/current bookings. Reviewed the fallback screenshot. Simulation is not an actual webOS browser test; the TV needs checking after the next deployment. No full suite, production build, commit, push or deployment performed.
+
 ## Dashboard playing-rule reminders — 22 October 2026
 
 - Added a shared four-rule reminder panel to the main dashboard and `/display`, preserving the owner's supplied wording for opponent-ball fouls, the cushion rule, foul snookers and playing from baulk. Both link to the full rules, with TV return navigation preserved. Main dashboard reminders use four/two/one columns as space decreases.
