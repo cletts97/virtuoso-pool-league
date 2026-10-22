@@ -29,6 +29,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   }),
   z.strictObject({ type: z.literal('resolveCasual'), id, score, reason: text.max(300) }),
   z.strictObject({ type: z.literal('voidCasual'), id, reason: text.max(300) }),
+  z.strictObject({ type: z.literal('deleteUser'), id }),
   z.strictObject({ type: z.literal('updateProfile'), name: text.max(70) }),
   z.strictObject({ type: z.literal('submit'), fixtureId: id, score }),
   z.strictObject({

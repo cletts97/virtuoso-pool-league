@@ -26,7 +26,8 @@ Keep operating costs as close to zero as reasonably possible.
 ### Players
 
 - Initially support approximately 10–14 players.
-- Support adding, editing, and deactivating players.
+- Support adding, editing, and deactivating players. User editing does not require or display a department.
+- Administrators may delete another user with explicit Yes/No confirmation. Remove the Supabase Auth account and private profile photo, prevent future access/reactivation, cancel their future owned reservations, and remove them from user management. Retain an inactive anonymized “Deleted user” profile and competition entries to preserve match records and immutable audit references. Do not permit self-deletion. This is account deletion, not erasure of competition history.
 - The Players directory lists every active user by default, including casual-only colleagues and users without season membership. Profiles accept both account and existing competition-entry links.
 - Player cards and profiles show confirmed individual league and playoff totals, form, history and head-to-head records across all published seasons, independent of the season selector. Combine separate competition entries belonging to the same account; exclude drafts, unconfirmed/invalid results and duplicate fixtures. Casual records remain separate. Users without league matches show zero statistics.
 - League standings remain specific to the selected season.

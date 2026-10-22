@@ -7,7 +7,7 @@ export async function readState(client: PoolClient, actorId = ''): Promise<Leagu
   const rows = async <T>(sql: string) =>
     (await client.query<T & Record<string, unknown>>(sql)).rows as T[];
   const players = await rows<LeagueState['players'][number]>(
-    'SELECT id,name,department,role,active,color FROM public.profiles ORDER BY id',
+    'SELECT id,name,department,role,active,color,(auth_user_id IS NULL) AS deleted FROM public.profiles ORDER BY id',
   );
   const participants = await rows<LeagueState['participants'][number]>(`SELECT id,name,kind,
     coalesce((SELECT json_agg(profile_id ORDER BY member_order) FROM public.participant_members WHERE participant_id=p.id),'[]') AS "playerIds" FROM public.participants p ORDER BY id`);

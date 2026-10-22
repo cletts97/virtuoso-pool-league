@@ -431,7 +431,6 @@ test('admin manages players and notices without unavailability controls', async 
   await page.getByRole('tab', { name: 'Players', exact: true }).click();
   await page.getByRole('button', { name: 'Add player' }).click();
   await page.getByLabel('Full name').fill('Robin Hayes');
-  await page.getByLabel('Department', { exact: true }).fill('Engineering');
   await page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('tabpanel').getByText('Robin Hayes', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Edit Robin Hayes' }).click();
@@ -554,4 +553,32 @@ test('player directory includes casual-only users and all-season stats without r
   await page.locator('a.player-card[href="/players/p01"]').click();
   await expect(page.locator('.profile-hero h1')).toHaveText('Alex Morgan');
   await expect(page.locator('.stats-grid')).toContainText('0%');
+});
+
+test('administrator deletes a user with Yes/No confirmation and no department field', async ({
+  page,
+}) => {
+  await page.goto('/admin');
+  await page.getByRole('tab', { name: 'Players', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit Oliver Grant', exact: true }).click();
+  await expect(page.getByRole('dialog').getByLabel('Department', { exact: true })).toHaveCount(0);
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete Oliver Grant', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'No', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Delete Oliver Grant', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Delete Oliver Grant', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Yes, delete user', exact: true })
+    .click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete Oliver Grant', exact: true })).toHaveCount(
+    0,
+  );
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Delete Oliver Grant', exact: true })).toHaveCount(
+    0,
+  );
 });

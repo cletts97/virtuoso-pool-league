@@ -21,6 +21,7 @@ export function Admin() {
   const { state, season, run, preferences, busy } = useLeague();
   const [tab, setTab] = useState('overview');
   const [modal, setModal] = useState<
+    | 'deleteUser'
     | 'player'
     | 'season'
     | 'settings'
@@ -306,36 +307,49 @@ export function Admin() {
               )}
             </div>
             <div className="admin-list">
-              {state.players.map((p) => (
-                <div className="managed-player" key={p.id}>
-                  <Avatar id={p.id} />
-                  <div>
-                    <strong>{p.name}</strong>
-                    <small>
-                      {p.department} ·{' '}
-                      {p.role === 'admin'
-                        ? 'Administrator'
-                        : p.role === 'colleague'
-                          ? 'Casual colleague'
-                          : 'Player'}
-                    </small>
+              {state.players
+                .filter((p) => !p.deleted)
+                .map((p) => (
+                  <div className="managed-player" key={p.id}>
+                    <Avatar id={p.id} />
+                    <div>
+                      <strong>{p.name}</strong>
+                      <small>
+                        {p.role === 'admin'
+                          ? 'Administrator'
+                          : p.role === 'colleague'
+                            ? 'Casual colleague'
+                            : 'Player'}
+                      </small>
+                    </div>
+                    <span className={`badge ${p.active ? 'badge-confirmed' : 'badge-cancelled'}`}>
+                      {p.active ? 'Active' : 'Inactive'}
+                    </span>
+                    <button
+                      className="button secondary small"
+                      onClick={() => {
+                        setEditing(p);
+                        setModal('player');
+                      }}
+                      aria-label={`Edit ${p.name}`}
+                    >
+                      <Edit3 size={14} />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      className="button danger small"
+                      disabled={p.id === user.id}
+                      title={p.id === user.id ? 'You cannot delete your own account' : undefined}
+                      aria-label={`Delete ${p.name}`}
+                      onClick={() => {
+                        setEditing(p);
+                        setModal('deleteUser');
+                      }}
+                    >
+                      Delete
+                    </button>
                   </div>
-                  <span className={`badge ${p.active ? 'badge-confirmed' : 'badge-cancelled'}`}>
-                    {p.active ? 'Active' : 'Inactive'}
-                  </span>
-                  <button
-                    className="button secondary small"
-                    onClick={() => {
-                      setEditing(p);
-                      setModal('player');
-                    }}
-                    aria-label={`Edit ${p.name}`}
-                  >
-                    <Edit3 size={14} />
-                    <span>Edit</span>
-                  </button>
-                </div>
-              ))}
+                ))}
             </div>
           </Section>
         )}
@@ -430,6 +444,26 @@ export function Admin() {
           resolve
           onClose={() => setCasualResultId(undefined)}
         />
+      )}
+      {modal === 'deleteUser' && editing && (
+        <Confirm
+          title={`Delete ${editing.name}?`}
+          label="Yes, delete user"
+          cancelLabel="No"
+          onClose={close}
+          onConfirm={() => {
+            void run(
+              { type: 'deleteUser', id: editing.id },
+              'User account deleted. Match history has been preserved.',
+            ).then((ok) => {
+              if (ok) close();
+            });
+          }}
+        >
+          This permanently removes their sign-in account and profile photo and cancels their future
+          table reservations. Their name is replaced with “Deleted user” in retained match records.
+          This cannot be undone.
+        </Confirm>
       )}
       {modal === 'player' && <PlayerForm player={editing} onClose={close} />}{' '}
       {modal === 'season' && <SeasonForm onClose={close} />}{' '}

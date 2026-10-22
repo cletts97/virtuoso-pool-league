@@ -203,6 +203,23 @@ export class LeagueService {
         throw new ApiError(400, e instanceof Error ? e.message : 'Invalid command.');
       }
       normalizeNewIds(before, next);
+      if (command.type === 'deleteUser') {
+        const target = await client.query<{ auth_user_id: string | null }>(
+          'SELECT auth_user_id FROM public.profiles WHERE id=$1',
+          [command.id],
+        );
+        requireCondition(target.rows[0], 404, 'User not found.');
+        // Storage-owned objects must be removed before deleting the Auth identity.
+        await new AvatarStorage(this.auth).save(command.id, null);
+        if (target.rows[0].auth_user_id) {
+          const { error } = await this.auth.auth.admin.deleteUser(target.rows[0].auth_user_id);
+          requireCondition(
+            !error,
+            503,
+            'The sign-in account could not be deleted. Please try again.',
+          );
+        }
+      }
       await persistChanges(client, before, next);
       await this.resultEmails?.enqueue(client, before, next);
       const saved = await readState(client, actor.id);

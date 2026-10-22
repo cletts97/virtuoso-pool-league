@@ -516,11 +516,37 @@ export function executeCommand(
       season.qualifiers = qualifiers;
       break;
     }
+    case 'deleteUser': {
+      const player = state.players.find((p) => p.id === command.id);
+      invariant(player, 'User not found.');
+      invariant(player.id !== actor.id, 'You cannot delete your own account.');
+      player.active = false;
+      player.deleted = true;
+      player.name = 'Deleted user';
+      player.department = '';
+      delete player.avatarUrl;
+      for (const entry of state.participants) {
+        if (!entry.playerIds.includes(player.id)) continue;
+        entry.name = entry.playerIds
+          .map((id) => state.players.find((p) => p.id === id)?.name ?? 'Deleted user')
+          .join(' & ');
+      }
+      for (const booking of state.bookings)
+        if (
+          booking.ownerId === player.id &&
+          booking.status === 'reserved' &&
+          new Date(booking.startAt).getTime() + booking.duration * 60000 > Date.now()
+        )
+          booking.status = 'cancelled';
+      break;
+    }
     case 'savePlayer': {
       const name = text(command.name, 'Player name', 70),
-        department = text(command.department, 'Department', 70);
+        department = command.department.trim();
+      invariant(department.length <= 70, 'Department must be at most 70 characters.');
       const player = state.players.find((p) => p.id === command.id);
       if (player) {
+        invariant(!player.deleted, 'Deleted accounts cannot be edited or reactivated.');
         invariant(
           player.id !== actor.id || command.active,
           'You cannot deactivate the current administrator.',

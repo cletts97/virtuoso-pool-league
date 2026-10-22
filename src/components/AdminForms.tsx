@@ -20,13 +20,12 @@ function FormActions({ onClose, label = 'Save changes' }: { onClose(): void; lab
 export function PlayerForm({ player, onClose }: { player?: Player; onClose(): void }) {
   const { run } = useLeague();
   const [name, setName] = useState(player?.name ?? '');
-  const [department, setDepartment] = useState(player?.department ?? '');
   const [active, setActive] = useState(player?.active ?? true);
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (
       await run(
-        { type: 'savePlayer', id: player?.id, name, department, active },
+        { type: 'savePlayer', id: player?.id, name, department: player?.department ?? '', active },
         player
           ? 'Player updated. Historical results are preserved.'
           : 'Player added. Include them when creating a new season.',
@@ -40,15 +39,6 @@ export function PlayerForm({ player, onClose }: { player?: Player; onClose(): vo
         <label>
           Full name
           <input value={name} onChange={(e) => setName(e.target.value)} required maxLength={70} />
-        </label>
-        <label>
-          Department
-          <input
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-            required
-            maxLength={70}
-          />
         </label>
         {player && (
           <label className="checkbox-label">

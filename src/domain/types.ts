@@ -5,6 +5,8 @@ export interface Player {
   department: string;
   role: 'player' | 'admin' | 'colleague';
   active: boolean;
+  /** Retained historical identity after its sign-in account was deleted. */
+  deleted?: boolean;
   color: number;
   /** Short-lived private Storage URL, supplied by the API; never persisted in league tables. */
   avatarUrl?: string;

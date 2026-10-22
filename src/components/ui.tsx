@@ -167,12 +167,14 @@ export function Confirm({
   onClose,
   onConfirm,
   label = 'Confirm',
+  cancelLabel = 'Cancel',
 }: {
   title: string;
   children: ReactNode;
   onClose(): void;
   onConfirm(): void;
   label?: string;
+  cancelLabel?: string;
 }) {
   const { busy } = useLeague();
   return (
@@ -180,7 +182,7 @@ export function Confirm({
       <p className="muted mb-6">{children}</p>
       <div className="form-actions">
         <button className="button secondary" onClick={onClose}>
-          Cancel
+          {cancelLabel}
         </button>
         <button disabled={busy} className="button danger" onClick={onConfirm}>
           {label}

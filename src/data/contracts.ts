@@ -6,6 +6,7 @@ import type { SeasonLifecycleCommand } from './seasonCommands';
 export type LeagueCommand =
   | SeasonLifecycleCommand
   | CasualCommand
+  | { type: 'deleteUser'; id: string }
   | { type: 'updateProfile'; name: string }
   | { type: 'enrolPlayer'; id: string }
   | { type: 'addSeasonPlayer'; seasonId: string; playerId: string; dueDate: string }

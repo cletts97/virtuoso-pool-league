@@ -1,5 +1,12 @@
 # Implementation status — Virtuoso Pool League
 
+## Administrator user deletion and simpler editing — 22 October 2026
+
+- Removed Department from the administrator user form and management list. Existing department values are preserved on save; blank values are valid for new demo users. No column or schema changes.
+- Added Delete beside each managed user, with Yes/No confirmation explaining the permanent account removal and retained history. Self-deletion is disabled and enforced by shared commands/server authorization. Ordinary users cannot delete accounts. Deleted users disappear from user management and cannot be edited/reactivated.
+- API removes the private profile photo and Supabase Auth identity; the existing database trigger clears auth_user_id and deactivates the profile, so existing tokens lose API access. Retains an anonymized “Deleted user” profile/competition entries to satisfy existing foreign keys and append-only history. Cancels future/current owned reservations without deleting match results. Mock mode follows the same visible workflow; API snapshots derive deleted status from the existing Auth mapping. Auth/Storage deletion and PostgreSQL persistence span separate services and cannot be rolled back as one transaction; deletion errors are surfaced instead of reporting success. No new permissions, migration or service settings.
+- Validation: 28 focused command/security unit tests, one disposable local Supabase integration test (19 unrelated tests skipped), two desktop admin browser checks, TypeScript, targeted ESLint and the API production build passed. Integration covers administrator authorization, self-deletion, actual Auth deletion, old-token rejection, inactive retained profile and blocked reactivation. Browser checks cover the removed field, No cancellation, Yes deletion, refresh persistence and existing player editing. No full suite, cloud changes, commit or deployment.
+
 ## All-active-user directory and historical league records — 22 October 2026
 
 - Players now lists all active accounts alphabetically, including casual-only users without competition entries. Cards link to account IDs; legacy competition-entry profile links continue working. Directory and profiles work without any season. Removed selected-season ranks from player cards and profiles; league standings remain unchanged.

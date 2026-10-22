@@ -871,7 +871,28 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       expect(JSON.stringify(display)).not.toContain('auth_user_id');
     });
     it('rejects deleted Auth users even with a previously valid access token and preserves their profile', async () => {
-      await auth.auth.admin.deleteUser(users[4].id);
+      const bucket = await auth.storage.createBucket('profile-photos', { public: false });
+      if (bucket.error && !bucket.error.message.toLowerCase().includes('already exists'))
+        throw bucket.error;
+      await expect(command({ type: 'deleteUser', id: profiles[4] }, users[1])).rejects.toThrow(
+        'Administrator',
+      );
+      await expect(command({ type: 'deleteUser', id: profiles[0] })).rejects.toThrow('own account');
+      const deleted = await command({ type: 'deleteUser', id: profiles[4] });
+      expect(deleted.players.find((p) => p.id === profiles[4])).toMatchObject({
+        name: 'Deleted user',
+        active: false,
+        deleted: true,
+      });
+      await expect(
+        command({
+          type: 'savePlayer',
+          id: profiles[4],
+          name: 'Restore',
+          department: '',
+          active: true,
+        }),
+      ).rejects.toThrow('Deleted accounts');
       expect(
         (
           await handler(
