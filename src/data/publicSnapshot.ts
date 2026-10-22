@@ -92,14 +92,14 @@ export function publicSnapshot(source: LeagueState, now = new Date()): LeagueSta
     ...bookings.flatMap((b) => [b.ownerId, ...b.guestIds]),
   ]);
   const players: Player[] = source.players
-    .filter((p) => visiblePlayers.has(p.id))
+    .filter((p) => p.active || visiblePlayers.has(p.id))
     .map((p) => ({
       id: p.id,
       name: p.name,
       color: p.color,
       department: '',
       role: 'player',
-      active: true,
+      active: p.active,
     }));
   // A non-account visitor keeps existing presentation components compatible; no Auth identity.
   players.push({

@@ -1,5 +1,12 @@
 # Implementation status — Virtuoso Pool League
 
+## All-active-user directory and historical league records — 22 October 2026
+
+- Players now lists all active accounts alphabetically, including casual-only users without competition entries. Cards link to account IDs; legacy competition-entry profile links continue working. Directory and profiles work without any season. Removed selected-season ranks from player cards and profiles; league standings remain unchanged.
+- Added centralized individual league statistics across published seasons, including playoffs. Aggregate separate entries for the same account, deduplicate fixture IDs and count only confirmed valid results. Show all-season totals, recent form, history, upcoming matches and league head-to-head records; casual statistics stay separate. Profile performance history names the season in each result tooltip. No new database query, migration or dependency.
+- Anonymous allowlisted snapshots now include all active users' public names, IDs and avatar colours, retaining actual active status for historical users; private account fields, departments and photo URLs stay excluded. Deploy frontend and API together for anonymous-directory support.
+- Validation: 28 focused player-statistics/public-privacy/standings unit tests, one focused desktop browser check, TypeScript and targeted ESLint passed. Browser check covers casual-only profiles, independence from the season selector, and directory/profile access without seasons. No full suite, production build, cloud changes, commit or deployment.
+
 ## Supabase Cron newsletters and result follow-up — 22 October 2026
 
 - Implemented secret-protected HTTP automation endpoints on the existing Azure API. `AUTOMATION_ENABLED` defaults false; `AUTOMATION_SECRET` is a separate minimum-32-character key, compared using fixed-size constant-time hashes. Normal Supabase user/admin sessions do not authorize scheduler requests. Runtime configuration supplies the application origin; no client-submitted recipients, clocks or results are accepted.

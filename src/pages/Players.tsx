@@ -2,24 +2,23 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Search, Target, TrendingUp, Trophy } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
-import { participantName, playedDate, standings, winner } from '../domain/rules';
+import { playedDate, winner } from '../domain/rules';
 import { Avatar, Empty, FormDots, PageHeading, Section, Stat } from '../components/ui';
+import { playerLeagueFixtures, playerLeagueStats } from '../domain/playerStats';
 import { MatchCard } from '../components/MatchCard';
 
 export function Players() {
-  const { state, season } = useLeague();
+  const { state } = useLeague();
   const [query, setQuery] = useState('');
-  const rows = standings(season, state.fixtures);
-  const entries = state.participants.filter(
-    (p) =>
-      season.participantIds.includes(p.id) && p.name.toLowerCase().includes(query.toLowerCase()),
-  );
+  const entries = state.players
+    .filter((p) => p.active && p.name.toLowerCase().includes(query.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
   return (
     <>
       <PageHeading
         eyebrow="PLAYER DIRECTORY"
         title="Players"
-        description={`${season.participantIds.length} players in the selected season.`}
+        description="All active users · Confirmed league and playoff records across all seasons."
       />
       <div className="filter-bar">
         <Search size={18} />
@@ -35,12 +34,12 @@ export function Players() {
       </div>
       <div className="player-grid">
         {entries.map((p) => {
-          const row = rows.find((r) => r.participantId === p.id)!;
-          const player = state.players.find((u) => p.playerIds.includes(u.id));
+          const row = playerLeagueStats(state, p.id);
+          const player = p;
           return (
             <Link key={p.id} to={`/players/${p.id}`} className="player-card">
               <div className="player-card-top">
-                <span className="player-rank">#{row.position} IN THE LEAGUE</span>
+                <span className="player-rank">ALL SEASONS</span>
                 <ArrowUpRight size={18} />
               </div>
               <Avatar id={p.id} large />
@@ -79,19 +78,25 @@ export function Players() {
 }
 export function PlayerProfile() {
   const { id } = useParams();
-  const { state, season } = useLeague();
+  const { state } = useLeague();
   const [opponentId, setOpponentId] = useState('');
-  const participant = state.participants.find((p) => p.id === id);
+  const entry = state.participants.find((p) => p.id === id && p.kind === 'individual');
+  const player = state.players.find((p) => p.id === id || p.id === entry?.playerIds[0]);
+  const participant = player
+    ? { id: entry?.id ?? player.id, name: player.name, playerIds: [player.id] }
+    : undefined;
   if (!participant)
     return (
       <Empty title="Player not found">
         <Link to="/players">View all players</Link>
       </Empty>
     );
-  const player = state.players.find((p) => participant.playerIds.includes(p.id));
-  const row = standings(season, state.fixtures).find((r) => r.participantId === participant.id);
-  const fixtures = state.fixtures.filter(
-    (f) => f.seasonId === season.id && [f.homeId, f.awayId].includes(participant.id),
+  const row = playerLeagueStats(state, player!.id);
+  const fixtures = playerLeagueFixtures(state, player!.id);
+  const entryIds = new Set(
+    state.participants
+      .filter((p) => p.kind === 'individual' && p.playerIds[0] === player!.id)
+      .map((p) => p.id),
   );
   const history = fixtures
     .filter((f) => f.status === 'confirmed')
@@ -99,17 +104,20 @@ export function PlayerProfile() {
   const upcoming = fixtures
     .filter((f) => ['scheduled', 'postponed', 'pending', 'disputed'].includes(f.status))
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-  const opponents = state.participants.filter(
-    (p) => p.id !== id && season.participantIds.includes(p.id),
-  );
+  const opponents = state.players.filter((p) => p.id !== player!.id && p.active);
   const opponent = opponentId || opponents[0]?.id;
-  const h2h = state.fixtures.filter(
+  const opponentEntries = new Set(
+    state.participants
+      .filter((p) => p.kind === 'individual' && p.playerIds[0] === opponent)
+      .map((p) => p.id),
+  );
+  const h2h = fixtures.filter(
     (f) =>
       f.status === 'confirmed' &&
-      [f.homeId, f.awayId].includes(participant.id) &&
-      [f.homeId, f.awayId].includes(opponent),
+      winner(f) &&
+      [f.homeId, f.awayId].some((id) => opponentEntries.has(id)),
   );
-  const wins = h2h.filter((f) => winner(f) === participant.id).length;
+  const wins = h2h.filter((f) => entryIds.has(winner(f)!)).length;
   return (
     <>
       <Link className="back-link" to="/players">
@@ -121,31 +129,25 @@ export function PlayerProfile() {
         <div>
           <span className="eyebrow">{player?.department}</span>
           <h1>{participant.name}</h1>
-          <p>{row ? `#${row.position} in ${season.name}` : `Not entered in ${season.name}`}</p>
+          <p>Confirmed league and playoff results · All seasons</p>
           <FormDots form={row?.form ?? []} />
         </div>
         <div className="profile-badge">
           <Trophy size={28} />
-          <span>
-            {season.qualifiers.includes(participant.id)
-              ? 'CONFIRMED QUALIFIER'
-              : !season.qualifiers.length && row && row.position <= 4
-                ? 'PROVISIONAL TOP FOUR'
-                : 'SEASON PARTICIPANT'}
-          </span>
+          <span>ALL SEASONS</span>
         </div>
       </div>
       <div className="stats-grid">
         <Stat
           label="Matches won"
           value={row?.won ?? 0}
-          detail={`${row?.played ?? 0} regular-season matches played`}
+          detail={`${row?.played ?? 0} league and playoff matches played`}
           icon={<Trophy size={18} />}
         />
         <Stat
           label="Matches lost"
           value={row?.lost ?? 0}
-          detail="Regular-season matches lost"
+          detail="Across all seasons"
           icon={<Target size={18} />}
         />
         <Stat
@@ -164,8 +166,8 @@ export function PlayerProfile() {
       <div className="dashboard-columns">
         <div className="stack">
           <Section
-            title="Season performance"
-            subtitle="Regular-season wins and losses, round by round."
+            title="League history"
+            subtitle="Confirmed league and playoff results across all seasons."
           >
             <div
               className="performance-chart"
@@ -173,23 +175,28 @@ export function PlayerProfile() {
               aria-label={`${row?.won ?? 0} wins and ${row?.lost ?? 0} losses`}
             >
               {fixtures
-                .filter((f) => f.stage === 'regular')
+                .filter((f) => f.status === 'confirmed')
                 .map((f) => (
                   <div key={f.id} className="performance-round">
                     <Link
                       to={`/fixtures/${f.id}`}
-                      title={`Round ${f.round}: ${f.status}`}
-                      className={`performance-bar ${f.status === 'confirmed' ? (winner(f) === id ? 'win' : 'loss') : ''}`}
+                      title={`${state.seasons.find((s) => s.id === f.seasonId)?.name} · Round ${f.round}: ${f.status}`}
+                      className={`performance-bar ${f.status === 'confirmed' ? (entryIds.has(winner(f)!) ? 'win' : 'loss') : ''}`}
                     >
-                      {f.status === 'confirmed' ? (winner(f) === id ? 'W' : 'L') : '·'}
+                      {f.status === 'confirmed' ? (entryIds.has(winner(f)!) ? 'W' : 'L') : '·'}
                     </Link>
                     <span>{f.round}</span>
                   </div>
                 ))}
             </div>
-            <div className="panel-footnote">Round number · Confirmed results only</div>
+            <div className="panel-footnote">
+              Round number · All seasons · Confirmed results only
+            </div>
           </Section>
-          <Section title="Match history" subtitle="Regular season and playoff results.">
+          <Section
+            title="Match history"
+            subtitle="All seasons · Regular season and playoff results."
+          >
             <div className="match-grid two">
               {history.map((f) => (
                 <MatchCard key={f.id} fixture={f} compact />
@@ -220,7 +227,9 @@ export function PlayerProfile() {
               <div>
                 <Avatar id={opponent ?? ''} />
                 <strong>{h2h.length - wins}</strong>
-                <span>{participantName(state, opponent).split(' ')[0]}</span>
+                <span>
+                  {opponents.find((p) => p.id === opponent)?.name.split(' ')[0] ?? 'No opponent'}
+                </span>
               </div>
             </div>
             <p className="panel-footnote">{h2h.length} confirmed meetings</p>
@@ -236,8 +245,8 @@ export function PlayerProfile() {
               {!upcoming.length && <Empty title="No upcoming fixtures" />}
             </div>
             {upcoming.length > 4 && (
-              <Link className="text-link panel-footnote" to={`/fixtures?player=${id}`}>
-                View all {upcoming.length} outstanding fixtures
+              <Link className="text-link panel-footnote" to="/fixtures">
+                Browse fixtures by season
                 <ArrowUpRight size={14} />
               </Link>
             )}

@@ -528,3 +528,30 @@ test('small phones and tablets retain navigation and contain wide tables', async
     }
   }
 });
+
+test('player directory includes casual-only users and all-season stats without requiring a season', async ({
+  page,
+}) => {
+  await page.goto('/players');
+  await expect(page.locator('.player-card')).toHaveCount(13);
+  const alexCard = page.locator('a.player-card[href="/players/p01"]');
+  const before = await alexCard.locator('.player-card-stats').textContent();
+  await page.getByLabel('Select season').selectOption('summer-2026');
+  await expect(alexCard.locator('.player-card-stats')).toHaveText(before!);
+  await page.locator('a.player-card[href="/players/colleague-01"]').click();
+  await expect(page.locator('.profile-hero h1')).toContainText('Riley');
+  await expect(page.locator('.stats-grid')).toContainText('0%');
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!);
+    state.seasons = [];
+    state.participants = [];
+    state.fixtures = [];
+    state.selectedSeasonId = '';
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(state));
+  });
+  await page.goto('/players');
+  await expect(page.locator('.player-card')).toHaveCount(13);
+  await page.locator('a.player-card[href="/players/p01"]').click();
+  await expect(page.locator('.profile-hero h1')).toHaveText('Alex Morgan');
+  await expect(page.locator('.stats-grid')).toContainText('0%');
+});

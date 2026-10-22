@@ -27,7 +27,9 @@ Keep operating costs as close to zero as reasonably possible.
 
 - Initially support approximately 10–14 players.
 - Support adding, editing, and deactivating players.
-- Track individual player statistics.
+- The Players directory lists every active user by default, including casual-only colleagues and users without season membership. Profiles accept both account and existing competition-entry links.
+- Player cards and profiles show confirmed individual league and playoff totals, form, history and head-to-head records across all published seasons, independent of the season selector. Combine separate competition entries belonging to the same account; exclude drafts, unconfirmed/invalid results and duplicate fixtures. Casual records remain separate. Users without league matches show zero statistics.
+- League standings remain specific to the selected season.
 - Allow active accounts to upload, replace and remove their own profile photo through the profile editor. Show photos wherever the shared player avatar appears, with initials as fallback.
 - Store profile photos in private Supabase Storage with server-authorized uploads and short-lived image URLs; do not expose private photo URLs through the public TV response.
 - Support multiple seasons and historical results.
