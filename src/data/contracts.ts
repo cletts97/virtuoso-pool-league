@@ -1,7 +1,9 @@
 import type { LeagueState, Score } from '../domain/types';
 import type { BookingCommand } from './bookingCommands';
+import type { CasualCommand } from './casualCommands';
 
 export type LeagueCommand =
+  | CasualCommand
   | { type: 'updateProfile'; name: string }
   | { type: 'enrolPlayer'; id: string }
   | { type: 'addSeasonPlayer'; seasonId: string; playerId: string; dueDate: string }

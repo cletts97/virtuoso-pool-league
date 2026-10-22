@@ -49,13 +49,17 @@ This is a JavaScript compatibility measure, not a guarantee of full TV support. 
 
 The reset icon beside the demo switcher restores all sample data after confirmation. Reset affects only this browser's demo workspace.
 
+## Casual results
+
+The new **Casual games** page supports singles/doubles submissions, opposing confirmation, disputes and separate head-to-head records. Production requires the additive database migration described in [Casual results setup](docs/CASUAL_RESULTS.md); no cloud migration has been applied automatically.
+
 ## Application features
 
 - Personal dashboard, live calculated standings, top-four indicators, sortable table, and recent form.
 - Full round-robin schedule, round/player/status filters, byes, match details, score submission, opponent approval, disputes, postponements, and an audit timeline.
 - Player directory, season profiles, regular-season statistics, round-by-round performance, match history, upcoming fixtures, and head-to-head records across seasons.
 - Projected and finalized playoff brackets, best-of-five semifinals, best-of-seven finals, automatic advancement, and champion presentation.
-- Admin player creation/editing/deactivation, season creation/settings, fixture generation and adjustments, leave records and clashes, overdue/postponed queues, dispute resolution, score corrections, and announcements.
+- Admin player creation/editing/deactivation, season creation/settings, fixture generation and adjustments, overdue/postponed queues, dispute resolution, score corrections, and announcements.
 - In-app notifications for fixtures, approvals, confirmed results, disputes, postponements, and notices; read/unread state is per user.
 - Multiple seasons, historical standings and results, persistent theme preference, responsive navigation, keyboard-accessible forms and native modal dialogs.
 - Shared league/casual reservations, collision protection, owner/admin management, London-time opening hours, and casual colleagues without league membership.
@@ -110,13 +114,13 @@ Mock browser persistence retains the key `virtuoso-pool-league.v1` for compatibi
 - Qualifiers lock automatically after all regular-season matches are confirmed, unless an unresolved tied group spans the fourth/fifth-place cutoff. The last approval still saves successfully in that case; playoff seeding waits. Explicit admin finalization also cannot bypass that tie. An administrator-approved decider workflow is the next frontend milestone. Ties wholly within the top four may use the display fallback for seed order because qualification membership is unchanged.
 - Explicit admin finalization requires a reason and confirmation, closes outstanding fixtures without wins or losses, and locks the resolved top four. It is irreversible within the demo except by a full reset.
 - Historical regular-season corrections update the table but preserve already finalized playoff seeds. Semifinal winner corrections can update an untouched scheduled final; they are blocked once the final has started. Final corrections update the champion and preserve score history.
-- Recorded leave never awards a defeat. During generation, overlapping due dates move to three days after the relevant leave ends, checking subsequent leave intervals too. Admins can adjust these catch-up dates. Recording leave after publication flags clashes for manual scheduling; it does not silently move fixtures.
+- Fixture postponement is explicit and never awards an automatic defeat. Unavailability recording has been retired; archived leave no longer changes new schedules.
 - Season start date, players, and round cadence lock at fixture publication. Names remain editable. Deactivating players preserves existing results/entries; reactivate them to confirm outstanding matches. The current admin cannot deactivate themself.
 - Multiple seasons may be in progress. The header chooses the viewed season; there is no automatic cross-season archival or deletion.
 
 ## Backend and deployment
 
-The API implements identity/profile mapping, shared league data, fixtures/results, approvals/disputes/corrections, seasons/playoffs, administration/leave, reservations, notifications and a sanitized display endpoint. Short writes are serialized and revision-checked; PostgreSQL independently enforces structural invariants and booking collisions. Clients poll shared data every 30 seconds and update immediately after their own writes.
+The API implements identity/profile mapping, shared league data, fixtures/results, approvals/disputes/corrections, seasons/playoffs, administration, reservations, notifications and a sanitized display endpoint. Short writes are serialized and revision-checked; PostgreSQL independently enforces structural invariants and booking collisions. Clients poll shared data every 30 seconds and update immediately after their own writes.
 
 See [BACKEND_SETUP.md](docs/BACKEND_SETUP.md) for every environment variable, invitation-only Supabase settings, local startup, SMTP templates, first-admin bootstrap, API routes, concurrency decisions, and Azure artifact/upload instructions. `npm run package:api` prepares a runtime package; it does not deploy. Private credentials stay exclusively in API environment settings.
 
@@ -135,7 +139,7 @@ npm run test:integration
 npm run test:live
 ```
 
-Playwright uses installed Google Chrome (`channel: chrome`) for desktop and a mobile viewport/touch emulation. Install Chrome before running these tests. This is mobile Chromium emulation, not a claim of testing on a physical iPhone or Safari. Tests use isolated browser contexts and do not alter your normal demo data. They cover navigation, page overflow, user switching, result submission/approval, persistence, disputes, season generation/byes, postponements, player management, leave, announcements, historical champions, themes, and access boundaries.
+Playwright uses installed Google Chrome (`channel: chrome`) for desktop and a mobile viewport/touch emulation. Install Chrome before running these tests. This is mobile Chromium emulation, not a claim of testing on a physical iPhone or Safari. Tests use isolated browser contexts and do not alter your normal demo data. They cover navigation, page overflow, user switching, result submission/approval, persistence, disputes, season generation/byes, postponements, player management, announcements, historical champions, themes, and access boundaries.
 
 The mock browser configuration starts/reuses Vite on 5173. Do not reuse an API-mode server for that suite. Local integration tests require running disposable Supabase; live browser tests start the API on 7071 and api-mode Vite on 5174. Stop a development API first. Helpers refuse cloud endpoints and capture local credentials in memory. Test records are retained for audit, test identities deactivated/deleted, and test bookings cancelled. Screenshots and traces are ignored under `.tools/screenshots/` and `test-results/`. Avoid source edits during browser runs.
 

@@ -92,6 +92,9 @@ export interface Announcement {
   createdAt: string;
 }
 export interface LeagueState {
+  casualResults?: CasualResult[];
+  /** False until the optional casual-results database migration is applied. */
+  casualResultsEnabled?: boolean;
   /** Public, allowlisted snapshot. Never grants permission to mutate server data. */
   readOnly?: boolean;
   revision?: string;
@@ -108,6 +111,17 @@ export interface LeagueState {
   currentUserId: ID;
   selectedSeasonId: ID;
   theme: 'dark' | 'light';
+}
+export interface CasualResult {
+  id: ID;
+  homePlayerIds: ID[];
+  awayPlayerIds: ID[];
+  playedOn: string;
+  bestOf: 1 | 3 | 5 | 7;
+  score: Score;
+  status: 'pending' | 'confirmed' | 'disputed' | 'cancelled';
+  submittedBy?: ID;
+  history: ResultRevision[];
 }
 /** User records live in players for compatibility; league membership is held in participants. */
 export interface BookingConfig {

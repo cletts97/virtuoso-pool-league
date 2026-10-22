@@ -92,14 +92,14 @@ Display standings using the following columns:
 - Administrators may add an active account to a singles season while its regular season remains unfinalized. Closed seasons and seasons with playoff fixtures/locked qualifiers do not allow additions.
 - Create or reuse the individual's competition entry, and append one best-of-three fixture against every existing participant. Preserve all existing fixtures, results, rounds and dates. Reject duplicate enrollment/pairings.
 - Append separate catch-up rounds after the current rounds. These backlog fixtures share an administrator-selected deadline (default two weeks from today), rather than regenerating the normal two-rounds-per-week schedule.
-- Mark the new fixtures postponed and extend individual deadlines around recorded leave. Scheduled and postponed fixtures display as overdue after their agreed deadline; the stored result is unchanged and no loss is awarded automatically.
+- Mark the new fixtures postponed with the selected catch-up deadline. Scheduled and postponed fixtures display as overdue after their agreed deadline; the stored result is unchanged and no loss is awarded automatically.
 - The new participant starts with zero played/wins/losses. Only approved results affect standings; all new regular-season fixtures must be resolved before normal automatic playoff qualification.
 
-### Annual Leave and Postponements
+### Postponements
 
-- Allow administrators to record player unavailability.
+- Do not provide separate unavailability/annual-leave recording. Retain historical records without using them to adjust new fixture dates.
 - Allow matches to be postponed.
-- Do not automatically penalize players for approved annual leave.
+- Do not automatically penalize players for missed or postponed fixtures.
 - Allow postponed matches to be completed after players return.
 - Continue other league fixtures while some matches remain outstanding.
 - Support a catch-up period before playoffs.
@@ -124,6 +124,16 @@ Display standings using the following columns:
 - Administrators can resolve disputes and correct results.
 - Maintain basic result history for accountability.
 - Prevent duplicate submissions and self-approval.
+
+## Casual results and head-to-head records
+
+- Provide `/casual` for season-independent singles and doubles results. Any active invited account may play without league membership or a booking.
+- Support one-frame games and best-of-three/five/seven matches (default three), completed scores without draws, and a date no later than today. Each side has one or two distinct players.
+- Only someone who played may submit. An opposing player confirms or disputes; a submitting player's doubles teammate cannot confirm. The original submitter may correct and resubmit a dispute with the same players.
+- Administrators may resolve/correct or void results with a reason. Preserve revisions; voided games cannot be reopened. Only confirmed results affect casual statistics.
+- Head-to-head compares exact singles players or doubles teams across all dates, independent of member/side order. Keep league records separate. Multiple real games on the same date are allowed.
+- Public visitors see confirmed scores/players without audit identities, history or reasons. Pending/disputed/voided games are visible only to participants and administrators.
+- Show pending opposing approvals on the dashboard and casual page. Existing season-scoped notifications/emails are unchanged; no casual emails are sent.
 
 ## Email Notifications
 
@@ -306,7 +316,7 @@ The HUD should prominently display:
 
 ### Phase 4 — Competition Management
 
-- Implement postponements and player unavailability.
+- Implement fixture postponements.
 - Implement playoff qualification and brackets.
 - Implement administrative controls.
 
@@ -352,7 +362,7 @@ Defaults established for this iteration:
 - **Playoff qualification:** Top-four seeds lock automatically after all regular-season fixtures are confirmed, or through explicit administrator finalization with a reason and confirmation, provided no unresolved tie spans the qualification cutoff.
 - **Season finalization:** Explicit finalization closes unresolved fixtures without awarding wins, losses, points, or automatic defeats.
 - **Historical corrections:** Later historical corrections update standings but preserve finalized playoff seeds. Changes to semifinal winners cannot replace participants in an already started final.
-- **Annual leave scheduling:** New schedule generation moves due-date clashes to three days after recorded leave, checking subsequent leave intervals. Published fixtures are adjusted explicitly by an administrator or postponed by a participant; they are not silently penalized or moved when leave is recorded.
+- **Scheduling:** Archived leave records do not adjust new fixtures. Participants or administrators explicitly postpone fixtures; existing agreed dates are preserved.
 - **Schedule configuration:** Draft seasons allow a configurable rounds-per-week target, defaulting to two. Published schedule settings are locked; individual fixture dates remain adjustable.
 - **Competition participants:** The competition participant model supports individual or team entries. The initial management UI is singles only; doubles management is deferred.
 

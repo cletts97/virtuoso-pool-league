@@ -224,6 +224,9 @@ export function PlayerProfile() {
               </div>
             </div>
             <p className="panel-footnote">{h2h.length} confirmed meetings</p>
+            <Link className="text-link panel-footnote" to={`/casual?player=${player?.id ?? ''}`}>
+              View casual head-to-head records <ArrowUpRight size={14} />
+            </Link>
           </Section>
           <Section title="Still to play">
             <div className="stack compact-stack">

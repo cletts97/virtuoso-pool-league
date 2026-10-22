@@ -2,26 +2,11 @@ import { useState } from 'react';
 import { liveMode } from '../auth/client';
 import { AccountManagement, ReminderAction } from '../components/AccountManagement';
 import { Link } from 'react-router-dom';
-import {
-  CalendarPlus,
-  ChevronRight,
-  Edit3,
-  Megaphone,
-  Plus,
-  ShieldCheck,
-  Trash2,
-  WandSparkles,
-} from 'lucide-react';
+import { ChevronRight, Edit3, Megaphone, Plus, ShieldCheck, WandSparkles } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
-import { isParticipant, matchStatus } from '../domain/rules';
+import { matchStatus } from '../domain/rules';
 import { Avatar, Badge, Confirm, Empty, PageHeading, Section, Stat } from '../components/ui';
-import {
-  AnnouncementForm,
-  FinalizeForm,
-  LeaveForm,
-  PlayerForm,
-  SeasonForm,
-} from '../components/AdminForms';
+import { AnnouncementForm, FinalizeForm, PlayerForm, SeasonForm } from '../components/AdminForms';
 import { MatchCard } from '../components/MatchCard';
 import type { Player } from '../domain/types';
 import { QualificationNotice } from '../components/QualificationNotice';
@@ -31,17 +16,9 @@ export function Admin() {
   const { state, season, run, preferences, busy } = useLeague();
   const [tab, setTab] = useState('overview');
   const [modal, setModal] = useState<
-    | 'player'
-    | 'season'
-    | 'settings'
-    | 'leave'
-    | 'finalize'
-    | 'announcement'
-    | 'generate'
-    | 'latePlayer'
+    'player' | 'season' | 'settings' | 'finalize' | 'announcement' | 'generate' | 'latePlayer'
   >();
   const [editing, setEditing] = useState<Player>();
-  const [removeLeave, setRemoveLeave] = useState<string>();
   const user = state.players.find((p) => p.id === state.currentUserId)!;
   if (user.role !== 'admin')
     return (
@@ -91,7 +68,6 @@ export function Admin() {
           ['overview', 'Season & configuration'],
           ['players', 'Players'],
           ['fixtures', 'Fixtures & disputes'],
-          ['availability', 'Availability'],
         ].map(([value, label]) => (
           <button
             key={value}
@@ -101,7 +77,7 @@ export function Admin() {
             aria-selected={tab === value}
             tabIndex={tab === value ? 0 : -1}
             onKeyDown={(e) => {
-              const order = ['overview', 'players', 'fixtures', 'availability'];
+              const order = ['overview', 'players', 'fixtures'];
               const index = order.indexOf(value);
               const next =
                 e.key === 'ArrowRight'
@@ -350,74 +326,11 @@ export function Admin() {
             </Link>
           </div>
         )}
-        {tab === 'availability' && (
-          <Section
-            title="Annual leave & availability"
-            subtitle="Record leave here, then adjust affected published fixtures."
-          >
-            <div className="admin-toolbar">
-              <button className="button primary" onClick={() => setModal('leave')}>
-                <CalendarPlus size={16} />
-                Record unavailability
-              </button>
-            </div>
-            <div className="admin-list">
-              {state.availability.map((a) => {
-                const affected = fixtures.filter(
-                  (f) =>
-                    ['scheduled', 'postponed'].includes(f.status) &&
-                    f.dueDate >= a.from &&
-                    f.dueDate <= a.to &&
-                    isParticipant(f, a.playerId, state.participants),
-                );
-                return (
-                  <div className="leave-record" key={a.id}>
-                    <div className="managed-player">
-                      <Avatar id={a.playerId} />
-                      <div>
-                        <strong>{state.players.find((p) => p.id === a.playerId)?.name}</strong>
-                        <small>
-                          {a.from} → {a.to} · {a.reason}
-                        </small>
-                      </div>
-                      <button
-                        className="icon-button"
-                        aria-label={`Remove leave for ${state.players.find((p) => p.id === a.playerId)?.name}`}
-                        onClick={() => setRemoveLeave(a.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                    {affected.length > 0 ? (
-                      <div className="leave-conflicts">
-                        <strong>{affected.length} fixture clashes</strong>
-                        {affected.map((f) => (
-                          <Link className="text-link" key={f.id} to={`/fixtures/${f.id}`}>
-                            Round {f.round} · due {f.dueDate}
-                            <ChevronRight size={14} />
-                          </Link>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="field-help px-6 pb-4">
-                        No outstanding fixture due dates overlap this leave in the selected season.
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-              {!state.availability.length && (
-                <Empty title="Everyone’s available">Recorded leave will appear here.</Empty>
-              )}
-            </div>
-          </Section>
-        )}
       </div>
       {modal === 'player' && <PlayerForm player={editing} onClose={close} />}{' '}
       {modal === 'season' && <SeasonForm onClose={close} />}{' '}
       {modal === 'settings' && <SeasonForm edit onClose={close} />}{' '}
       {modal === 'latePlayer' && <AddSeasonPlayerForm onClose={close} />}{' '}
-      {modal === 'leave' && <LeaveForm onClose={close} />}{' '}
       {modal === 'finalize' && <FinalizeForm onClose={close} />}{' '}
       {modal === 'announcement' && <AnnouncementForm onClose={close} />}{' '}
       {modal === 'generate' && (
@@ -440,25 +353,8 @@ export function Admin() {
           {season.participantIds.length % 2
             ? season.participantIds.length
             : season.participantIds.length - 1}{' '}
-          rounds, targeting {season.config.roundsPerWeek} rounds per week. Recorded leave will be
-          respected. The season’s schedule settings will then be locked.
-        </Confirm>
-      )}
-      {removeLeave && (
-        <Confirm
-          title="Remove this availability record?"
-          label="Remove record"
-          onClose={() => setRemoveLeave(undefined)}
-          onConfirm={() =>
-            void run(
-              { type: 'removeAvailability', id: removeLeave },
-              'Availability record removed. Fixture dates are unchanged.',
-            ).then((ok) => {
-              if (ok) setRemoveLeave(undefined);
-            })
-          }
-        >
-          This removes the recorded leave. Fixtures already postponed keep their agreed dates.
+          rounds, targeting {season.config.roundsPerWeek} rounds per week. The season’s schedule
+          settings will then be locked.
         </Confirm>
       )}
     </>

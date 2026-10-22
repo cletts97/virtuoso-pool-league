@@ -16,6 +16,7 @@ import { MatchCard } from '../components/MatchCard';
 import { StandingsTable } from '../components/StandingsTable';
 import { TodayBookings } from '../components/TodayBookings';
 import { RuleReminders } from '../components/RuleReminders';
+import { canReviewCasual } from '../domain/casual';
 
 export function Dashboard() {
   const { state, season } = useLeague();
@@ -110,6 +111,11 @@ export function Dashboard() {
         </div>
       </div>
       <TodayBookings />
+      {(state.casualResults ?? []).some((r) => canReviewCasual(r, user.id)) && (
+        <Link className="action-banner" to="/casual">
+          <CheckCheck size={20} /> Casual results need your confirmation <ArrowRight size={18} />
+        </Link>
+      )}
       <RuleReminders />
       <div className="stats-grid">
         <Stat

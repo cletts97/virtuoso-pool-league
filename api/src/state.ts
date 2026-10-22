@@ -43,6 +43,18 @@ export async function readState(client: PoolClient, actorId = ''): Promise<Leagu
   const announcements = await rows<LeagueState['announcements'][number]>(
     `SELECT id,season_id AS "seasonId",title,body,created_at AS "createdAt" FROM public.announcements ORDER BY created_at DESC,id`,
   );
+  const [{ enabled: casualResultsEnabled }] = await rows<{ enabled: boolean }>(
+    `SELECT to_regclass('public.casual_results') IS NOT NULL AS enabled`,
+  );
+  const casualResults = casualResultsEnabled
+    ? await rows<NonNullable<LeagueState['casualResults']>[number]>(
+        `SELECT id, array_remove(ARRAY[home_player_id,home_partner_id],NULL) AS "homePlayerIds",
+      array_remove(ARRAY[away_player_id,away_partner_id],NULL) AS "awayPlayerIds",
+      played_on::text AS "playedOn",best_of AS "bestOf",status,
+      json_build_object('home',home_score,'away',away_score) AS score,
+      submitted_by AS "submittedBy",history FROM public.casual_results ORDER BY played_on DESC,id`,
+      )
+    : [];
   // JSON serialization also normalizes pg timestamptz Date objects to the frontend's ISO contract.
   const state: LeagueState = JSON.parse(
     JSON.stringify({
@@ -56,6 +68,8 @@ export async function readState(client: PoolClient, actorId = ''): Promise<Leagu
       availability,
       notifications,
       announcements,
+      casualResults,
+      casualResultsEnabled,
       currentUserId: actorId,
       selectedSeasonId: seasons[0]?.id ?? '',
       theme: 'dark',
@@ -70,6 +84,12 @@ export function privateSnapshot(state: LeagueState): LeagueState {
   const actor = state.players.find((p) => p.id === state.currentUserId)!;
   return {
     ...state,
+    casualResults: (state.casualResults ?? []).filter(
+      (r) =>
+        actor.role === 'admin' ||
+        r.status === 'confirmed' ||
+        [...r.homePlayerIds, ...r.awayPlayerIds].includes(actor.id),
+    ),
     notifications: state.notifications.filter((n) => n.userId === actor.id),
     availability:
       actor.role === 'admin'

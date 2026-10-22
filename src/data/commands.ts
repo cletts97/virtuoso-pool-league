@@ -16,6 +16,7 @@ import { generateRoundRobin } from '../domain/rules';
 import type { Fixture, LeagueState, ResultRevision, Season } from '../domain/types';
 import type { LeagueCommand, NotificationService } from './contracts';
 import { executeBookingCommand } from './bookingCommands';
+import { executeCasualCommand } from './casualCommands';
 
 const id = () => crypto.randomUUID();
 const text = (value: string, label: string, max = 300) => {
@@ -128,6 +129,13 @@ export function executeCommand(
   command: LeagueCommand,
   notifications: NotificationService = inAppNotifications,
 ): LeagueState {
+  if (
+    command.type === 'submitCasual' ||
+    command.type === 'reviewCasual' ||
+    command.type === 'resolveCasual' ||
+    command.type === 'voidCasual'
+  )
+    return executeCasualCommand(source, command);
   if (
     command.type === 'saveBooking' ||
     command.type === 'cancelBooking' ||
@@ -349,23 +357,7 @@ export function executeCommand(
           ),
           'This pairing already has a fixture.',
         );
-        const memberIds = [player.id, ...opponent.playerIds];
-        let dueDate = command.dueDate;
-        let leave = state.availability.filter(
-          (a) => memberIds.includes(a.playerId) && a.from <= dueDate && a.to >= dueDate,
-        );
-        while (leave.length) {
-          dueDate = addDays(
-            leave
-              .map((a) => a.to)
-              .sort()
-              .at(-1)!,
-            3,
-          );
-          leave = state.availability.filter(
-            (a) => memberIds.includes(a.playerId) && a.from <= dueDate && a.to >= dueDate,
-          );
-        }
+        const dueDate = command.dueDate;
         const fixture: Fixture = {
           id: id(),
           seasonId: season.id,
@@ -377,11 +369,11 @@ export function executeCommand(
           dueDate,
           status: 'postponed',
           history: [],
-          note: `Catch-up fixture: ${player.name} joined the season late.${dueDate !== command.dueDate ? ' Deadline adjusted around recorded leave.' : ''}`,
+          note: `Catch-up fixture: ${player.name} joined the season late.`,
         };
         audit(fixture, actor.id, 'postponed', fixture.note);
         state.fixtures.push(fixture);
-        notifications.publish(state, memberIds, {
+        notifications.publish(state, [player.id, ...opponent.playerIds], {
           seasonId: season.id,
           fixtureId: fixture.id,
           kind: 'postponement',
@@ -487,34 +479,6 @@ export function executeCommand(
         'This season already has fixtures.',
       );
       const fixtures = generateRoundRobin(season);
-      for (const fixture of fixtures) {
-        const playerIds = state.participants
-          .filter((p) => [fixture.homeId, fixture.awayId].includes(p.id))
-          .flatMap((p) => p.playerIds);
-        let leave = state.availability.filter(
-          (a) =>
-            playerIds.includes(a.playerId) && a.from <= fixture.dueDate && a.to >= fixture.dueDate,
-        );
-        while (leave.length) {
-          fixture.status = 'postponed';
-          fixture.dueDate = addDays(
-            leave
-              .map((a) => a.to)
-              .sort()
-              .at(-1)!,
-            3,
-          );
-          fixture.note = 'Adjusted around recorded annual leave.';
-          // A catch-up date may overlap a second leave interval for either player.
-          leave = state.availability.filter(
-            (a) =>
-              playerIds.includes(a.playerId) &&
-              a.from <= fixture.dueDate &&
-              a.to >= fixture.dueDate,
-          );
-        }
-        if (fixture.status === 'postponed') audit(fixture, actor.id, 'postponed', fixture.note);
-      }
       state.fixtures.push(...fixtures);
       season.status = 'regular';
       notifications.publish(
@@ -583,24 +547,10 @@ export function executeCommand(
       break;
     }
     case 'availability':
-      invariant(
-        state.players.some((p) => p.id === command.playerId),
-        'Player not found.',
-      );
-      validateDate(command.from);
-      validateDate(command.to);
-      invariant(command.to >= command.from, 'End date must be on or after the start date.');
-      state.availability.push({
-        id: id(),
-        playerId: command.playerId,
-        from: command.from,
-        to: command.to,
-        reason: text(command.reason, 'Reason'),
-      });
-      break;
     case 'removeAvailability':
-      state.availability = state.availability.filter((a) => a.id !== command.id);
-      break;
+      throw new Error(
+        'Unavailability recording has been retired. Postpone individual fixtures instead.',
+      );
     case 'announce': {
       invariant(
         state.seasons.some((s) => s.id === command.seasonId),

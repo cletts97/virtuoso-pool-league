@@ -22,7 +22,8 @@ This is an initial schema, not a replacement backend. Auth service settings, HTT
 | `Fixture` | `fixtures`; home/away reference competition participants, not profiles |
 | `Fixture.score` | Nullable `home_score` and `away_score` columns |
 | `Fixture.history` / `ResultRevision` | Append-only `result_events`, ordered by fixture revision |
-| `Availability` | `availability`; API maps `profile_id` to `playerId` and dates to `from`/`to` |
+| `Availability` (archived) | `availability`; retained for history/privacy compatibility, no longer editable or used for new scheduling |
+| `CasualResult` | `casual_results`; additive migration `20261022000100_casual_results.sql`, season-independent singles/doubles, explicit player FKs and append-preserving JSON audit history; see `CASUAL_RESULTS.md` |
 | `BookingConfig` | One `booking_settings` record |
 | `Booking` | `table_bookings` |
 | `Booking.guestIds` | `booking_guests`, ordered by `guest_order` |

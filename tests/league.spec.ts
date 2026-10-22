@@ -1,6 +1,46 @@
 import { test, expect } from '@playwright/test';
 import type { LeagueState } from '../src/domain/types';
 
+test('casual singles and doubles results persist and require opposing confirmation', async ({
+  page,
+}) => {
+  await page.goto('/casual');
+  await page.getByRole('button', { name: 'Record a game', exact: true }).click();
+  let form = page.getByRole('dialog');
+  await form.getByLabel('Side B player 1').selectOption('p02');
+  await form.getByLabel('Score (Side A – Side B)').selectOption('2:1');
+  await form.getByRole('button', { name: 'Submit result', exact: true }).click();
+  await expect(page.locator('.casual-game')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Confirm result', exact: true })).toHaveCount(0);
+  await page.getByLabel('Playing as').selectOption('p02');
+  await page.getByRole('button', { name: 'Confirm result', exact: true }).click();
+  await expect(page.locator('.casual-totals')).toContainText('1 confirmed games');
+  await page.reload();
+  await expect(page.locator('.casual-game')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Record a game', exact: true }).click();
+  form = page.getByRole('dialog');
+  await form.getByLabel('Game type', { exact: true }).selectOption('2');
+  await form.getByLabel('Side A player 2').selectOption('p03');
+  await form.getByLabel('Side B player 1').selectOption('p04');
+  await form.getByLabel('Side B player 2').selectOption('p05');
+  await form.getByLabel('Score (Side A – Side B)').selectOption('2:0');
+  await form.getByRole('button', { name: 'Submit result', exact: true }).click();
+  await expect(page.locator('.casual-game')).toHaveCount(2);
+  await page.getByLabel('Playing as').selectOption('p03');
+  await expect(page.getByRole('button', { name: 'Confirm result', exact: true })).toHaveCount(0);
+  await page.getByLabel('Playing as').selectOption('p04');
+  await page.getByRole('button', { name: 'Confirm result', exact: true }).click();
+  await page.getByLabel('Game type', { exact: true }).selectOption('2');
+  await page.getByLabel('Team A player 1').selectOption('p03');
+  await page.getByLabel('Team A player 2').selectOption('p02');
+  await page.getByLabel('Team B player 1').selectOption('p05');
+  await page.getByLabel('Team B player 2').selectOption('p04');
+  await expect(page.locator('.casual-totals')).toContainText('1 confirmed games');
+  await expect(page.locator('.casual-totals')).toContainText('Frames 2 – 0');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test('administrator adds a late player without changing existing matches', async ({ page }) => {
   await page.goto('/admin');
   const before = await page.evaluate(
@@ -250,7 +290,7 @@ test('historical champion, themes, notifications and access boundaries work', as
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
 
-test('admin manages players, leave and notices with real state changes', async ({ page }) => {
+test('admin manages players and notices without unavailability controls', async ({ page }) => {
   await page.goto('/admin');
   await page.getByRole('tab', { name: 'Players', exact: true }).click();
   await page.getByRole('button', { name: 'Add player' }).click();
@@ -264,12 +304,7 @@ test('admin manages players, leave and notices with real state changes', async (
   await expect(page.locator('.managed-player').filter({ hasText: 'Robin Hayes' })).toContainText(
     'Inactive',
   );
-  await page.getByRole('tab', { name: 'Availability', exact: true }).click();
-  await page.getByRole('button', { name: 'Record unavailability' }).click();
-  await page.getByLabel('From', { exact: true }).fill('2026-12-20');
-  await page.getByLabel('Until', { exact: true }).fill('2026-12-31');
-  await page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click();
-  await expect(page.getByText('2026-12-20 → 2026-12-31 · Annual leave')).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Availability', exact: true })).toHaveCount(0);
   await page.getByRole('tab', { name: 'Season & configuration' }).click();
   await page.getByRole('button', { name: 'Post announcement' }).click();
   await page.getByLabel('Title', { exact: true }).fill('Catch-up Friday');

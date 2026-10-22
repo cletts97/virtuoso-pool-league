@@ -8,6 +8,25 @@ const score = z.strictObject({
 });
 const fields = { fixtureId: id, reason: text.max(300) };
 export const commandSchema = z.discriminatedUnion('type', [
+  z.strictObject({
+    type: z.literal('submitCasual'),
+    result: z.strictObject({
+      id,
+      homePlayerIds: z.array(id).min(1).max(2),
+      awayPlayerIds: z.array(id).min(1).max(2),
+      playedOn: date,
+      bestOf: z.union([z.literal(1), z.literal(3), z.literal(5), z.literal(7)]),
+      score,
+    }),
+  }),
+  z.strictObject({
+    type: z.literal('reviewCasual'),
+    id,
+    approve: z.boolean(),
+    reason: z.string().max(300),
+  }),
+  z.strictObject({ type: z.literal('resolveCasual'), id, score, reason: text.max(300) }),
+  z.strictObject({ type: z.literal('voidCasual'), id, reason: text.max(300) }),
   z.strictObject({ type: z.literal('updateProfile'), name: text.max(70) }),
   z.strictObject({ type: z.literal('submit'), fixtureId: id, score }),
   z.strictObject({
@@ -44,14 +63,6 @@ export const commandSchema = z.discriminatedUnion('type', [
     active: z.boolean(),
   }),
   z.strictObject({ type: z.literal('enrolPlayer'), id }),
-  z.strictObject({
-    type: z.literal('availability'),
-    playerId: id,
-    from: date,
-    to: date,
-    reason: text.max(300),
-  }),
-  z.strictObject({ type: z.literal('removeAvailability'), id }),
   z.strictObject({ type: z.literal('announce'), seasonId: id, title: text.max(100), body: text }),
   z.strictObject({ type: z.literal('readNotifications'), ids: z.array(id).max(1000) }),
   z.strictObject({

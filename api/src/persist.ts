@@ -33,6 +33,29 @@ export async function persistChanges(
       values,
     );
   };
+  for (const r of next.casualResults ?? []) {
+    if (
+      !changed(
+        r,
+        before.casualResults?.find((old) => old.id === r.id),
+      )
+    )
+      continue;
+    await upsert('casual_results', {
+      id: r.id,
+      home_player_id: r.homePlayerIds[0],
+      home_partner_id: r.homePlayerIds[1],
+      away_player_id: r.awayPlayerIds[0],
+      away_partner_id: r.awayPlayerIds[1],
+      played_on: r.playedOn,
+      best_of: r.bestOf,
+      home_score: r.score.home,
+      away_score: r.score.away,
+      status: r.status,
+      submitted_by: r.submittedBy,
+      history: JSON.stringify(r.history),
+    });
+  }
   for (const p of next.players)
     if (
       changed(

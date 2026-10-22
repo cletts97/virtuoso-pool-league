@@ -100,7 +100,7 @@ describe('mid-season player addition', () => {
     );
   });
 
-  it('moves catch-up deadlines around recorded leave without altering existing fixtures', () => {
+  it('ignores archived leave for new catch-up deadlines', () => {
     const { state, command } = setup();
     state.availability.push({
       id: 'late-leave',
@@ -111,11 +111,7 @@ describe('mid-season player addition', () => {
     });
     const next = executeCommand(state, command);
     expect(
-      next.fixtures
-        .slice(state.fixtures.length)
-        .every(
-          (f) => f.dueDate === addDays(command.dueDate, 5) && f.note?.includes('recorded leave'),
-        ),
+      next.fixtures.slice(state.fixtures.length).every((f) => f.dueDate === command.dueDate),
     ).toBe(true);
   });
 });

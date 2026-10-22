@@ -192,14 +192,14 @@ describe('administration and playoffs', () => {
     expect(state.fixtures.filter((f) => f.seasonId === seasonId)).toHaveLength(55);
     expect(() => executeCommand(state, { type: 'generate', seasonId })).toThrow('draft');
   });
-  it('records leave and moves newly generated clashes without penalties', () => {
+  it('ignores archived leave when generating new fixtures', () => {
     let state = createSeed('2026-10-19');
-    state = executeCommand(state, {
-      type: 'availability',
+    state.availability.push({
+      id: 'archived',
       playerId: 'p01',
       from: '2027-01-01',
       to: '2027-01-31',
-      reason: 'Holiday',
+      reason: 'Archived',
     });
     state = executeCommand(state, {
       type: 'createSeason',
@@ -212,9 +212,7 @@ describe('administration and playoffs', () => {
     const fixtures = state.fixtures.filter(
       (f) => f.seasonId === state.selectedSeasonId && [f.homeId, f.awayId].includes('entry-p01'),
     );
-    expect(fixtures.every((f) => f.status === 'postponed' && f.dueDate === '2027-02-03')).toBe(
-      true,
-    );
+    expect(fixtures.every((f) => f.status === 'scheduled' && f.dueDate < '2027-02-01')).toBe(true);
     expect(
       standings(state.seasons[0], state.fixtures).every((r) => r.won === 0 && r.lost === 0),
     ).toBe(true);
@@ -399,35 +397,16 @@ describe('edge cases and notifications', () => {
       state.fixtures.filter((f) => f.seasonId === seasonId && f.stage === 'regular'),
     ).toHaveLength(91);
   });
-  it('rechecks leave when a proposed catch-up date overlaps another absence', () => {
-    let state = createSeed('2026-10-19');
-    for (const [from, to] of [
-      ['2027-01-01', '2027-01-08'],
-      ['2027-01-10', '2027-01-20'],
-    ])
-      state = executeCommand(state, {
+  it('rejects retired unavailability commands', () => {
+    expect(() =>
+      executeCommand(createSeed(), {
         type: 'availability',
         playerId: 'p01',
-        from,
-        to,
+        from: '2027-01-01',
+        to: '2027-01-02',
         reason: 'Leave',
-      });
-    state = executeCommand(state, {
-      type: 'createSeason',
-      name: 'Catch-up',
-      startDate: '2027-01-01',
-      participantIds: state.participants.slice(0, 4).map((p) => p.id),
-      roundsPerWeek: 2,
-    });
-    state = executeCommand(state, { type: 'generate', seasonId: state.selectedSeasonId });
-    expect(
-      state.fixtures
-        .filter(
-          (f) =>
-            f.seasonId === state.selectedSeasonId && [f.homeId, f.awayId].includes('entry-p01'),
-        )
-        .every((f) => f.dueDate === '2027-01-23'),
-    ).toBe(true);
+      }),
+    ).toThrow('retired');
   });
   it('does not mark another user’s notifications as read', () => {
     const state = createSeed('2026-10-19');

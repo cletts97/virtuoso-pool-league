@@ -63,6 +63,78 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       }
       await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[0]]);
     }, 60000);
+    it('persists casual singles and doubles, opposing approval, corrections and void history', async () => {
+      const id = crypto.randomUUID();
+      const before = await service.load(users[1]);
+      const result = {
+        id,
+        homePlayerIds: [profiles[1]],
+        awayPlayerIds: [profiles[2]],
+        playedOn: '2026-01-01',
+        bestOf: 3 as const,
+        score: { home: 2, away: 1 },
+      };
+      await command({ type: 'submitCasual', result }, users[1]);
+      await expect(
+        command({ type: 'reviewCasual', id, approve: true, reason: '' }, users[1]),
+      ).rejects.toThrow('opposing');
+      await expect(
+        command({ type: 'reviewCasual', id, approve: true, reason: '' }, users[3]),
+      ).rejects.toThrow('opposing');
+      expect((await service.publicState()).casualResults?.some((r) => r.id === id)).toBe(false);
+      const loaded = await service.load(users[2]);
+      const approvals = await Promise.allSettled(
+        [1, 2].map(() =>
+          service.execute(
+            users[2],
+            { type: 'reviewCasual', id, approve: true, reason: '' },
+            loaded.revision!,
+          ),
+        ),
+      );
+      expect(approvals.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect((await service.load(users[1])).fixtures).toEqual(before.fixtures);
+      expect(
+        (await service.publicState()).casualResults?.find((r) => r.id === id)?.history,
+      ).toEqual([]);
+      await command(
+        { type: 'resolveCasual', id, score: { home: 2, away: 0 }, reason: 'Players checked' },
+        users[0],
+      );
+      await command({ type: 'voidCasual', id, reason: 'Duplicate' }, users[0]);
+      expect(
+        (await service.load(users[0]))
+          .casualResults!.find((r) => r.id === id)!
+          .history.map((h) => h.action),
+      ).toEqual(['submitted', 'approved', 'corrected', 'cancelled']);
+      const doublesId = crypto.randomUUID();
+      await command(
+        {
+          type: 'submitCasual',
+          result: {
+            ...result,
+            id: doublesId,
+            homePlayerIds: [profiles[1], profiles[3]],
+            awayPlayerIds: [profiles[2], profiles[4]],
+          },
+        },
+        users[1],
+      );
+      await expect(
+        command({ type: 'reviewCasual', id: doublesId, approve: true, reason: '' }, users[3]),
+      ).rejects.toThrow('opposing');
+      await command({ type: 'reviewCasual', id: doublesId, approve: true, reason: '' }, users[4]);
+      expect(
+        (await service.load(users[0])).casualResults!.find((r) => r.id === doublesId)!.status,
+      ).toBe('confirmed');
+      const grants = await pool.query(
+        "SELECT has_table_privilege('anon','public.casual_results','SELECT') AS anon,has_table_privilege('authenticated','public.casual_results','INSERT') AS client",
+      );
+      expect(grants.rows[0]).toEqual({ anon: false, client: false });
+      await expect(
+        pool.query('UPDATE public.casual_results SET history=$2 WHERE id=$1', [doublesId, '[]']),
+      ).rejects.toThrow();
+    });
     it('adds a late player atomically and rejects concurrent duplicate joins', async () => {
       const created = await command({
         type: 'createSeason',
@@ -234,21 +306,6 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       expect(
         (await service.load(users[1])).notifications.find((n) => n.id === notice.id)!.read,
       ).toBe(true);
-      await command({
-        type: 'availability',
-        playerId: profiles[1],
-        from: '2027-02-01',
-        to: '2027-02-03',
-        reason: 'Annual leave',
-      });
-      state = await service.load(users[0]);
-      const leave = state.availability.find(
-        (a) => a.playerId === profiles[1] && a.from === '2027-02-01',
-      )!;
-      await command({ type: 'removeAvailability', id: leave.id });
-      expect((await service.load(users[0])).availability.some((a) => a.id === leave.id)).toBe(
-        false,
-      );
     });
     it('submits, rejects self/third-party approval, races two approvals, and appends exactly one approval event', async () => {
       let state = await service.load(users[0]);
@@ -368,13 +425,10 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       await command({ type: 'cancelBooking', id: b.id });
     });
     it('keeps private data out of other accounts and out of the public HUD', async () => {
-      await command({
-        type: 'availability',
-        playerId: profiles[1],
-        from: '2027-01-01',
-        to: '2027-01-02',
-        reason: 'PRIVATE-REASON',
-      });
+      await pool.query(
+        "INSERT INTO public.availability(profile_id,from_date,to_date,reason) VALUES($1,'2027-01-01','2027-01-02','PRIVATE-REASON')",
+        [profiles[1]],
+      );
       const regular = await service.load(users[2]);
       expect(regular.availability.some((a) => a.reason === 'PRIVATE-REASON')).toBe(false);
       expect(regular.notifications.every((n) => n.userId === profiles[2])).toBe(true);

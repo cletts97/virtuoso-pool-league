@@ -1,5 +1,8 @@
 # Database setup and invitation-only access
 
+For the additive casual-results migration and its production rollout, see [Casual results setup](CASUAL_RESULTS.md). The original schema below remains deployed; do not reapply it.
+
+
 ## Current integration status (21 October 2026)
 
 The initial schema has been deployed by the owner and remains the baseline. Local database lint and all 57 pgTAP checks passed. The application now has API-backed repositories, Supabase Auth, protected Functions handlers and local database/browser integration tests; see [BACKEND_SETUP.md](BACKEND_SETUP.md) for the current runbook. The sections below retain the original migration procedure for reference; do not reapply the deployed migration or reset the cloud project.

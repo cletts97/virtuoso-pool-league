@@ -56,8 +56,8 @@ export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
         <p className="field-help">
           Adds {season.participantIds.length} best-of-three fixtures in new catch-up rounds, one
           against each existing player. Existing matches and results stay unchanged. Matches are
-          marked postponed, then overdue after the deadline. Recorded leave can extend individual
-          deadlines. No automatic losses are awarded.
+          marked postponed, then overdue after the deadline. You can adjust individual deadlines
+          later. No automatic losses are awarded.
         </p>
         <div className="form-actions">
           <button type="button" className="button secondary" onClick={onClose}>

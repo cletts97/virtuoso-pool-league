@@ -1,0 +1,112 @@
+.casual-content,
+.casual-history {
+  padding: 22px;
+}
+.casual-teams {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.casual-team {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.casual-team legend {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.casual-team select {
+  width: 100%;
+}
+.casual-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  text-align: center;
+  padding: 18px;
+  background: var(--raised);
+  border-radius: 10px;
+}
+.casual-totals strong {
+  display: block;
+  font-size: 32px;
+  color: var(--accent);
+}
+.casual-totals span,
+.casual-totals p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.casual-totals p {
+  grid-column: 1/-1;
+}
+.casual-game {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.casual-game header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.casual-score {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 20px;
+  align-items: center;
+  margin: 18px 0;
+}
+.casual-score > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.casual-score > b {
+  font-size: 24px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.casual-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.casual-game details {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.casual-game summary {
+  cursor: pointer;
+}
+.casual-game li {
+  margin-top: 8px;
+}
+@media (max-width: 600px) {
+  .casual-content,
+  .casual-history {
+    padding: 16px;
+  }
+  .casual-teams {
+    grid-template-columns: 1fr;
+  }
+  .casual-score {
+    gap: 8px;
+  }
+  .casual-score > div {
+    font-size: 12px;
+  }
+}

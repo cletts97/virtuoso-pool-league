@@ -16,6 +16,7 @@ import { Notifications } from './pages/Notifications';
 import { Bookings } from './pages/Bookings';
 import { Display } from './pages/Display';
 import { Rules } from './pages/Rules';
+import { CasualGames } from './pages/CasualGames';
 import { AuthGate } from './auth/AuthGate';
 import { AuthLanding } from './auth/AuthLanding';
 import { SignIn, AuthCallback } from './auth/AuthPages';
@@ -59,6 +60,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="admin" element={<Admin />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="bookings" element={<Bookings />} />
+              <Route path="casual" element={<CasualGames />} />
               <Route
                 path="*"
                 element={

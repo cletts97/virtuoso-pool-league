@@ -28,6 +28,7 @@ const links = [
   { to: '/players', label: 'Players', icon: Users },
   { to: '/playoffs', label: 'Playoffs', icon: GitBranch },
   { to: '/bookings', label: 'Table bookings', icon: CalendarClock },
+  { to: '/casual', label: 'Casual games', icon: Users },
   { to: '/rules', label: 'Rules', icon: BookOpen },
 ];
 export function Layout() {

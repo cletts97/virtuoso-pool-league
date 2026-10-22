@@ -69,7 +69,20 @@ export function publicSnapshot(source: LeagueState, now = new Date()): LeagueSta
       createdAt: b.startAt,
       updatedAt: b.startAt,
     }));
+  const casualResults = (source.casualResults ?? [])
+    .filter((r) => r.status === 'confirmed')
+    .map((r) => ({
+      id: r.id,
+      homePlayerIds: [...r.homePlayerIds],
+      awayPlayerIds: [...r.awayPlayerIds],
+      playedOn: r.playedOn,
+      bestOf: r.bestOf,
+      score: { ...r.score },
+      status: r.status,
+      history: [],
+    }));
   const visiblePlayers = new Set([
+    ...casualResults.flatMap((r) => [...r.homePlayerIds, ...r.awayPlayerIds]),
     ...participants.flatMap((p) => p.playerIds),
     ...bookings.flatMap((b) => [b.ownerId, ...b.guestIds]),
   ]);
@@ -94,6 +107,8 @@ export function publicSnapshot(source: LeagueState, now = new Date()): LeagueSta
   });
   return {
     version: 3,
+    casualResults,
+    casualResultsEnabled: source.casualResultsEnabled,
     readOnly: true,
     currentUserId: PUBLIC_VISITOR_ID,
     selectedSeasonId: seasons[0]?.id ?? '',

@@ -103,6 +103,8 @@ export class LeagueService {
       );
       let next: LeagueState;
       const playerActions = [
+        'submitCasual',
+        'reviewCasual',
         'updateProfile',
         'submit',
         'review',

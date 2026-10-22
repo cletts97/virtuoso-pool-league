@@ -175,69 +175,6 @@ export function SeasonForm({ edit = false, onClose }: { edit?: boolean; onClose(
     </Modal>
   );
 }
-export function LeaveForm({ onClose }: { onClose(): void }) {
-  const { state, run } = useLeague();
-  const [playerId, setPlayerId] = useState(state.players[0].id);
-  const [from, setFrom] = useState(dateOnly());
-  const [to, setTo] = useState(dateOnly());
-  const [reason, setReason] = useState('Annual leave');
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (
-      await run(
-        { type: 'availability', playerId, from, to, reason },
-        'Unavailability recorded. Review affected fixtures to arrange catch-up dates.',
-      )
-    )
-      onClose();
-  }
-  return (
-    <Modal title="Record player unavailability" onClose={onClose}>
-      <form onSubmit={submit} className="form-stack">
-        <label>
-          Player
-          <select value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
-            {state.players.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="form-grid">
-          <label>
-            From
-            <input type="date" required value={from} onChange={(e) => setFrom(e.target.value)} />
-          </label>
-          <label>
-            Until
-            <input
-              type="date"
-              required
-              min={from}
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
-          </label>
-        </div>
-        <label>
-          Reason
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            required
-            maxLength={300}
-          />
-        </label>
-        <p className="field-help">
-          Leave never causes an automatic loss. Existing fixtures remain in place until you adjust
-          them. New fixture generation moves clashes to catch-up dates after leave.
-        </p>
-        <FormActions onClose={onClose} />
-      </form>
-    </Modal>
-  );
-}
 export function FinalizeForm({ onClose }: { onClose(): void }) {
   const { season, state, run } = useLeague();
   const [reason, setReason] = useState('');
