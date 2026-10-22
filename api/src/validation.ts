@@ -8,6 +8,8 @@ const score = z.strictObject({
 });
 const fields = { fixtureId: id, reason: text.max(300) };
 export const commandSchema = z.discriminatedUnion('type', [
+  z.strictObject({ type: z.literal('endSeason'), seasonId: id, reason: text.min(5).max(300) }),
+  z.strictObject({ type: z.literal('deleteSeason'), seasonId: id, confirmName: text.max(120) }),
   z.strictObject({
     type: z.literal('submitCasual'),
     result: z.strictObject({

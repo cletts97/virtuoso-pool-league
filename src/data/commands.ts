@@ -17,6 +17,8 @@ import type { Fixture, LeagueState, ResultRevision, Season } from '../domain/typ
 import type { LeagueCommand, NotificationService } from './contracts';
 import { executeBookingCommand } from './bookingCommands';
 import { executeCasualCommand } from './casualCommands';
+import { executeSeasonLifecycle } from './seasonCommands';
+import { canAddSeasonPlayer } from '../domain/seasonManagement';
 
 const id = () => crypto.randomUUID();
 const text = (value: string, label: string, max = 300) => {
@@ -129,6 +131,8 @@ export function executeCommand(
   command: LeagueCommand,
   notifications: NotificationService = inAppNotifications,
 ): LeagueState {
+  if (command.type === 'endSeason' || command.type === 'deleteSeason')
+    return executeSeasonLifecycle(source, command);
   if (
     command.type === 'submitCasual' ||
     command.type === 'reviewCasual' ||
@@ -314,12 +318,8 @@ export function executeCommand(
     case 'addSeasonPlayer': {
       const season = state.seasons.find((s) => s.id === command.seasonId);
       invariant(
-        season?.status === 'regular' &&
-          season.format === 'singles' &&
-          !season.qualifiers.length &&
-          !season.finalizedReason &&
-          !state.fixtures.some((f) => f.seasonId === season.id && f.stage !== 'regular'),
-        'Players can only be added during an unfinalized singles regular season.',
+        season && canAddSeasonPlayer(state, season),
+        'Players can only be added to a draft or unfinalized singles regular season.',
       );
       invariant(season.participantIds.length < 40, 'A season supports up to 40 players.');
       validateDate(command.dueDate);
@@ -343,6 +343,11 @@ export function executeCommand(
       if (!entrant) {
         entrant = { id: id(), name: player.name, kind: 'individual', playerIds: [player.id] };
         state.participants.push(entrant);
+      }
+      if (season.status === 'draft') {
+        season.participantIds.push(entrant.id);
+        if (player.role === 'colleague') player.role = 'player';
+        break;
       }
       const firstRound =
         Math.max(0, ...state.fixtures.filter((f) => f.seasonId === season.id).map((f) => f.round)) +

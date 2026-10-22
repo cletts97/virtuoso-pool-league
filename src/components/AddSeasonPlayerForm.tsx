@@ -18,7 +18,9 @@ export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
     if (
       await run(
         { type: 'addSeasonPlayer', seasonId: season.id, playerId, dueDate },
-        'Player added. Catch-up fixtures have been created.',
+        season.status === 'draft'
+          ? 'Player added to the draft season.'
+          : 'Player added. Catch-up fixtures have been created.',
       )
     )
       onClose();
@@ -43,28 +45,40 @@ export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
           </select>
         </label>
         {!available.length && <p>Invite an active colleague who is not already in this season.</p>}
-        <label>
-          Catch-up deadline
-          <input
-            type="date"
-            required
-            min={dateOnly()}
-            value={dueDate}
-            onChange={(event) => setDueDate(event.target.value)}
-          />
-        </label>
+        {season.status !== 'draft' && (
+          <label>
+            Catch-up deadline
+            <input
+              type="date"
+              required
+              min={dateOnly()}
+              value={dueDate}
+              onChange={(event) => setDueDate(event.target.value)}
+            />
+          </label>
+        )}
         <p className="field-help">
-          Adds {season.participantIds.length} best-of-three fixtures in new catch-up rounds, one
-          against each existing player. Existing matches and results stay unchanged. Matches are
-          marked postponed, then overdue after the deadline. You can adjust individual deadlines
-          later. No automatic losses are awarded.
+          {season.status === 'draft' ? (
+            'Adds this player to the draft. Fixtures will include them when you generate the schedule.'
+          ) : (
+            <>
+              Adds {season.participantIds.length} best-of-three fixtures in new catch-up rounds, one
+              against each existing player. Existing matches and results stay unchanged. Matches are
+              marked postponed, then overdue after the deadline. You can adjust individual deadlines
+              later. No automatic losses are awarded.
+            </>
+          )}
         </p>
         <div className="form-actions">
           <button type="button" className="button secondary" onClick={onClose}>
             Cancel
           </button>
           <button className="button primary" disabled={busy || !playerId}>
-            {busy ? 'Adding…' : `Add player and ${season.participantIds.length} fixtures`}
+            {busy
+              ? 'Adding…'
+              : season.status === 'draft'
+                ? 'Add player'
+                : `Add player and ${season.participantIds.length} fixtures`}
           </button>
         </div>
       </form>

@@ -13,12 +13,22 @@ import { QualificationNotice } from '../components/QualificationNotice';
 import { AddSeasonPlayerForm } from '../components/AddSeasonPlayerForm';
 import { CasualResultForm } from '../components/CasualResultForm';
 import '../casual.css';
+import { canAddSeasonPlayer, seasonDeletionBlock } from '../domain/seasonManagement';
+import { SeasonLifecycleForm } from '../components/SeasonLifecycleForm';
 
 export function Admin() {
   const { state, season, run, preferences, busy } = useLeague();
   const [tab, setTab] = useState('overview');
   const [modal, setModal] = useState<
-    'player' | 'season' | 'settings' | 'finalize' | 'announcement' | 'generate' | 'latePlayer'
+    | 'player'
+    | 'season'
+    | 'settings'
+    | 'finalize'
+    | 'announcement'
+    | 'generate'
+    | 'latePlayer'
+    | 'end'
+    | 'delete'
   >();
   const [editing, setEditing] = useState<Player>();
   const [casualResultId, setCasualResultId] = useState<string>();
@@ -144,14 +154,15 @@ export function Admin() {
                             Generate fixtures
                           </button>
                         )}
-                        {season.status === 'regular' && (
+                        {
                           <button
                             className="button secondary"
+                            disabled={!canAddSeasonPlayer(state, season)}
                             onClick={() => setModal('latePlayer')}
                           >
                             <Plus size={15} /> Add player to season
                           </button>
-                        )}
+                        }
                         {season.status === 'regular' && (
                           <button className="button secondary" onClick={() => setModal('finalize')}>
                             <ShieldCheck size={15} />
@@ -164,7 +175,37 @@ export function Admin() {
                             <ChevronRight size={16} />
                           </Link>
                         )}
+                        {season.status !== 'complete' && (
+                          <button className="button secondary" onClick={() => setModal('end')}>
+                            End season
+                          </button>
+                        )}
+                        <button
+                          className="button danger"
+                          disabled={!!seasonDeletionBlock(state, season)}
+                          onClick={() => setModal('delete')}
+                        >
+                          Delete season
+                        </button>
                       </div>
+                      {!canAddSeasonPlayer(state, season) && (
+                        <p className="field-help">
+                          Players can be added to singles drafts or an unfinalized regular season.
+                          Additions are closed once playoffs are finalized or the season ends.
+                        </p>
+                      )}
+                      {season.status === 'draft' && (
+                        <p className="field-help">
+                          This season is a draft. Add players here, then generate fixtures to begin
+                          the regular season.
+                        </p>
+                      )}
+                      {seasonDeletionBlock(state, season) && (
+                        <p className="field-help">{seasonDeletionBlock(state, season)}</p>
+                      )}
+                      {season.finalizedReason && (
+                        <p className="field-help">{season.finalizedReason}</p>
+                      )}
                       <dl className="config-list">
                         <div>
                           <dt>Competition</dt>
@@ -393,6 +434,9 @@ export function Admin() {
       {modal === 'season' && <SeasonForm onClose={close} />}{' '}
       {modal === 'settings' && <SeasonForm edit onClose={close} />}{' '}
       {modal === 'latePlayer' && <AddSeasonPlayerForm onClose={close} />}{' '}
+      {(modal === 'end' || modal === 'delete') && (
+        <SeasonLifecycleForm deleting={modal === 'delete'} onClose={close} />
+      )}
       {modal === 'finalize' && <FinalizeForm onClose={close} />}{' '}
       {modal === 'announcement' && <AnnouncementForm onClose={close} />}{' '}
       {modal === 'generate' && (

@@ -1,6 +1,60 @@
 import { test, expect } from '@playwright/test';
 import type { LeagueState } from '../src/domain/types';
 
+test('administrator can enroll in an older draft, delete an unused season and end a test season', async ({
+  page,
+}) => {
+  await page.goto('/admin');
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    const base = state.seasons.find((s) => s.status === 'regular')!;
+    state.seasons.unshift({
+      ...base,
+      id: 'old-draft',
+      name: 'Old test draft',
+      startDate: '2026-01-01',
+      status: 'draft',
+      participantIds: base.participantIds.slice(0, 4),
+      qualifiers: [],
+      championId: undefined,
+      finalizedReason: undefined,
+    });
+    state.selectedSeasonId = 'old-draft';
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(state));
+  });
+  await page.reload();
+  await page.getByRole('button', { name: 'Add player to season', exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Catch-up deadline')).toHaveCount(0);
+  await dialog.getByRole('combobox', { name: 'Player', exact: true }).selectOption('colleague-01');
+  await dialog.getByRole('button', { name: 'Add player', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('.admin-season').first()).toContainText('5 players');
+  await page.getByRole('button', { name: 'Delete season', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('button', { name: 'Delete season permanently' })).toBeDisabled();
+  await dialog.getByLabel('Confirm season name').fill('Old test draft');
+  await dialog.getByRole('button', { name: 'Delete season permanently' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByLabel('Select season')).not.toContainText('Old test draft');
+  await expect(page.getByRole('button', { name: 'Delete season', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'End season', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Reason for ending').fill('This season was only for testing');
+  await dialog.getByRole('checkbox').check();
+  await dialog.getByRole('button', { name: 'End season', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Add player to season', exact: true }),
+  ).toBeDisabled();
+  await expect(page.locator('.admin-season').first()).toContainText(
+    'Ended early: This season was only for testing',
+  );
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'End season', exact: true })).toHaveCount(0);
+});
+
 test('administrator queue includes and resolves casual disputes independently of season', async ({
   page,
 }) => {
@@ -299,7 +353,7 @@ test('administrator creates an odd-player season, publishes fixtures and postpon
     .getByRole('dialog')
     .getByRole('button', { name: 'Generate fixtures', exact: true })
     .click();
-  await expect(page.locator('.admin-season').first()).toContainText('55 league fixtures');
+  await expect(page.locator('.admin-season').first().first()).toContainText('55 league fixtures');
   await page.goto('/fixtures');
   await expect(page.locator('.match-card')).toHaveCount(55);
   await expect(page.getByText(/Bye this round:/)).toHaveCount(11);

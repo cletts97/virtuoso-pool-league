@@ -26,7 +26,8 @@ export class LocalLeagueRepository implements LeagueRepository, DisplayRepositor
           Array.isArray(value.availability) &&
           Array.isArray(value.announcements) &&
           value.players.some((p) => p.id === value.currentUserId) &&
-          value.seasons.some((s) => s.id === value.selectedSeasonId),
+          (value.seasons.some((s) => s.id === value.selectedSeasonId) ||
+            (!value.seasons.length && value.selectedSeasonId === '')),
         'Invalid demo data.',
       );
     } catch {

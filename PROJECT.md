@@ -89,6 +89,7 @@ Display standings using the following columns:
 
 ### Mid-season additions
 
+- Display Add player to season for administrators on every selected season, disabled with an explanation when closed. Existing seasons support the same controls regardless of creation date. Draft seasons allow enrollment without creating fixtures; regular seasons append catch-up matches.
 - Administrators may add an active account to a singles season while its regular season remains unfinalized. Closed seasons and seasons with playoff fixtures/locked qualifiers do not allow additions.
 - Create or reuse the individual's competition entry, and append one best-of-three fixture against every existing participant. Preserve all existing fixtures, results, rounds and dates. Reject duplicate enrollment/pairings.
 - Append separate catch-up rounds after the current rounds. These backlog fixtures share an administrator-selected deadline (default two weeks from today), rather than regenerating the normal two-rounds-per-week schedule.
@@ -104,6 +105,12 @@ Display standings using the following columns:
 - Continue other league fixtures while some matches remain outstanding.
 - Support a catch-up period before playoffs.
 - Allow administrators to resolve overdue or abandoned fixtures.
+
+### Ending and deleting seasons
+
+- Administrators can end an unfinished season with a reason and explicit confirmation, without seeding playoffs or inventing a champion. Preserve confirmed results, standings, playoff seeds and history. Cancel outstanding matches without automatic wins/losses, record cancellation events and cancel future reservations for those outstanding matches. Mark the season complete and notify its participants.
+- Permit permanent deletion only when no result/audit history, playoff seeds/champion or linked bookings exist. Require typing the exact season name. Remove the season, unused fixtures, season entries, announcements and notifications atomically; retain accounts, reusable competition entries and casual games. Select another season, or support an empty workspace when the last season is deleted.
+- Seasons with recorded history or linked bookings must be ended rather than deleted. No automatic cleanup of historical records is permitted.
 
 ### Playoffs
 

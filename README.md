@@ -49,6 +49,12 @@ This is a JavaScript compatibility measure, not a guarantee of full TV support. 
 
 The reset icon beside the demo switcher restores all sample data after confirmation. Reset affects only this browser's demo workspace.
 
+## Season administration
+
+In **Administration → Season & configuration**, **Add player to season** works for existing drafts and regular seasons regardless of creation date. Draft additions are included when fixtures are generated; regular-season additions create catch-up matches. Closed seasons show the disabled action with an explanation.
+
+**End season** closes outstanding games without starting playoffs, keeps confirmed results/history, and cancels future bookings for those outstanding games. **Delete season** is only available for unused seasons without history, seeds or linked bookings and requires typing the exact name. Both are administrator-only; no database migration is required. Recorded seasons must be ended to preserve their audit history.
+
 ## Casual results
 
 The new **Casual games** page supports singles/doubles submissions, opposing confirmation, disputes and separate head-to-head records. Production requires the additive database migration described in [Casual results setup](docs/CASUAL_RESULTS.md); no cloud migration has been applied automatically.

@@ -22,6 +22,15 @@ export async function persistChanges(
   next: LeagueState,
 ): Promise<void> {
   // Table and column names below are code-owned constants; all values are bound parameters.
+  for (const season of before.seasons.filter((s) => !next.seasons.some((n) => n.id === s.id))) {
+    // Domain rules forbid deleting result history or seasons with any linked bookings.
+    await client.query('DELETE FROM public.notifications WHERE season_id=$1', [season.id]);
+    await client.query('DELETE FROM public.announcements WHERE season_id=$1', [season.id]);
+    await client.query('DELETE FROM public.fixtures WHERE season_id=$1', [season.id]);
+    await client.query('DELETE FROM public.season_qualifiers WHERE season_id=$1', [season.id]);
+    await client.query('DELETE FROM public.season_participants WHERE season_id=$1', [season.id]);
+    await client.query('DELETE FROM public.seasons WHERE id=$1', [season.id]);
+  }
   const upsert = async (table: string, row: Record<string, unknown>, key = 'id') => {
     const columns = Object.keys(row),
       values = Object.values(row).map((v) => v ?? null);

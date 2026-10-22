@@ -63,6 +63,75 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       }
       await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[0]]);
     }, 60000);
+    it('manages draft enrollment, deletion and early ending without changing the schema', async () => {
+      let state = await command({
+        type: 'createSeason',
+        name: `${prefix} disposable`,
+        startDate: londonDate(new Date()),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const disposable = state.selectedSeasonId;
+      state = await command({
+        type: 'addSeasonPlayer',
+        seasonId: disposable,
+        playerId: profiles[4],
+        dueDate: addDays(londonDate(new Date()), 14),
+      });
+      expect(state.seasons.find((s) => s.id === disposable)!.participantIds).toHaveLength(5);
+      await command({ type: 'generate', seasonId: disposable });
+      await expect(
+        command(
+          { type: 'deleteSeason', seasonId: disposable, confirmName: `${prefix} disposable` },
+          users[1],
+        ),
+      ).rejects.toThrow('Administrator');
+      state = await command({
+        type: 'deleteSeason',
+        seasonId: disposable,
+        confirmName: `${prefix} disposable`,
+      });
+      expect(state.seasons.some((s) => s.id === disposable)).toBe(false);
+      expect(
+        (
+          await pool.query(
+            'SELECT count(*)::int AS total FROM public.fixtures WHERE season_id=$1',
+            [disposable],
+          )
+        ).rows[0].total,
+      ).toBe(0);
+      state = await command({
+        type: 'createSeason',
+        name: `${prefix} ended`,
+        startDate: londonDate(new Date()),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const ended = state.selectedSeasonId;
+      state = await command({ type: 'generate', seasonId: ended });
+      const fixture = state.fixtures.find((f) => f.seasonId === ended)!;
+      const home = state.participants.find((p) => p.id === fixture.homeId)!.playerIds[0];
+      const away = state.participants.find((p) => p.id === fixture.awayId)!.playerIds[0];
+      await command(
+        { type: 'submit', fixtureId: fixture.id, score: { home: 2, away: 0 } },
+        users[profiles.indexOf(home)],
+      );
+      await command(
+        { type: 'review', fixtureId: fixture.id, approve: true, reason: '' },
+        users[profiles.indexOf(away)],
+      );
+      state = await command({ type: 'endSeason', seasonId: ended, reason: 'Test season finished' });
+      expect(state.seasons.find((s) => s.id === ended)!.status).toBe('complete');
+      expect(state.fixtures.find((f) => f.id === fixture.id)!.history).toHaveLength(2);
+      expect(
+        state.fixtures
+          .filter((f) => f.seasonId === ended && f.id !== fixture.id)
+          .every((f) => f.status === 'cancelled' && f.history.at(-1)?.action === 'cancelled'),
+      ).toBe(true);
+      await expect(
+        command({ type: 'deleteSeason', seasonId: ended, confirmName: `${prefix} ended` }),
+      ).rejects.toThrow('history');
+    });
     it('persists casual singles and doubles, opposing approval, corrections and void history', async () => {
       const id = crypto.randomUUID();
       const before = await service.load(users[1]);
