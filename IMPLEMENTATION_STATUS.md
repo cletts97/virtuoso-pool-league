@@ -1,5 +1,10 @@
 # Implementation status — Virtuoso Pool League
 
+## Unified TV booking-card appearance — 22 October 2026
+
+- Removed the contrasting availability-panel background so current availability and upcoming bookings share one continuous card surface. Added a subtle inset divider between sections, horizontal when stacked on mobile. Preserved the existing layout, all information, opening hours and behaviour.
+- Three focused desktop browser checks passed for full-HD long names, four viewport sizes and legacy CSS fallbacks; reviewed the resulting screenshot. CSS-only change; no full suite/build, database changes, commit or deployment.
+
 ## TV standings and combined bookings layout — 22 October 2026
 
 - Standings now occupy the left column across both main rows. Removed the five-player cap from the shared TV projection, allowing the full normal 12–14-player league at 1080p. Short displays and long names use bounded pages rotating every 15 seconds, with page indicators and actual rank numbers. Ranking, public-data allowlisting and qualification rules are unchanged.

@@ -483,12 +483,23 @@
 .tv-table .tv-current {
   min-height: 0;
   border: 0;
-  border-radius: 16px 0 0 16px;
+  border-radius: 0;
+  background: transparent;
 }
 .tv-queue {
+  position: relative;
   padding: 1.35vw;
   min-width: 0;
   min-height: 0;
+}
+.tv-queue::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1.35vw;
+  bottom: 1.35vw;
+  width: 1px;
+  background: var(--border);
 }
 @media (min-width: 701px) and (max-height: 950px) {
   .tv-queue {
@@ -499,11 +510,16 @@
   .tv-table {
     display: block;
   }
-  .tv-table .tv-current {
-    border-radius: 16px 16px 0 0;
-  }
   .tv-queue {
     padding: 20px;
+  }
+  .tv-queue::before {
+    top: 0;
+    bottom: auto;
+    left: 20px;
+    right: 20px;
+    width: auto;
+    height: 1px;
   }
 }
 .tv-booking-row {
