@@ -29,6 +29,8 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
         requireCondition(config.publicDisplay, 404, 'Public display is disabled.');
         return json(await service.display());
       }
+      if (request.method === 'GET' && path === '/public-state')
+        return json(await service.publicState());
       if (request.method === 'POST' && path === '/auth/reset') {
         const { email } = resetSchema.parse(await body());
         requireCondition(

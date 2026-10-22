@@ -191,7 +191,7 @@ export function MatchDetails() {
             Manage this separately from the fixture due date.
           </p>
         )}
-        {match.status === 'pending' && (
+        {match.status === 'pending' && !state.readOnly && (
           <p className="match-message">
             Submitted by {state.players.find((p) => p.id === match.submittedBy)?.name}. Only the
             opposing player can confirm it.{' '}

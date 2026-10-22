@@ -65,11 +65,13 @@ export function Layout() {
               <span>{label}</span>
             </NavLink>
           ))}
-          <NavLink to="/notifications" aria-label="Notifications" title="Notifications">
-            <Bell size={19} />
-            <span>Notifications</span>
-            {unread > 0 && <span className="nav-count">{unread}</span>}
-          </NavLink>
+          {!state.readOnly && (
+            <NavLink to="/notifications" aria-label="Notifications" title="Notifications">
+              <Bell size={19} />
+              <span>Notifications</span>
+              {unread > 0 && <span className="nav-count">{unread}</span>}
+            </NavLink>
+          )}
           {user.role === 'admin' && (
             <>
               <div className="nav-label admin-label">MANAGEMENT</div>
@@ -134,27 +136,31 @@ export function Layout() {
             >
               {state.theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
             </button>
-            <Link
-              className="icon-button notification-bell"
-              to="/notifications"
-              aria-label={`Notifications, ${unread} unread`}
-            >
-              <Bell size={19} />
-              {unread > 0 && <span />}
-            </Link>
+            {!state.readOnly && (
+              <Link
+                className="icon-button notification-bell"
+                to="/notifications"
+                aria-label={`Notifications, ${unread} unread`}
+              >
+                <Bell size={19} />
+                {unread > 0 && <span />}
+              </Link>
+            )}
             <span className="topbar-divider" />
-            {liveMode ? <ProfileSettings /> : <Avatar id={user.id} />}
+            {liveMode && !state.readOnly ? <ProfileSettings /> : <Avatar id={user.id} />}
             <span className="header-user">
               <strong>{user.name}</strong>
               <small>
-                {user.role === 'admin'
-                  ? 'League administrator'
-                  : user.role === 'colleague'
-                    ? 'Office colleague'
-                    : 'League player'}
+                {state.readOnly
+                  ? 'Read-only visitor'
+                  : user.role === 'admin'
+                    ? 'League administrator'
+                    : user.role === 'colleague'
+                      ? 'Office colleague'
+                      : 'League player'}
               </small>
             </span>
-            {liveMode && (
+            {liveMode && !state.readOnly && (
               <button
                 className="button secondary small"
                 onClick={() => void authClient().auth.signOut()}
@@ -162,8 +168,25 @@ export function Layout() {
                 Sign out
               </button>
             )}
+            {state.readOnly && (
+              <Link
+                className="button primary small"
+                to="/login"
+                state={{ from: location.pathname + location.search }}
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </header>
+        {state.readOnly && (
+          <div className="demo-bar">
+            <span>Public view · Sign in to book the table or take part in the league.</span>
+            <Link className="text-link" to="/display">
+              TV display
+            </Link>
+          </div>
+        )}
         {!liveMode && (
           <div className="demo-bar">
             <span>

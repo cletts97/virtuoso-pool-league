@@ -51,10 +51,16 @@ export function Bookings() {
         title="The table is yours."
         description="League rivals or a friendly frame. Reserve a little time together."
         action={
-          <button className="button primary" onClick={() => setForm('new')}>
-            <CalendarPlus size={17} />
-            Reserve the table
-          </button>
+          state.readOnly ? (
+            <Link className="button primary" to="/login" state={{ from: '/bookings' }}>
+              Sign in to book
+            </Link>
+          ) : (
+            <button className="button primary" onClick={() => setForm('new')}>
+              <CalendarPlus size={17} />
+              Reserve the table
+            </button>
+          )
         }
       />
       <div className="booking-toolbar">
@@ -115,8 +121,8 @@ export function Bookings() {
               Show reservations
               <select value={filter} onChange={(e) => setFilter(e.target.value)}>
                 <option value="all">All reservations</option>
-                <option value="mine">My reservations</option>
-                <option value="cancelled">Cancelled reservations</option>
+                {!state.readOnly && <option value="mine">My reservations</option>}
+                {!state.readOnly && <option value="cancelled">Cancelled reservations</option>}
               </select>
             </label>
           </div>
@@ -153,6 +159,8 @@ export function Bookings() {
             {slots.map((slot) => (
               <button
                 key={slot}
+                disabled={state.readOnly}
+                title={state.readOnly ? 'Sign in to reserve this time' : undefined}
                 onClick={() => {
                   setSlot(slot);
                   setForm('new');
@@ -173,7 +181,7 @@ export function Bookings() {
           </p>
         </Section>
       </div>
-      {(form || fixtureId) && (
+      {!state.readOnly && (form || fixtureId) && (
         <BookingForm
           booking={typeof form === 'object' ? form : undefined}
           initialDate={date}

@@ -10,6 +10,70 @@ const admin = createClient(url, process.env.SUPABASE_SECRET_KEY!, {
   pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const accounts: { id: string; name: string; email: string; password: string }[] = [];
 const prefix = `Browser ${Date.now()}`;
+test('anonymous visitors browse published data and TV without write access', async ({
+  page,
+  browser,
+}) => {
+  await login(page, 0);
+  await page.goto('/admin');
+  await page.getByRole('button', { name: 'Create season', exact: true }).click();
+  await page.getByLabel('Season name').fill(`${prefix} public`);
+  await page.getByRole('button', { name: 'Create draft season' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Generate fixtures', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Generate fixtures', exact: true })
+    .click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5174' });
+  const visitor = await context.newPage();
+  try {
+    await visitor.goto('/');
+    await expect(
+      visitor.getByRole('heading', { name: 'Welcome to Virtuoso Pool League.' }),
+    ).toBeVisible();
+    for (const path of ['/standings', '/players', '/fixtures', '/playoffs', '/bookings']) {
+      await visitor.goto(path);
+      await expect(
+        visitor.getByText('Public view · Sign in to book the table or take part in the league.'),
+      ).toBeVisible();
+      await expect(visitor.getByRole('link', { name: 'Administration', exact: true })).toHaveCount(
+        0,
+      );
+      await expect(visitor.getByRole('button', { name: 'Edit your profile' })).toHaveCount(0);
+      await expect(visitor.getByRole('button', { name: 'Submit result', exact: true })).toHaveCount(
+        0,
+      );
+    }
+    await expect(
+      visitor.getByRole('button', { name: 'Reserve the table', exact: true }),
+    ).toHaveCount(0);
+    await expect(visitor.locator('.availability-slots button:not([disabled])')).toHaveCount(0);
+    const fixtureId = (
+      await pool.query(
+        'SELECT f.id FROM public.fixtures f JOIN public.seasons s ON s.id=f.season_id WHERE s.name=$1 LIMIT 1',
+        [`${prefix} public`],
+      )
+    ).rows[0].id;
+    await visitor.goto(`/fixtures/${fixtureId}`);
+    await expect(visitor.getByRole('heading', { name: /Round \d+ · Match centre/ })).toBeVisible();
+    await expect(visitor.getByRole('button', { name: 'Submit result', exact: true })).toHaveCount(
+      0,
+    );
+    const rejected = await context.request.post('/api/commands', {
+      data: { command: { type: 'updateProfile', name: 'Forbidden' } },
+    });
+    expect(rejected.status()).toBe(401);
+    await visitor.goto('/display');
+    await visitor.getByRole('link', { name: 'Dashboard', exact: true }).click();
+    await expect(
+      visitor.getByRole('heading', { name: 'Welcome to Virtuoso Pool League.' }),
+    ).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
 test.beforeAll(async () => {
   for (let i = 0; i < 4; i++) {
     const email = `vpl-browser-${Date.now()}-${i}@${i === 1 ? 'example.net' : 'virtuoso.tech'}`,
@@ -106,7 +170,7 @@ test('real colleague login, shared casual booking, TV polling and logout', async
   context,
 }) => {
   await page.goto('/bookings');
-  await expect(page.getByRole('heading', { name: 'Welcome to the league.' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Sign in to book', exact: true })).toBeVisible();
   await login(page, 1);
   await expect(page.getByLabel('Playing as')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Reset demo data' })).toHaveCount(0);
@@ -131,7 +195,7 @@ test('real colleague login, shared casual booking, TV polling and logout', async
   await expect(other.locator('body')).not.toContainText(accounts[1].email);
   await other.close();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
 });
 test('admin selects invited colleagues for a season, and two sessions submit and approve', async ({
   page,

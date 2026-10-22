@@ -72,6 +72,9 @@ export function Display() {
           </span>
         </div>
         <div className="tv-header-actions">
+          <Link className="button secondary tv-rules-link" to="/">
+            Dashboard
+          </Link>
           <Link className="button secondary tv-rules-link" to="/rules?from=display">
             <BookOpen size={20} />
             Rules

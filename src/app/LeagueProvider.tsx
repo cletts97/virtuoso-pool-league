@@ -41,6 +41,10 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, [toast]);
   async function run(command: LeagueCommand, message = 'Changes saved.') {
+    if (state?.readOnly) {
+      setToast({ text: 'Sign in to make changes.', error: true });
+      return false;
+    }
     setBusy(true);
     try {
       setState(await repository.execute(command));
@@ -63,6 +67,7 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     }
   }
   async function saveAvatar(image: string | null) {
+    if (state?.readOnly) return false;
     setBusy(true);
     try {
       setState(await repository.saveAvatar(image));

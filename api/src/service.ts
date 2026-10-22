@@ -11,6 +11,7 @@ import { ApiError, requireCondition } from './errors';
 import type { ApiCommand } from './validation';
 import { allowedEmail } from './access';
 import { AvatarStorage } from './avatars';
+import { publicSnapshot } from '../../src/data/publicSnapshot';
 
 export class LeagueService {
   constructor(
@@ -78,6 +79,9 @@ export class LeagueService {
   }
   async display() {
     return this.transaction(async (client) => displaySnapshot(await readState(client)));
+  }
+  async publicState() {
+    return this.transaction(async (client) => publicSnapshot(await readState(client)));
   }
   async execute(user: User, command: ApiCommand, expectedRevision: string) {
     const state = await this.transaction(async (client) => {

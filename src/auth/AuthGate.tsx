@@ -1,10 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
 import { authClient, liveMode } from './client';
 export function AuthGate({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null | undefined>(undefined),
     [error, setError] = useState('');
-  const location = useLocation();
   useEffect(() => {
     if (!liveMode) return;
     let unsubscribe = () => {};
@@ -47,7 +45,5 @@ export function AuthGate({ children }: { children: ReactNode }) {
         <p>Checking your session…</p>
       </main>
     );
-  if (!userId)
-    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
-  return <div key={userId}>{children}</div>;
+  return <div key={userId ?? 'public'}>{children}</div>;
 }

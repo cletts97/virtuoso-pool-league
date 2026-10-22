@@ -41,7 +41,11 @@ export function Dashboard() {
     <>
       <PageHeading
         eyebrow="THE CLUBHOUSE"
-        title={`Good to see you, ${user.name.split(' ')[0]}.`}
+        title={
+          state.readOnly
+            ? 'Welcome to Virtuoso Pool League.'
+            : `Good to see you, ${user.name.split(' ')[0]}.`
+        }
         description={
           season.status === 'complete'
             ? 'A season to remember. Explore the results and the road to the title.'
@@ -124,14 +128,16 @@ export function Dashboard() {
           icon={<CheckCheck size={18} />}
         />
         <Stat
-          label="Your position"
-          value={own?.played ? `#${own.position}` : '—'}
+          label={state.readOnly ? 'Season progress' : 'Your position'}
+          value={state.readOnly ? `${progress}%` : own?.played ? `#${own.position}` : '—'}
           detail={
-            own?.played
-              ? `${own.won} wins · ${own.lost} losses`
-              : ownEntry
-                ? 'Your story starts with a game'
-                : 'Casual bookings are open to you'
+            state.readOnly
+              ? 'Browse the competition · Sign in to participate'
+              : own?.played
+                ? `${own.won} wins · ${own.lost} losses`
+                : ownEntry
+                  ? 'Your story starts with a game'
+                  : 'Casual bookings are open to you'
           }
           icon={<Flag size={18} />}
         />

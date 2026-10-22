@@ -14,6 +14,14 @@ import { Empty, PageHeading } from '../components/ui';
 export function Notifications() {
   const { state, season, run, busy } = useLeague();
   const [filter, setFilter] = useState('all');
+  if (state.readOnly)
+    return (
+      <Empty title="Notifications are private">
+        <Link className="text-link" to="/login" state={{ from: '/notifications' }}>
+          Sign in to view your notifications
+        </Link>
+      </Empty>
+    );
   const all = state.notifications
     .filter((n) => n.userId === state.currentUserId && n.seasonId === season.id)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));

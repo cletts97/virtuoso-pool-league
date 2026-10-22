@@ -6,6 +6,29 @@ import { createHandler } from '../src/http';
 import { ApiError } from '../src/errors';
 
 describe('application bearer forwarding through SWA', () => {
+  it('allows only the read-only public endpoint without an authenticated identity', async () => {
+    const identity = vi.fn(async () => {
+      throw new ApiError(401, 'Sign in.');
+    });
+    const publicState = vi.fn(async () => ({ readOnly: true }));
+    const handle = createHandler(
+      { identity, publicState } as unknown as LeagueService,
+      {} as SupabaseClient,
+      {} as ApiConfig,
+    );
+    expect((await handle(new Request('https://league.example/api/public-state'))).status).toBe(200);
+    expect(identity).not.toHaveBeenCalled();
+    for (const path of ['/commands', '/profile/photo', '/admin/invitations']) {
+      const response = await handle(
+        new Request(`https://league.example/api${path}`, {
+          method: 'POST',
+          headers: { 'X-VPL-Authorization': 'Bearer forged' },
+          body: JSON.stringify({ type: 'updateProfile', name: 'Unauthorized' }),
+        }),
+      );
+      expect(response.status).toBe(401);
+    }
+  });
   function setup() {
     const user = { id: 'verified-user' };
     const identity = vi.fn(async (token: string) => {

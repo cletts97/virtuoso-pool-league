@@ -152,6 +152,12 @@ The first administrator is a controlled bootstrap data change after verifying th
 
 ## API and consistency
 
+### Anonymous browsing
+
+The main application now supports a public, read-only mode without an Auth account. `GET /api/public-state` returns an explicitly allowlisted snapshot: published/historical seasons and participants, fixtures, confirmed scores, published announcements and reserved table bookings for today through seven days ahead. Draft seasons, cancelled reservation history, account roles/departments, private photo URLs, availability records, notifications, result-submit identities and audit reasons are excluded. A non-account visitor presentation record keeps the existing UI reusable; it is inactive and grants no access.
+
+The main dashboard, standings, players/profiles, fixtures, playoffs and calendar work anonymously. Theme, season selection and filters remain usable locally. Booking slots cannot create reservations, personal notification/profile controls are hidden, and sign-in links explain how to participate. Every write endpoint retains Supabase identity and active-profile checks. Anonymous browsing does not require new database grants, a migration or a configuration flag. The separate TV data endpoint still respects `PUBLIC_DISPLAY_ENABLED=true`; enable that Azure API setting to populate the existing `/display` HUD. Its Dashboard link now opens the public main application. Sign-out returns to public browsing on the current page.
+
 ### Profile photos — one-time Storage setup
 
 In the existing Supabase project's **Storage**, create a bucket with the exact name **`profile-photos`**:

@@ -43,6 +43,14 @@ export class ApiLeagueRepository implements LeagueRepository, DisplayRepository 
     return result;
   }
   async load() {
+    const { data } = await authClient().auth.getSession();
+    if (!data.session) {
+      const response = await fetch('/api/public-state');
+      const payload = await response.json();
+      if (!response.ok)
+        throw new Error(payload.error ?? 'Public league information is unavailable.');
+      return this.apply(payload as LeagueState);
+    }
     return this.apply(await authenticatedRequest<LeagueState>('/state'));
   }
   async saveAvatar(image: string | null) {

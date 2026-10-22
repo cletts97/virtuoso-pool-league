@@ -92,6 +92,8 @@ export interface Announcement {
   createdAt: string;
 }
 export interface LeagueState {
+  /** Public, allowlisted snapshot. Never grants permission to mutate server data. */
+  readOnly?: boolean;
   revision?: string;
   version: 3;
   bookings: Booking[];

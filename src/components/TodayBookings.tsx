@@ -33,7 +33,7 @@ export function TodayBookings() {
             {next ? bookingDayLabel(londonDate(next)) : 'Check the calendar for shorter slots.'}
           </p>
           <Link className="button primary" to="/bookings">
-            Reserve the table
+            {state.readOnly ? 'View availability' : 'Reserve the table'}
           </Link>
         </div>
         {bookings.slice(0, 2).map((b) => (

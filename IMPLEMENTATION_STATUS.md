@@ -1,5 +1,12 @@
 # Implementation status — Virtuoso Pool League
 
+## Anonymous read-only browsing — 22 October 2026
+
+- Main routes no longer require a personal session for browsing. API repositories load a dedicated `GET /api/public-state` snapshot when no Supabase session exists; sign-in uses the existing authenticated data/actions. Logout remounts into public view. The TV has a Dashboard link back to this public application.
+- Public snapshots explicitly allowlist published/historical season data, participant names, fixture schedules, confirmed scores, published announcements and reserved bookings for today through seven days ahead. Draft seasons, unconfirmed scores, private account roles/departments/photo URLs, notifications, leave records and audit identities/reasons remain private. Public result dates preserve standings/form ordering. No full private snapshot is returned to a visitor.
+- Public UI shows a visitor banner/sign-in links, keeps navigation/filters/history/theme usable, and hides personal controls. Reservation slots are read-only and query strings cannot open booking forms. All existing protected writes still require server-validated invited identity and an active profile; read-only mode is not an authorization bypass. No new schema/grants/settings are needed for the public main app. The separate HUD's data gate remains `PUBLIC_DISPLAY_ENABLED=true`.
+- Validation: 6 focused privacy/authorization tests, targeted ESLint, TypeScript and whitespace checks passed. Started Docker and the existing disposable local Supabase stack; **both focused browser tests passed** (anonymous published browsing/fixture details/TV-to-dashboard navigation/write rejection, plus normal signed-in booking/shared data/logout-to-public). The helper built the local API. Full suites and production frontend builds were not run. No cloud changes, commits, pushes or deployments performed.
+
 ## Simplified season enrollment — 21 October 2026
 
 - Create-season selection now lists every active account. The existing server-validated season command creates missing individual competition entries automatically, reuses previous entries and includes only selected accounts. Existing entry-ID clients remain compatible. Selected casual colleagues become players; existing admin roles/history are preserved. Inactive and duplicate-person selections are rejected.

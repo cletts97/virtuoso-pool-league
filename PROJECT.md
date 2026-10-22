@@ -131,6 +131,8 @@ Email links must not bypass authentication or authorization.
 
 ## Application Pages
 
+Visitors may browse the dashboard, published seasons, standings, player profiles, fixtures/results, playoffs, rules and upcoming table reservations without signing in. Sign-in is required for all changes, booking/cancellation, result actions, personal notifications, profile editing and administration. Anonymous data must be explicitly allowlisted: exclude draft seasons, unapproved scores, private account details, leave records, audit notes and private profile-photo URLs. The TV can navigate to the main public dashboard without an account.
+
 1. Dashboard — current standings, upcoming fixtures, recent results, and league highlights.
 2. League Table — rankings, wins, losses, frame difference, and player statistics.
 3. Fixtures — upcoming, completed, and postponed matches.
