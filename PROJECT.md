@@ -236,6 +236,10 @@ The HUD should prominently display:
    - Display a QR code linking directly to the pool table booking page.
    - Allow colleagues to quickly open the app on their phones.
 
+7. **Rules reminders**
+   - Show four persistent reminders on the TV and main dashboard: potting an opponent's ball, the cushion rule (including the white), foul-snooker nomination subject to its rules, and shooting in any direction from baulk.
+   - Link to the full rules and keep the TV reminders readable within the 1080p layout.
+
 ### Future HUD Enhancements
 
 - Player of the Week.

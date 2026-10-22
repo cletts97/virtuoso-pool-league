@@ -1,5 +1,11 @@
 # Implementation status — Virtuoso Pool League
 
+## Dashboard playing-rule reminders — 22 October 2026
+
+- Added a shared four-rule reminder panel to the main dashboard and `/display`, preserving the owner's supplied wording for opponent-ball fouls, the cushion rule, foul snookers and playing from baulk. Both link to the full rules, with TV return navigation preserved. Main dashboard reminders use four/two/one columns as space decreases.
+- TV reminders remain visible in a full-width bottom row. Reduced TV heading sizes, spacing and card padding; the grid allocates remaining viewport height between bookings/standings and results/QR. Short desktop windows use compact typography and booking-row spacing; mobile remains a scrolling layout. No data, authorization or competition logic changed.
+- Validation: TypeScript, targeted ESLint and whitespace checks passed. Both focused desktop browser checks passed, covering full reminder/QR containment and card overflow at 1920×1080, 1920×900, 1536×700 and 1280×720, plus 1080p long names/current bookings. Reviewed the reduced-height screenshot. No full suite, production build, commit, push or deployment performed. Actual LG TV rendering remains unverified.
+
 ## Legacy TV JavaScript bundles — 22 October 2026
 
 - Added Vite 8-compatible `@vitejs/plugin-legacy`, targeting Chromium 53+ (webOS 4.x+) with automatic usage-based language polyfills confined to the legacy bundle. Modern ES-module output remains separate, with modern polyfills disabled. No application behaviour, styling, API or deployment configuration changed.

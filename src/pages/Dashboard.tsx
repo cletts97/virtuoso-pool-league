@@ -15,6 +15,7 @@ import { Avatar, Badge, Empty, PageHeading, Section, Stat } from '../components/
 import { MatchCard } from '../components/MatchCard';
 import { StandingsTable } from '../components/StandingsTable';
 import { TodayBookings } from '../components/TodayBookings';
+import { RuleReminders } from '../components/RuleReminders';
 
 export function Dashboard() {
   const { state, season } = useLeague();
@@ -109,6 +110,7 @@ export function Dashboard() {
         </div>
       </div>
       <TodayBookings />
+      <RuleReminders />
       <div className="stats-grid">
         <Stat
           label="In the competition"

@@ -14,6 +14,7 @@ test('short desktop viewports contain the TV QR tile and administrator sidebar f
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Welcome, Alex.' })).toBeVisible();
+    await expect(page.locator('.rule-reminders h3')).toHaveCount(4);
     const sidebar = page.locator('.sidebar');
     for (const selector of ['.league-note', '.company-link', 'a[href="/admin"]']) {
       const item = sidebar.locator(selector);
@@ -28,6 +29,24 @@ test('short desktop viewports contain the TV QR tile and administrator sidebar f
     }
     await page.goto('/display');
     await expect(page.locator('.tv-qr svg')).toBeVisible();
+    await expect(page.locator('.rule-reminders h3')).toHaveCount(4);
+    const reminders = page.getByRole('region', { name: 'Rules to remember' });
+    await expect(reminders).toBeInViewport({ ratio: 1 });
+    expect(
+      await reminders.evaluate((section) => {
+        const bounds = section.getBoundingClientRect();
+        return [...section.querySelectorAll('h2, h3, p, a')].every((element) => {
+          const rect = element.getBoundingClientRect();
+          return (
+            rect.top >= bounds.top &&
+            rect.bottom <= bounds.bottom &&
+            rect.left >= bounds.left &&
+            rect.right <= bounds.right
+          );
+        });
+      }),
+      `All four rules fit at ${width}x${height}`,
+    ).toBe(true);
     expect(
       await page.locator('.tv-qr').evaluate((tile) => {
         const bounds = tile.getBoundingClientRect();
@@ -43,6 +62,16 @@ test('short desktop viewports contain the TV QR tile and administrator sidebar f
       }),
       `QR image and copy fit with padding at ${width}x${height}`,
     ).toBe(true);
+    expect(
+      await page
+        .locator('.tv-grid > *')
+        .evaluateAll((cards) =>
+          cards
+            .filter((card) => card.scrollHeight > card.clientHeight + 1)
+            .map((card) => card.className),
+        ),
+      `TV cards do not overflow at ${width}x${height}`,
+    ).toEqual([]);
     expect(
       await page.evaluate(
         () =>

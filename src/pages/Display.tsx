@@ -7,6 +7,7 @@ import { liveMode } from '../auth/client';
 import { browserRepository } from '../data/browserRepository';
 import type { DisplaySnapshot } from '../data/display';
 import { bookingDayLabel, londonDate, londonTime } from '../domain/bookings';
+import { RuleReminders } from '../components/RuleReminders';
 
 const bookingUrl = new URL(
   '/bookings',
@@ -270,6 +271,7 @@ export function Display() {
             <span>League and casual bookings.</span>
           </div>
         </aside>
+        <RuleReminders display />
       </div>
       <footer className="tv-footer">
         <span>
