@@ -1,5 +1,11 @@
 # Implementation status — Virtuoso Pool League
 
+## Legacy TV JavaScript bundles — 22 October 2026
+
+- Added Vite 8-compatible `@vitejs/plugin-legacy`, targeting Chromium 53+ (webOS 4.x+) with automatic usage-based language polyfills confined to the legacy bundle. Modern ES-module output remains separate, with modern polyfills disabled. No application behaviour, styling, API or deployment configuration changed.
+- Documented the distinction between JavaScript compatibility and full browser support in README. Tailwind v4 still requires modern CSS; webOS 3.x/Chromium 38 is outside the JavaScript target. Actual LG TV rendering remains unverified pending its model/webOS version and a post-deployment device check. CSS/browser-API/TLS limitations are not fixed by this plugin.
+- Validation: ran **one API-mode production build** (`tsc -b && vite build`), which passed and emitted modern, legacy and legacy-polyfill bundles. Checked generated HTML for conditional legacy loading. Build reported bundle-size warnings (modern 618 kB; legacy 717 kB; legacy polyfills 136 kB, before gzip). No full tests, browser tests, commit, push or deployment performed.
+
 ## Mid-season player additions — 22 October 2026
 
 - Added administrator-only **Administration → Season & configuration → Add player to season** for an unfinalized singles regular season. Select any active account not already entered and a deadline of today or later, default two weeks ahead. The form previews the number of new matches before submission.

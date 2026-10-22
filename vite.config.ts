@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import legacy from '@vitejs/plugin-legacy';
 import tailwindcss from '@tailwindcss/vite';
 import { loadEnv } from 'vite';
 import { isPublicSupabaseKey } from './src/auth/publicConfig.ts';
@@ -15,7 +16,15 @@ export default defineConfig(({ mode }) => {
   )
     throw new Error('Live mode requires the public Supabase URL and publishable key.');
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      legacy({
+        // webOS 4.x uses Chromium 53. This targets JavaScript, not CSS support.
+        targets: ['chrome >= 53'],
+        modernPolyfills: false,
+      }),
+    ],
     optimizeDeps: { entries: ['index.html'] },
     server: {
       proxy: { '/api': 'http://127.0.0.1:7071' },

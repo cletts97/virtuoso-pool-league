@@ -30,6 +30,12 @@ npm run dev
 
 The portable runtime and its cache are local development aids, not tracked application dependencies.
 
+## Browser compatibility
+
+Production builds include a modern ES-module bundle and a separate legacy JavaScript bundle targeting Chromium 53+ (webOS 4.x and newer). Vite's legacy plugin conditionally loads the legacy bundle and usage-based language polyfills; modern browsers do not load these polyfills. Development mode remains modern-browser only.
+
+This is a JavaScript compatibility measure, not a guarantee of full TV support. [LG's engine table](https://webostv.developer.lge.com/develop/specifications/web-api-and-web-engine) lists Chromium 38 for webOS 3.x, which is outside this target. [Tailwind v4 requires modern CSS](https://tailwindcss.com/docs/compatibility), including Chrome 111+, so older TVs may still have layout/rendering limitations. The plugin does not repair CSS, missing browser APIs or outdated TLS certificates. Check `/display` on the actual TV after deployment; a current browser on an external display device is the reliable fallback for unsupported TVs.
+
 ## Try the main workflow
 
 1. The initial user is **Alex Morgan (Admin)**. Open **Fixtures & results**, then a scheduled match involving Alex (for example, round 6 against Oliver Grant).
