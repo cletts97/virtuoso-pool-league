@@ -221,6 +221,29 @@ export class LeagueService {
         }
       }
       await persistChanges(client, before, next);
+      if (command.type === 'updateProfile' || command.type === 'savePlayer') {
+        const profileId = command.type === 'updateProfile' ? actor.id : command.id;
+        const profile = next.players.find((p) => p.id === profileId);
+        const target = await client.query<{ auth_user_id: string | null }>(
+          'SELECT auth_user_id FROM public.profiles WHERE id=$1',
+          [profileId],
+        );
+        requireCondition(
+          profile && target.rows[0]?.auth_user_id,
+          400,
+          'This profile has no sign-in account.',
+        );
+        // Auth merges supplied metadata keys; never copy client metadata or change roles.
+        // Keep the shared write lock until both name writes complete to preserve ordering.
+        const { error } = await this.auth.auth.admin.updateUserById(target.rows[0].auth_user_id, {
+          user_metadata: { name: profile.name },
+        });
+        requireCondition(
+          !error,
+          503,
+          'The display name could not be synchronized. Please try again.',
+        );
+      }
       await this.resultEmails?.enqueue(client, before, next);
       const saved = await readState(client, actor.id);
       saved.selectedSeasonId = next.selectedSeasonId;

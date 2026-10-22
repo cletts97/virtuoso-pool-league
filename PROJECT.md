@@ -33,6 +33,7 @@ Keep operating costs as close to zero as reasonably possible.
 - League standings remain specific to the selected season.
 - Allow active accounts to upload, replace and remove their own profile photo through the profile editor. Show photos wherever the shared player avatar appears, with initials as fallback.
 - Store profile photos in private Supabase Storage with server-authorized uploads and short-lived image URLs; do not expose private photo URLs through the public TV response.
+- Keep public.profiles.name authoritative. Self-service display-name changes and administrator name edits also update the linked Supabase Auth user_metadata.name, preserving unrelated metadata and roles. Existing accounts synchronize when their name is next saved; no automatic bulk backfill.
 - Support multiple seasons and historical results.
 - When creating a season, administrators select from all active accounts. Create or reuse individual competition entries automatically; no separate Add to league enrollment step is required.
 

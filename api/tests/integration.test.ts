@@ -656,6 +656,49 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         'confirmed invited account',
       );
     });
+    it('synchronizes self and administrator name edits to Auth without replacing other metadata', async () => {
+      const before = await auth.auth.admin.getUserById(users[1].id);
+      if (before.error) throw before.error;
+      const untouched = await auth.auth.admin.getUserById(users[2].id);
+      const renamed = await command(
+        { type: 'updateProfile', name: '  Updated colleague  ' },
+        users[1],
+      );
+      expect(renamed.players.find((p) => p.id === profiles[1])!.name).toBe('Updated colleague');
+      let account = await auth.auth.admin.getUserById(users[1].id);
+      expect(account.error).toBeNull();
+      expect(account.data.user!.user_metadata).toEqual({
+        ...before.data.user.user_metadata,
+        name: 'Updated colleague',
+      });
+      await command({
+        type: 'savePlayer',
+        id: profiles[1],
+        name: 'Administrator edited',
+        department: '',
+        active: true,
+      });
+      account = await auth.auth.admin.getUserById(users[1].id);
+      expect(account.data.user!.user_metadata).toEqual({
+        ...before.data.user.user_metadata,
+        name: 'Administrator edited',
+      });
+      expect((await auth.auth.admin.getUserById(users[2].id)).data.user!.user_metadata).toEqual(
+        untouched.data.user!.user_metadata,
+      );
+      await expect(
+        command(
+          {
+            type: 'savePlayer',
+            id: profiles[2],
+            name: 'Unauthorized',
+            department: '',
+            active: true,
+          },
+          users[1],
+        ),
+      ).rejects.toThrow('Administrator');
+    });
     it('rejects inactive accounts with still-valid tokens', async () => {
       await pool.query('UPDATE public.profiles SET active=false WHERE id=$1', [profiles[4]]);
       expect(

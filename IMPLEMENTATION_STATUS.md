@@ -1,5 +1,11 @@
 # Implementation status — Virtuoso Pool League
 
+## Display-name synchronization with Supabase Auth — 22 October 2026
+
+- Self-service display-name saves and administrator user edits now synchronize the validated profile name to the linked Auth user_metadata.name through the server-only Supabase Admin API. Resolve the Auth UUID from the existing profile mapping; never trust client-supplied identity/metadata. Patch only name, preserving other metadata and authorization roles. Profile names remain authoritative; mock mode is unchanged.
+- Sync runs under the existing shared write lock, after profile persistence and before database commit. Auth errors fail the save and roll back PostgreSQL changes; the two services cannot provide a single distributed transaction, so a rare database commit failure after a successful Auth update can leave metadata temporarily different. Re-saving the name repairs this. No bulk backfill: existing users should save their display name once after API deployment.
+- One focused disposable local Supabase integration test passed (20 unrelated tests skipped), covering self/admin edits, trimmed names, preservation of other metadata, unchanged unrelated users and denied non-admin edits. TypeScript, targeted ESLint and API production build passed. No migration, new setting/dependency, real email, cloud change, commit or deployment.
+
 ## Administrator user deletion and simpler editing — 22 October 2026
 
 - Removed Department from the administrator user form and management list. Existing department values are preserved on save; blank values are valid for new demo users. No column or schema changes.
