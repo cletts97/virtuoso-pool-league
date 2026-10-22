@@ -11,6 +11,8 @@ import { MatchCard } from '../components/MatchCard';
 import type { Player } from '../domain/types';
 import { QualificationNotice } from '../components/QualificationNotice';
 import { AddSeasonPlayerForm } from '../components/AddSeasonPlayerForm';
+import { CasualResultForm } from '../components/CasualResultForm';
+import '../casual.css';
 
 export function Admin() {
   const { state, season, run, preferences, busy } = useLeague();
@@ -19,6 +21,7 @@ export function Admin() {
     'player' | 'season' | 'settings' | 'finalize' | 'announcement' | 'generate' | 'latePlayer'
   >();
   const [editing, setEditing] = useState<Player>();
+  const [casualResultId, setCasualResultId] = useState<string>();
   const user = state.players.find((p) => p.id === state.currentUserId)!;
   if (user.role !== 'admin')
     return (
@@ -29,6 +32,11 @@ export function Admin() {
       </Empty>
     );
   const fixtures = state.fixtures.filter((f) => f.seasonId === season.id);
+  // Casual games have no season: always include all unresolved casual disputes.
+  const casualDisputes = (state.casualResults ?? []).filter((r) => r.status === 'disputed');
+  const resolvingCasual = casualDisputes.find((r) => r.id === casualResultId);
+  const casualTeamName = (ids: string[]) =>
+    ids.map((id) => state.players.find((p) => p.id === id)?.name ?? 'Former account').join(' & ');
   const disputes = fixtures.filter((f) => f.status === 'disputed'),
     postponed = fixtures.filter((f) => f.status === 'postponed'),
     overdue = fixtures.filter((f) => matchStatus(f) === 'overdue');
@@ -55,7 +63,11 @@ export function Admin() {
           value={state.players.filter((p) => p.active && p.role !== 'colleague').length}
           detail="Across the club"
         />
-        <Stat label="Disputed results" value={disputes.length} detail="Waiting for your review" />
+        <Stat
+          label="Disputed results"
+          value={disputes.length + casualDisputes.length}
+          detail="Selected season and all casual games"
+        />
         <Stat label="Overdue matches" value={overdue.length} detail="No automatic penalties" />
         <Stat
           label="Postponed fixtures"
@@ -289,14 +301,56 @@ export function Admin() {
           <div className="stack">
             <Section
               title="Disputed results"
-              subtitle="Review the match timeline, then resolve with a recorded reason."
+              subtitle="League matches for the selected season and casual games from all dates. Resolve with a recorded reason."
             >
               <div className="match-grid">
                 {disputes.map((f) => (
                   <MatchCard key={f.id} fixture={f} />
                 ))}
               </div>
-              {!disputes.length && <Empty title="No disputed results" />}
+              {!!casualDisputes.length && (
+                <div className="casual-history">
+                  {casualDisputes.map((r) => (
+                    <article className="casual-game" key={r.id}>
+                      <header>
+                        <span>
+                          Casual {r.homePlayerIds.length === 2 ? 'doubles' : 'singles'} ·{' '}
+                          {r.playedOn}
+                        </span>
+                        <Badge status={r.status} />
+                      </header>
+                      <div className="casual-score">
+                        <div>
+                          <strong>{casualTeamName(r.homePlayerIds)}</strong>
+                        </div>
+                        <b>
+                          {r.score.home} – {r.score.away}
+                        </b>
+                        <div>
+                          <strong>{casualTeamName(r.awayPlayerIds)}</strong>
+                        </div>
+                      </div>
+                      <p className="field-help">
+                        Dispute:{' '}
+                        {[...r.history].reverse().find((h) => h.action === 'disputed')?.reason ??
+                          'Review the game history for details.'}
+                      </p>
+                      <div className="casual-actions">
+                        <button
+                          className="button primary small"
+                          onClick={() => setCasualResultId(r.id)}
+                        >
+                          Resolve casual result
+                        </button>
+                        <Link className="button secondary small" to="/casual">
+                          Casual games & history
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+              {!disputes.length && !casualDisputes.length && <Empty title="No disputed results" />}
             </Section>
             <Section
               title="Overdue fixtures"
@@ -327,6 +381,14 @@ export function Admin() {
           </div>
         )}
       </div>
+      {resolvingCasual && (
+        <CasualResultForm
+          key={resolvingCasual.id}
+          result={resolvingCasual}
+          resolve
+          onClose={() => setCasualResultId(undefined)}
+        />
+      )}
       {modal === 'player' && <PlayerForm player={editing} onClose={close} />}{' '}
       {modal === 'season' && <SeasonForm onClose={close} />}{' '}
       {modal === 'settings' && <SeasonForm edit onClose={close} />}{' '}

@@ -131,6 +131,7 @@ Display standings using the following columns:
 - Support one-frame games and best-of-three/five/seven matches (default three), completed scores without draws, and a date no later than today. Each side has one or two distinct players.
 - Only someone who played may submit. An opposing player confirms or disputes; a submitting player's doubles teammate cannot confirm. The original submitter may correct and resubmit a dispute with the same players.
 - Administrators may resolve/correct or void results with a reason. Preserve revisions; voided games cannot be reopened. Only confirmed results affect casual statistics.
+- Include disputed casual results in the administration dispute count and Fixtures & disputes queue across all dates, independent of the selected league season, with direct resolution.
 - Head-to-head compares exact singles players or doubles teams across all dates, independent of member/side order. Keep league records separate. Multiple real games on the same date are allowed.
 - Public visitors see confirmed scores/players without audit identities, history or reasons. Pending/disputed/voided games are visible only to participants and administrators.
 - Show pending opposing approvals on the dashboard and casual page. Existing season-scoped notifications/emails are unchanged; no casual emails are sent.

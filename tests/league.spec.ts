@@ -1,6 +1,76 @@
 import { test, expect } from '@playwright/test';
 import type { LeagueState } from '../src/domain/types';
 
+test('administrator queue includes and resolves casual disputes independently of season', async ({
+  page,
+}) => {
+  await page.goto('/admin');
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    state.casualResults = [1, 2].map((size) => ({
+      id: crypto.randomUUID(),
+      homePlayerIds: size === 1 ? ['p02'] : ['p02', 'p03'],
+      awayPlayerIds: size === 1 ? ['p04'] : ['p04', 'p05'],
+      playedOn: '2026-10-01',
+      bestOf: 3,
+      score: { home: 2, away: 1 },
+      status: 'disputed',
+      submittedBy: 'p02',
+      history: [
+        {
+          id: crypto.randomUUID(),
+          actorId: 'p02',
+          action: 'submitted',
+          at: '2026-10-01T12:00:00Z',
+          score: { home: 2, away: 1 },
+        },
+        {
+          id: crypto.randomUUID(),
+          actorId: 'p04',
+          action: 'disputed',
+          at: '2026-10-01T12:05:00Z',
+          reason: 'The recorded score is wrong',
+          score: { home: 2, away: 1 },
+        },
+      ],
+    }));
+    // This historical season has no league disputes; casual disputes must still appear.
+    state.selectedSeasonId = 'summer-2026';
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(state));
+  });
+  await page.reload();
+  const count = page
+    .locator('.stat-card')
+    .filter({ has: page.getByText('Disputed results', { exact: true }) })
+    .locator('.stat-value');
+  await expect(count).toHaveText('2');
+  await page.getByRole('tab', { name: 'Fixtures & disputes' }).click();
+  await expect(page.getByRole('heading', { name: 'No disputed results', exact: true })).toHaveCount(
+    0,
+  );
+  await expect(page.locator('.casual-game')).toHaveCount(2);
+  await expect(page.locator('.casual-game').first()).toContainText('Casual singles');
+  await expect(page.locator('.casual-game').last()).toContainText('Casual doubles');
+  await expect(page.locator('.casual-game').first()).toContainText('The recorded score is wrong');
+  await page.getByRole('button', { name: 'Resolve casual result' }).first().click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Score (Side A – Side B)').selectOption('2:0');
+  await dialog.getByLabel('Reason', { exact: true }).fill('Confirmed with both players');
+  await dialog.getByRole('button', { name: 'Confirm correction', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(count).toHaveText('1');
+  await expect(page.locator('.casual-game')).toHaveCount(1);
+  await page.reload();
+  await expect(count).toHaveText('1');
+  const resolved = await page.evaluate(() =>
+    (
+      JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState
+    ).casualResults!.find((r) => r.status === 'confirmed')!,
+  );
+  expect(resolved.score).toEqual({ home: 2, away: 0 });
+  expect(resolved.history.map((h) => h.action)).toEqual(['submitted', 'disputed', 'corrected']);
+});
+
 test('casual singles and doubles results persist and require opposing confirmation', async ({
   page,
 }) => {

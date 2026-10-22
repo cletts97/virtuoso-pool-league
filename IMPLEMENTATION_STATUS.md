@@ -1,5 +1,10 @@
 # Implementation status — Virtuoso Pool League
 
+## Casual disputes in administration — 22 October 2026
+
+- Fixed the administrator dispute count/queue, which previously inspected only league fixtures. **Fixtures & disputes → Disputed results** now includes all disputed casual singles/doubles games, independent of selected season, alongside that season's league disputes. Cards show players/teams, score, date and dispute reason, with direct resolution through the existing correction form and a link to casual history. Successful correction removes the card and updates the count without a refresh; existing server authorization/history rules are reused.
+- Validation: TypeScript, targeted ESLint, seven casual workflow unit tests and one focused desktop browser test passed. The browser test covers singles/doubles visibility while a historical season is selected, no incorrect empty state, direct correction with reason, updated count, refresh persistence and preserved history. No database migration, API change, full suite/build, commit, push or deployment required/performed.
+
 ## Casual results and retired unavailability — 22 October 2026
 
 - Removed the availability tab/form and retired availability commands at API validation. Preserved archived database/mock records and existing fixture dates; new schedules and late-entry catch-up deadlines no longer adjust around archived leave. Updated affected requirements/tests.
