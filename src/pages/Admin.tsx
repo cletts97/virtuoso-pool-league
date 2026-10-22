@@ -54,9 +54,9 @@ export function Admin() {
   return (
     <>
       <PageHeading
-        eyebrow="BEHIND THE SCENES"
+        eyebrow="ADMINISTRATION"
         title="League administration"
-        description="Keep the competition running smoothly. Every decision, properly recorded."
+        description="Manage seasons, players, fixtures and league settings."
         action={
           <button className="button primary" onClick={() => setModal('season')}>
             <Plus size={17} />
@@ -75,7 +75,7 @@ export function Admin() {
         <Stat
           label="Postponed fixtures"
           value={postponed.length}
-          detail="Ready for a catch-up plan"
+          detail="Waiting to be rescheduled"
         />
       </div>
       <div className="tabs" role="tablist" aria-label="Administration sections">
@@ -215,7 +215,7 @@ export function Admin() {
               <Section title="League communications">
                 <div className="admin-season">
                   <Megaphone className="accent" size={28} />
-                  <h3>Keep everyone in the loop</h3>
+                  <h3>League announcements</h3>
                   <p>Post a notice to the dashboard and everyone’s in-app inbox for this season.</p>
                   <button
                     disabled={!season.id}
@@ -229,12 +229,10 @@ export function Admin() {
                 </div>
               </Section>
               <div className="notice-card">
-                <div className="eyebrow">BUILT FOR WHAT’S NEXT</div>
-                <h3>One league now. More possibilities ahead.</h3>
+                <div className="eyebrow">COMPETITION FORMATS</div>
+                <h3>Singles league</h3>
                 <p>
-                  Competition entries support individuals and two-person teams. Doubles scheduling
-                  and team management are reserved for a future release, keeping this season focused
-                  on singles.
+                  This league uses singles matches. Doubles competitions are not available yet.
                 </p>
               </div>
             </div>

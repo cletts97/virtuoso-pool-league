@@ -259,6 +259,8 @@ The HUD should prominently display:
 
 ## Design Goals
 
+- Use simple, natural language throughout the interface. Prefer descriptive labels and useful instructions over dramatic sports slogans or promotional wording.
+
 - Modern sports dashboard aesthetic.
 - Subtle Virtuoso branding.
 - Responsive on desktop and mobile.

@@ -266,7 +266,7 @@ test('invitation callback sets a password and grants casual access', async ({ pa
   await expect(page.getByRole('alert')).toHaveText('The passwords do not match.');
   await page.getByLabel('Confirm password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Save password and sign in' }).click();
-  await expect(page.getByRole('heading', { name: 'Welcome to the league.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   await login(page, accounts.length - 1);
   await page.goto('/bookings');
   await expect(page.getByRole('button', { name: 'Reserve the table', exact: true })).toBeVisible();

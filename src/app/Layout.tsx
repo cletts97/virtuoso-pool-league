@@ -86,9 +86,9 @@ export function Layout() {
           <div className="league-note">
             <div className="small-ball">8</div>
             <p>
-              A little competition.
+              Office pool.
               <br />
-              <strong>A lot of good company.</strong>
+              <strong>League and casual games.</strong>
             </p>
           </div>
           <a
@@ -228,7 +228,7 @@ export function Layout() {
         </main>
         <footer className="app-footer">
           <span>Virtuoso Pool League</span>
-          <span>Good games. Great colleagues.</span>
+          <span>Fixtures, results and bookings.</span>
           <span>{liveMode ? 'Shared league workspace' : 'Demo workspace · Local data'}</span>
         </footer>
       </div>

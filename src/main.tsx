@@ -58,7 +58,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route
                 path="*"
                 element={
-                  <Empty title="You’ve gone off the table">
+                  <Empty title="Page not found">
                     <Link className="text-link" to="/">
                       Return to the clubhouse
                     </Link>

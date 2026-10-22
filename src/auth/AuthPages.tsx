@@ -55,7 +55,7 @@ export function SignIn() {
       <div className="auth-card">
         <img src="/brand/virtuoso-white.png" alt="Virtuoso" />
         <div className="eyebrow">POOL LEAGUE</div>
-        <h1>{reset ? 'Back in the game.' : 'Welcome to the league.'}</h1>
+        <h1>{reset ? 'Reset your password' : 'Sign in'}</h1>
         <p>
           {reset
             ? 'Request a password reset for your invited account.'

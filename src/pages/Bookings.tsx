@@ -47,9 +47,9 @@ export function Bookings() {
   return (
     <>
       <PageHeading
-        eyebrow="MAKE TIME FOR A GAME"
-        title="The table is yours."
-        description="League rivals or a friendly frame. Reserve a little time together."
+        eyebrow="TABLE BOOKINGS"
+        title="Table bookings"
+        description="View availability and reserve the table for league or casual games."
         action={
           state.readOnly ? (
             <Link className="button primary" to="/login" state={{ from: '/bookings' }}>
@@ -84,7 +84,7 @@ export function Bookings() {
       <section className="panel booking-calendar" aria-label="Booking calendar">
         <div className="section-heading">
           <div>
-            <h2>Find your next frame</h2>
+            <h2>Booking calendar</h2>
             <p>Today and the next seven days · Bookings open on a rolling seven-day basis</p>
           </div>
         </div>
@@ -105,7 +105,7 @@ export function Bookings() {
               >
                 <span>{day === today ? 'Today' : bookingDayLabel(day).split(',')[0]}</span>
                 <strong>{Number(day.slice(-2))}</strong>
-                <small>{closed ? 'Closed' : count ? `${count} reserved` : 'Wide open'}</small>
+                <small>{closed ? 'Closed' : count ? `${count} reserved` : 'Available'}</small>
               </button>
             );
           })}
@@ -134,12 +134,12 @@ export function Bookings() {
           {!bookings.length && (
             <Empty title="No reservations here">
               {filter === 'all'
-                ? 'Choose an available time to make your next game happen.'
+                ? 'Choose an available time to make a reservation.'
                 : 'Try another day or view all reservations.'}
             </Empty>
           )}
         </Section>
-        <Section title="Room for a game" subtitle="Available start times · Europe/London">
+        <Section title="Available times" subtitle="Available start times · Europe/London">
           <div className="booking-filter">
             <label>
               Find a slot

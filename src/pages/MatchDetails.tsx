@@ -109,8 +109,8 @@ export function MatchDetails() {
           match.stage === 'regular'
             ? `Round ${match.round} · Match centre`
             : match.stage === 'final'
-              ? 'The grand final'
-              : 'The semifinals'
+              ? 'Final'
+              : 'Semifinals'
         }
         description={`Best of ${match.bestOf} frames · First to ${Math.ceil(match.bestOf / 2)} wins · Due ${new Date(`${match.dueDate}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`}
         action={<Badge status={matchStatus(match)} />}
@@ -222,7 +222,7 @@ export function MatchDetails() {
         )}
       </section>
       <div className="dashboard-columns">
-        <Section title="Match timeline" subtitle="An accountable record of every change.">
+        <Section title="Match timeline" subtitle="Recorded submissions, approvals and changes.">
           {match.history.length ? (
             <ol className="timeline">
               {[...match.history].reverse().map((h) => (
@@ -246,7 +246,7 @@ export function MatchDetails() {
               ))}
             </ol>
           ) : (
-            <Empty title="A match waiting for its story">
+            <Empty title="No match activity yet">
               Play early if you like. Submit the score when you’re done.
             </Empty>
           )}

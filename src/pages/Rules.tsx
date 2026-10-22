@@ -125,7 +125,7 @@ export function Rules() {
       </header>
       <main id="rules-content" className="rules-content">
         <PageHeading
-          eyebrow="KNOW YOUR NEXT SHOT"
+          eyebrow="PLAYING RULES"
           title="Virtuoso Pool League — Rules"
           description="Based on the official World Eightball Pool Federation (WEPF) rules."
         />

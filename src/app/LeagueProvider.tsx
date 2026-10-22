@@ -120,7 +120,7 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     return (
       <main className="error-screen" aria-busy="true">
         <div className="loader" />
-        <p>Getting the table ready…</p>
+        <p>Loading league information…</p>
       </main>
     );
   const season = state.seasons.find((s) => s.id === state.selectedSeasonId) ?? {

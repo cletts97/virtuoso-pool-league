@@ -22,7 +22,7 @@ export function TodayBookings() {
   return (
     <Section
       title="Today at the table"
-      subtitle="League games and friendly frames · Europe/London"
+      subtitle="League and casual bookings · Europe/London"
       link={{ to: '/bookings', label: 'Booking calendar' }}
     >
       <div className="booking-dashboard">
@@ -41,7 +41,7 @@ export function TodayBookings() {
         ))}
         {!bookings.length && (
           <Empty title="No more reservations today">
-            Find an opening and make time for a game.
+            View available times in the booking calendar.
           </Empty>
         )}
       </div>

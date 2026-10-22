@@ -39,9 +39,9 @@ export function Notifications() {
   return (
     <>
       <PageHeading
-        eyebrow="STAY IN THE LOOP"
+        eyebrow="NOTIFICATIONS"
         title="Your league inbox"
-        description="Fixture reminders, score confirmations, and the news from around the table."
+        description="Fixture reminders, result confirmations and league notices."
         action={
           <button
             className="button secondary"
@@ -135,7 +135,7 @@ export function Notifications() {
           );
         })}
         {!items.length && (
-          <Empty title="You’re all caught up">
+          <Empty title="No new notifications">
             New league updates will appear here. These are demo in-app notifications; no emails are
             sent.
           </Empty>

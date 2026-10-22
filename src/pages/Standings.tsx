@@ -12,9 +12,9 @@ export function Standings() {
   return (
     <>
       <PageHeading
-        eyebrow="THE COMPETITION"
-        title="Every frame counts."
-        description={`${season.name} · The standings, as they stand. Only confirmed results count.`}
+        eyebrow="STANDINGS"
+        title="League table"
+        description={`${season.name} · Rankings based on confirmed results.`}
       />
       <div className="podium-grid">
         {rows.slice(0, 3).map((row) => (
@@ -28,10 +28,10 @@ export function Standings() {
             <div>
               <span className="eyebrow">
                 {row.position === 1
-                  ? 'SETTING THE PACE'
+                  ? 'FIRST PLACE'
                   : row.position === 2
-                    ? 'IN THE CHASE'
-                    : 'ON THE PODIUM'}
+                    ? 'SECOND PLACE'
+                    : 'THIRD PLACE'}
               </span>
               <h2>{participantName(state, row.participantId)}</h2>
               <p>
@@ -67,7 +67,7 @@ export function Standings() {
       <div className="rules-callout">
         <Trophy size={23} />
         <div>
-          <h3>The road to the title</h3>
+          <h3>Playoff qualification</h3>
           <p>
             Ranked by match wins, frame difference, then frames won. For exactly two players still
             tied, their confirmed regular-season head-to-head result decides the order. Otherwise

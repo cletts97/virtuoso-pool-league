@@ -29,9 +29,9 @@ export function Fixtures() {
   return (
     <>
       <PageHeading
-        eyebrow="ON THE TABLE"
+        eyebrow="SCHEDULE"
         title="Fixtures & results"
-        description="Find your next opponent, record a result, or relive a great game."
+        description="Browse scheduled matches and results, or submit a score."
         action={<Badge status={season.status} />}
       />
       <div className="filter-bar">
@@ -66,7 +66,7 @@ export function Fixtures() {
                 {all.find((f) => f.round === r)?.stage === 'regular'
                   ? `Round ${r}`
                   : all.find((f) => f.round === r)?.stage === 'final'
-                    ? 'Grand final'
+                    ? 'Final'
                     : 'Semifinals'}
               </option>
             ))}
@@ -127,7 +127,7 @@ export function Fixtures() {
                       <span>{String(r).padStart(2, '0')}</span>Round {r}
                     </>
                   ) : stage === 'final' ? (
-                    'Grand final'
+                    'Final'
                   ) : (
                     'Semifinals'
                   )}

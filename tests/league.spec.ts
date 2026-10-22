@@ -3,7 +3,7 @@ import type { LeagueState } from '../src/domain/types';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Good to see you, Alex.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Alex.' })).toBeVisible();
 });
 
 test('all primary screens render without runtime errors or page overflow', async ({
@@ -86,7 +86,7 @@ test('legacy demo data migrates on refresh without changing approved results', a
     return state;
   });
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Good to see you, Alex.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Alex.' })).toBeVisible();
   const after = await page.evaluate(
     () => JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState,
   );

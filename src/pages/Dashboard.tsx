@@ -40,16 +40,16 @@ export function Dashboard() {
   return (
     <>
       <PageHeading
-        eyebrow="THE CLUBHOUSE"
+        eyebrow="OVERVIEW"
         title={
           state.readOnly
             ? 'Welcome to Virtuoso Pool League.'
-            : `Good to see you, ${user.name.split(' ')[0]}.`
+            : `Welcome, ${user.name.split(' ')[0]}.`
         }
         description={
           season.status === 'complete'
-            ? 'A season to remember. Explore the results and the road to the title.'
-            : 'The table is set. Let’s make every frame count.'
+            ? 'View the final standings, results and playoff matches.'
+            : 'View league standings, fixtures, results and table bookings.'
         }
         action={
           <Link className="button secondary" to="/fixtures">
@@ -68,28 +68,28 @@ export function Dashboard() {
           <h2>
             {season.status === 'complete' ? (
               <>
-                A season.
+                Season complete.
                 <br />
-                <em>A champion.</em>
+                <em>Final results.</em>
               </>
             ) : (
               <>
-                Office colleagues.
+                Pool league.
                 <br />
-                <em>Table rivals.</em>
+                <em>Season overview.</em>
               </>
             )}
           </h2>
           <p>
             {season.status === 'complete' && season.championId
-              ? `${participantName(state, season.championId)} takes the crown. Relive the season, frame by frame.`
-              : `${season.participantIds.length} players. One league. Four playoff spots. Your next great game starts here.`}
+              ? `${participantName(state, season.championId)} won the season. View the final results.`
+              : `${season.participantIds.length} players. View the schedule, results and playoff places.`}
           </p>
           <Link
             className="button primary"
             to={season.status === 'complete' ? '/playoffs' : '/standings'}
           >
-            {season.status === 'complete' ? 'Meet the champion' : 'Explore the standings'}
+            {season.status === 'complete' ? 'View season winner' : 'View standings'}
             <ArrowUpRight size={17} />
           </Link>
         </div>
@@ -113,7 +113,7 @@ export function Dashboard() {
         <Stat
           label="In the competition"
           value={season.participantIds.length}
-          detail="Players. One shared ambition."
+          detail="Players in this season."
           icon={<Users size={18} />}
         />
         <Stat
@@ -136,7 +136,7 @@ export function Dashboard() {
               : own?.played
                 ? `${own.won} wins · ${own.lost} losses`
                 : ownEntry
-                  ? 'Your story starts with a game'
+                  ? 'No matches played yet'
                   : 'Casual bookings are open to you'
           }
           icon={<Flag size={18} />}
@@ -160,7 +160,7 @@ export function Dashboard() {
               {approvals.length} {approvals.length === 1 ? 'result needs' : 'results need'} your
               confirmation
             </strong>
-            <span>Review your opponent’s score to make it official.</span>
+            <span>Review your opponent’s score to confirm the result.</span>
           </div>
           <ArrowRight size={20} />
         </Link>
@@ -168,8 +168,8 @@ export function Dashboard() {
       <div className="dashboard-columns">
         <div className="stack">
           <Section
-            title="The race to the playoffs"
-            subtitle="Every frame makes a difference."
+            title="League table"
+            subtitle="Standings based on confirmed results."
             link={{ to: '/standings', label: 'Full table' }}
           >
             <StandingsTable preview />
@@ -181,7 +181,7 @@ export function Dashboard() {
             </div>
           </Section>
           <Section
-            title="Around the tables"
+            title="Recent results"
             subtitle="The latest confirmed results."
             link={{ to: '/fixtures?status=confirmed', label: 'All results' }}
           >
@@ -203,16 +203,16 @@ export function Dashboard() {
                   </div>
                 </Link>
               ))}
-              {!recent.length && <Empty title="The first result is still to come" />}
+              {!recent.length && <Empty title="No confirmed results yet" />}
             </div>
           </Section>
         </div>
         <div className="stack">
-          <Section title="Your next match" subtitle="Find your opponent. Find your form.">
+          <Section title="Your next match" subtitle="Your next scheduled fixture.">
             {next ? (
               <MatchCard fixture={next} />
             ) : (
-              <Empty title="You’re all caught up">Check the full schedule for your season.</Empty>
+              <Empty title="No upcoming matches">Check the full schedule for your season.</Empty>
             )}
           </Section>
           <div className="notice-card">
@@ -221,11 +221,11 @@ export function Dashboard() {
             </div>
             <h3>
               {state.announcements.find((a) => a.seasonId === season.id)?.title ??
-                'Make it a good game.'}
+                'League information'}
             </h3>
             <p>
               {state.announcements.find((a) => a.seasonId === season.id)?.body ??
-                'Keep it friendly, confirm your results, and enjoy the competition.'}
+                'Check your fixtures and confirm submitted results after each match.'}
             </p>
             <Link to="/notifications" className="text-link">
               Visit your inbox
@@ -235,8 +235,8 @@ export function Dashboard() {
         </div>
       </div>
       <Section
-        title="Next on the baize"
-        subtitle="The next chapter of the competition."
+        title="Upcoming fixtures"
+        subtitle="Scheduled matches for this season."
         link={{ to: '/fixtures', label: 'Full schedule' }}
       >
         <div className="match-grid">

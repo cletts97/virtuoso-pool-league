@@ -94,19 +94,19 @@ export function Display() {
               : current
                 ? 'ON THE TABLE'
                 : open
-                  ? 'READY FOR A GAME'
+                  ? 'TABLE AVAILABLE'
                   : 'OUTSIDE OFFICE HOURS'}
           </div>
           <h1 className={current && current.owner.length > 28 ? 'tv-long-name' : undefined}>
             {!data
-              ? 'Getting the table ready…'
+              ? 'Loading table information…'
               : stale
                 ? 'Checking availability…'
                 : current
                   ? current.owner
                   : open
                     ? 'The table is free.'
-                    : 'See you next session.'}
+                    : 'Outside office hours'}
           </h1>
           {current ? (
             <>
@@ -143,14 +143,14 @@ export function Display() {
           )}
           <div className="tv-current-foot">
             {config ? `Office hours ${config.opensAt}–${config.closesAt}` : 'Loading office hours'}
-            <span>One table. Good company.</span>
+            <span>Shared office pool table</span>
           </div>
         </section>
         <section className="tv-panel tv-standings">
           <div className="tv-section-title">
             <h2>
               <Trophy size={22} />
-              The race to the playoffs
+              League standings
             </h2>
             <span>{data?.season?.name ?? 'No published season'}</span>
           </div>
@@ -216,14 +216,14 @@ export function Display() {
             <p className="tv-empty">
               No more bookings today.
               <br />
-              Scan the code to reserve your next game.
+              Scan the code to book the table.
             </p>
           )}
         </section>
         <section className="tv-panel tv-results">
           <div className="tv-result-column">
             <div className="tv-section-title">
-              <h2>Fresh off the table</h2>
+              <h2>Recent results</h2>
               <span>Approved results</span>
             </div>
             {data?.results.map((r) => (
@@ -237,12 +237,10 @@ export function Display() {
                 <span>{r.away}</span>
               </div>
             ))}
-            {!data?.results.length && (
-              <p className="tv-empty">The first result is still to come.</p>
-            )}
+            {!data?.results.length && <p className="tv-empty">No confirmed results yet.</p>}
           </div>
           <div className="tv-result-column">
-            <h2 className="tv-fixtures-title">Coming up in the league</h2>
+            <h2 className="tv-fixtures-title">Upcoming fixtures</h2>
             {data?.fixtures.map((f) => (
               <div className="tv-fixture" key={f.id}>
                 <strong>
@@ -267,13 +265,9 @@ export function Display() {
             title="Scan to book the pool table"
           />
           <div>
-            <h2>
-              Your next game
-              <br />
-              starts here.
-            </h2>
+            <h2>Book the table</h2>
             <p>Scan to reserve the table</p>
-            <span>League or casual. Everyone’s welcome.</span>
+            <span>League and casual bookings.</span>
           </div>
         </aside>
       </div>
@@ -286,7 +280,7 @@ export function Display() {
               : 'Connecting…'}
         </span>
         <span>{liveMode ? 'Virtuoso · Shared office table' : 'Demo · Browser-local data'}</span>
-        <span>Good games. Great colleagues.</span>
+        <span>Fixtures, results and bookings.</span>
       </footer>
     </main>
   );

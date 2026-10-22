@@ -78,9 +78,9 @@ export function Playoffs() {
   return (
     <>
       <PageHeading
-        eyebrow="THE ROAD TO GLORY"
-        title="Four contenders. One champion."
-        description="The league gets you here. Your next game takes you further."
+        eyebrow="SEASON PLAYOFFS"
+        title="Playoffs"
+        description="The top four players qualify for the semifinals."
         action={
           <span className="badge badge-playoffs">
             <Trophy size={16} />
@@ -93,7 +93,7 @@ export function Playoffs() {
         <div className="action-banner neutral">
           <LockKeyhole size={22} />
           <div>
-            <strong>The bracket is taking shape</strong>
+            <strong>Provisional playoff bracket</strong>
             <span>
               Projected from today’s standings. Seeds lock after all {count || 'regular-season'}{' '}
               matches are confirmed ({confirmed} so far), or when an administrator finalizes the
@@ -111,7 +111,7 @@ export function Playoffs() {
       <div className="bracket-panel">
         <div className="bracket-heading">
           <span className="eyebrow">{season.name}</span>
-          <h2>THE CHAMPIONSHIP</h2>
+          <h2>PLAYOFF BRACKET</h2>
           <span className="bracket-rule" />
         </div>
         <div className="bracket">
@@ -139,25 +139,25 @@ export function Playoffs() {
           <div className="bracket-stage final-stage">
             <div className="stage-title">
               <span>02</span>
-              <h3>Grand final</h3>
+              <h3>Final</h3>
               <small>FIRST TO 4</small>
             </div>
             <div className="final-slot">
-              <BracketMatch fixture={final} label="The title match" bestOf={7} />
+              <BracketMatch fixture={final} label="Final" bestOf={7} />
             </div>
           </div>
           <div className="bracket-stage champion-stage">
             <div className="stage-title">
               <span>03</span>
-              <h3>The champion</h3>
-              <small>ONE OF A KIND</small>
+              <h3>Season winner</h3>
+              <small>SEASON RESULT</small>
             </div>
             <div className={`champion-card ${season.championId ? 'crowned' : ''}`}>
               <div className="trophy-halo">
                 <Crown size={54} strokeWidth={1.3} />
               </div>
               <span className="eyebrow">
-                {season.championId ? 'YOUR LEAGUE CHAMPION' : 'THE CROWN AWAITS'}
+                {season.championId ? 'SEASON WINNER' : 'AWAITING FINAL RESULT'}
               </span>
               {season.championId ? (
                 <>
@@ -170,11 +170,11 @@ export function Playoffs() {
               ) : (
                 <>
                   <h2>
-                    Who will own
+                    Winner not
                     <br />
-                    the table?
+                    confirmed
                   </h2>
-                  <p>One final. Everything to play for.</p>
+                  <p>The winner will appear after the final is confirmed.</p>
                 </>
               )}
             </div>
@@ -189,15 +189,15 @@ export function Playoffs() {
       </div>
       <div className="playoff-info">
         <div>
-          <strong>01 / EARN YOUR PLACE</strong>
+          <strong>01 / QUALIFICATION</strong>
           <p>Finish in the top four of the regular season.</p>
         </div>
         <div>
-          <strong>02 / WIN YOUR SEMIFINAL</strong>
+          <strong>02 / SEMIFINALS</strong>
           <p>First plays fourth. Second plays third. Best of five.</p>
         </div>
         <div>
-          <strong>03 / TAKE THE TITLE</strong>
+          <strong>03 / FINAL</strong>
           <p>The semifinal winners meet in a best-of-seven final.</p>
         </div>
       </div>

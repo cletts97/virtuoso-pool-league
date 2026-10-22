@@ -233,7 +233,7 @@ export function createSeed(today = dateOnly()): LeagueState {
       seasonId: current.id,
       kind: 'notice',
       title: 'Welcome to the Autumn League',
-      body: 'Your fixtures are ready. The table is waiting.',
+      body: 'Fixtures are available. Arrange your matches with your opponents.',
       createdAt: `${today}T08:00:00Z`,
       read: false,
     });

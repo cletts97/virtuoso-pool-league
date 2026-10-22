@@ -13,7 +13,7 @@ test('short desktop viewports contain the TV QR tile and administrator sidebar f
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Good to see you, Alex.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome, Alex.' })).toBeVisible();
     const sidebar = page.locator('.sidebar');
     for (const selector of ['.league-note', '.company-link', 'a[href="/admin"]']) {
       const item = sidebar.locator(selector);
@@ -107,7 +107,7 @@ test('rules are public, complete, responsive and navigable from the app and TV',
     .getByRole('link', { name: 'Rules', exact: true })
     .click();
   await page.getByRole('link', { name: 'Back to league', exact: true }).first().click();
-  await expect(page.getByRole('heading', { name: 'Good to see you, Alex.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Alex.' })).toBeVisible();
   await page.goto('/rules');
   await page.screenshot({
     path: `.tools/screenshots/${info.project.name}-rules.png`,
@@ -121,7 +121,7 @@ test('1080p TV cards contain full text with long names and a current booking', a
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.clock.install({ time: new Date('2026-10-20T09:05:00Z') });
   await page.goto('/bookings');
-  await expect(page.getByRole('heading', { name: 'The table is yours.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Table bookings' })).toBeVisible();
   await page.evaluate(() => {
     const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
     state.players.forEach((p, i) => {
@@ -180,6 +180,6 @@ test('1080p TV cards contain full text with long names and a current booking', a
   await checkText();
   await page.clock.setSystemTime(new Date('2026-10-20T18:00:00Z'));
   await page.clock.runFor(31_000);
-  await expect(page.getByRole('heading', { name: 'See you next session.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Outside office hours' })).toBeVisible();
   await checkText();
 });

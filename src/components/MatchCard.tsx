@@ -18,7 +18,7 @@ export function MatchCard({ fixture, compact = false }: { fixture: Fixture; comp
           {fixture.stage === 'regular'
             ? `Round ${String(fixture.round).padStart(2, '0')}`
             : fixture.stage === 'final'
-              ? 'Grand final'
+              ? 'Final'
               : 'Semifinal'}
         </span>
         <Badge status={matchStatus(fixture)} />

@@ -1,5 +1,11 @@
 # Implementation status — Virtuoso Pool League
 
+## Plain-language application copy — 22 October 2026
+
+- Replaced promotional/dramatic wording across dashboard, standings, players, playoffs, bookings, fixtures, match details, TV, administration, sign-in/reset screens, shared navigation/footer, loading and empty states. Examples: “Every frame counts” → “League table”, “Who will own the table?” → “Winner not confirmed”, and “The table is set…” → a description of standings, fixtures, results and bookings. Demo seed notification copy was simplified; existing user-authored/persisted announcements were not edited.
+- Preserved branding, components, navigation behaviour, competition rules and the owner's supplied playing-rules content. Updated existing browser text assertions to match the wording.
+- Validation: targeted ESLint, TypeScript and whitespace checks passed. Three existing desktop browser tests passed, covering all primary screens, reduced-height sidebar/TV QR layout, and responsive/public rules navigation. No full suite, build, commit, push or deployment performed.
+
 ## 1080p browser-height layout fixes — 22 October 2026
 
 - QR overflow came from stacking a viewport-sized QR and text inside a fixed-height TV grid tile. Short desktop viewports now use a side-by-side QR/text layout, with a square SVG constrained by available column width/height. Full-height TV and mobile layouts retain their existing arrangements. No content is hidden to make the tile fit.

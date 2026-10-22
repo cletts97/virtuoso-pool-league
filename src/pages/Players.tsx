@@ -17,9 +17,9 @@ export function Players() {
   return (
     <>
       <PageHeading
-        eyebrow="MEET THE COMPETITION"
-        title="Good people. Great rivals."
-        description={`${season.participantIds.length} colleagues bringing their best game to the table.`}
+        eyebrow="PLAYER DIRECTORY"
+        title="Players"
+        description={`${season.participantIds.length} players in the selected season.`}
       />
       <div className="filter-bar">
         <Search size={18} />
@@ -131,7 +131,7 @@ export function PlayerProfile() {
               ? 'CONFIRMED QUALIFIER'
               : !season.qualifiers.length && row && row.position <= 4
                 ? 'PROVISIONAL TOP FOUR'
-                : 'THE CHASE IS ON'}
+                : 'SEASON PARTICIPANT'}
           </span>
         </div>
       </div>
@@ -145,7 +145,7 @@ export function PlayerProfile() {
         <Stat
           label="Matches lost"
           value={row?.lost ?? 0}
-          detail="A chance to come back stronger"
+          detail="Regular-season matches lost"
           icon={<Target size={18} />}
         />
         <Stat
@@ -230,7 +230,7 @@ export function PlayerProfile() {
               {upcoming.slice(0, 4).map((f) => (
                 <MatchCard key={f.id} fixture={f} compact />
               ))}
-              {!upcoming.length && <Empty title="All caught up" />}
+              {!upcoming.length && <Empty title="No upcoming fixtures" />}
             </div>
             {upcoming.length > 4 && (
               <Link className="text-link panel-footnote" to={`/fixtures?player=${id}`}>
