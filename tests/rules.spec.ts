@@ -1,6 +1,60 @@
 import { expect, test } from '@playwright/test';
 import type { LeagueState } from '../src/domain/types';
 
+test('short desktop viewports contain the TV QR tile and administrator sidebar footer', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-10-22T06:43:00Z') });
+  for (const [width, height] of [
+    [1920, 1080],
+    [1920, 900],
+    [1536, 700],
+    [1280, 720],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Good to see you, Alex.' })).toBeVisible();
+    const sidebar = page.locator('.sidebar');
+    for (const selector of ['.league-note', '.company-link', 'a[href="/admin"]']) {
+      const item = sidebar.locator(selector);
+      await expect(item).toBeInViewport();
+      expect(
+        await item.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          return rect.top >= 0 && rect.bottom <= innerHeight;
+        }),
+        `${selector} fits at ${width}x${height}`,
+      ).toBe(true);
+    }
+    await page.goto('/display');
+    await expect(page.locator('.tv-qr svg')).toBeVisible();
+    expect(
+      await page.locator('.tv-qr').evaluate((tile) => {
+        const bounds = tile.getBoundingClientRect();
+        return [...tile.querySelectorAll('svg, h2, p, span')].every((element) => {
+          const rect = element.getBoundingClientRect();
+          return (
+            rect.left >= bounds.left + 8 &&
+            rect.right <= bounds.right - 8 &&
+            rect.top >= bounds.top + 8 &&
+            rect.bottom <= bounds.bottom - 8
+          );
+        });
+      }),
+      `QR image and copy fit with padding at ${width}x${height}`,
+    ).toBe(true);
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <= innerWidth &&
+          document.documentElement.scrollHeight <= innerHeight,
+      ),
+    ).toBe(true);
+    if (width === 1536)
+      await page.screenshot({ path: '.tools/screenshots/display-browser-1080p.png' });
+  }
+});
+
 test('rules are public, complete, responsive and navigable from the app and TV', async ({
   page,
 }, info) => {

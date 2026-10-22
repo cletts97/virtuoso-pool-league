@@ -1,5 +1,11 @@
 # Implementation status — Virtuoso Pool League
 
+## 1080p browser-height layout fixes — 22 October 2026
+
+- QR overflow came from stacking a viewport-sized QR and text inside a fixed-height TV grid tile. Short desktop viewports now use a side-by-side QR/text layout, with a square SVG constrained by available column width/height. Full-height TV and mobile layouts retain their existing arrangements. No content is hidden to make the tile fit.
+- Desktop sidebar spacing compresses below 900 CSS pixels of viewport height, accounting for browser toolbars and OS scaling. The bottom message/company link are reserved visible space, while navigation and the sidebar can scroll if a shorter viewport requires it. Administrator navigation is included.
+- Both focused desktop browser checks passed: card/text containment with long names at 1920×1080, plus QR image/copy padding and visible administrator sidebar/footer at 1920×1080, 1920×900, 1536×700 and 1280×720. Reviewed the reduced-height TV screenshot. Targeted ESLint, TypeScript and whitespace checks passed. No full suite, build, commit or deployment was performed.
+
 ## Anonymous read-only browsing — 22 October 2026
 
 - Main routes no longer require a personal session for browsing. API repositories load a dedicated `GET /api/public-state` snapshot when no Supabase session exists; sign-in uses the existing authenticated data/actions. Logout remounts into public view. The TV has a Dashboard link back to this public application.

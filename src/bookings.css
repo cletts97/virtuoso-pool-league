@@ -620,6 +620,28 @@
   color: var(--muted);
   margin-top: 2vh;
 }
+/* Keep the QR quiet zone and all copy inside the shorter second-row tile. */
+@media (min-width: 701px) and (max-height: 950px) {
+  .tv-qr {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+    gap: 1vw;
+    text-align: left;
+  }
+  .tv-qr svg {
+    width: min(100%, 17vh);
+    height: auto;
+    aspect-ratio: 1;
+    justify-self: center;
+  }
+  .tv-qr > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .tv-qr h2 {
+    font-size: 1.1em;
+  }
+}
 @media (min-width: 1400px) {
   .tv-display {
     font-size: clamp(18px, 1.25vw, 32px);
