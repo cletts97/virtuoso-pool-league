@@ -14,14 +14,30 @@ export function RuleReminders({ display = false }: { display?: boolean }) {
           Full rules
         </Link>
       </header>
-      <ol>
-        {reminders.map((rule) => (
-          <li key={rule.title}>
-            <h3>{rule.title}</h3>
-            <p>{rule.text}</p>
-          </li>
-        ))}
-      </ol>
+      <div className="rule-reminders-content">
+        <ol>
+          {(display ? reminders : reminders.slice(0, 4)).map((rule) => (
+            <li key={rule.title}>
+              <h3>{rule.title}</h3>
+              <p>{rule.text}</p>
+            </li>
+          ))}
+        </ol>
+        {display && (
+          <a
+            className="rule-rack"
+            href="/images/rack_layout.png"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Open the pool rack layout"
+          >
+            <img
+              src="/images/rack_layout.png"
+              alt="Pool rack: red at the apex, black in the centre of the third row; full colour arrangement shown."
+            />
+          </a>
+        )}
+      </div>
     </section>
   );
 }

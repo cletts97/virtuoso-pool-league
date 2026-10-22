@@ -1,7 +1,7 @@
 import type { Booking, BookingConfig, BookingInput, Fixture, LeagueState } from './types';
 import { addDays, invariant, isParticipant, validateDate } from './rules';
 
-export const BOOKING_DURATIONS = [15, 30, 60] as const;
+export const BOOKING_DURATIONS = [15, 30] as const;
 export const DEFAULT_BOOKING_CONFIG: BookingConfig = {
   timeZone: 'Europe/London',
   opensAt: '08:00',
@@ -113,7 +113,7 @@ export function validateBooking(
       Number.isFinite(start),
     'Use a valid UTC booking start time.',
   );
-  invariant(BOOKING_DURATIONS.includes(input.duration), 'Choose a 15, 30 or 60-minute booking.');
+  invariant(input.duration === 15 || input.duration === 30, 'Choose a 15 or 30-minute booking.');
   invariant(
     start >= now.getTime() && start <= now.getTime() + 7 * 24 * 60 * MINUTE,
     'Bookings must start in the future and within seven days.',

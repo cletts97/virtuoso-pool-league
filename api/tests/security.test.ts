@@ -48,6 +48,20 @@ describe('API security boundary', () => {
       }).success,
     ).toBe(false);
   });
+  it('accepts only 15/30-minute booking commands', () => {
+    const command = {
+      type: 'saveBooking',
+      booking: { kind: 'casual', startAt: '2026-10-24T23:45:00Z', guestIds: [], duration: 30 },
+    };
+    for (const duration of [15, 30])
+      expect(
+        commandSchema.safeParse({ ...command, booking: { ...command.booking, duration } }).success,
+      ).toBe(true);
+    expect(
+      commandSchema.safeParse({ ...command, booking: { ...command.booking, duration: 60 } })
+        .success,
+    ).toBe(false);
+  });
   it('filters private notifications and availability from regular-user snapshots', () => {
     const state = createSeed();
     state.currentUserId = 'p02';

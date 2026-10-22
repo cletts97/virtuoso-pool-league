@@ -119,4 +119,20 @@ export const ruleReminders = [
     title: 'Playing from baulk',
     text: 'You can shoot in any direction, including backwards, when playing from behind the baulk line.',
   },
+  {
+    title: 'Two visits after a foul',
+    text: 'A standard foul gives your opponent two visits. If the white is potted, play from baulk. A fair break has a different penalty.',
+  },
+  {
+    title: 'Potting the black',
+    text: 'Clear your colours, then pot the black on a separate legal shot. Potting it early or fouling while potting it loses the frame, except on the break.',
+  },
+  {
+    title: 'Black on the break',
+    text: 'If the black goes in on the break, re-rack. The same player breaks again.',
+  },
+  {
+    title: 'Feet and moving balls',
+    text: 'Keep at least one foot on the floor during a shot. Wait for all balls to stop moving before playing.',
+  },
 ];

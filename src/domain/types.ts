@@ -134,6 +134,7 @@ export interface BookingConfig {
 export interface BookingInput {
   kind: 'league' | 'casual';
   startAt: string;
+  // Keep historical 60-minute records readable; new/edited bookings are validated as 15 or 30.
   duration: 15 | 30 | 60;
   fixtureId?: ID;
   guestIds: ID[];

@@ -35,7 +35,7 @@ export function BookingForm({
   );
   const [date, setDate] = useState(booking ? londonDate(booking.startAt) : initialDate);
   const [duration, setDuration] = useState<BookingInput['duration']>(
-    booking?.duration ?? initialDuration ?? 30,
+    booking?.duration === 60 ? 30 : (booking?.duration ?? initialDuration ?? 30),
   );
   const [start, setStart] = useState(booking?.startAt ?? initialStart ?? '');
   const [linked, setLinked] = useState(booking?.fixtureId ?? fixtureId ?? '');

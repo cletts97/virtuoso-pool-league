@@ -24,13 +24,13 @@ test('casual colleague reserves, edits, refreshes and cancels without joining th
   await expect(card).toContainText('11:00–11:30');
   await expect(card).toContainText('Priya Shah');
   await card.getByRole('button', { name: 'Edit reservation' }).click();
-  await page.getByRole('combobox', { name: 'Duration', exact: true }).selectOption('60');
+  await page.getByRole('combobox', { name: 'Duration', exact: true }).selectOption('15');
   await page.getByLabel('Available start time').selectOption({ label: '13:00' });
   await page.getByRole('button', { name: 'Save reservation' }).click();
-  await expect(card).toContainText('13:00–14:00');
+  await expect(card).toContainText('13:00–13:15');
   await page.reload();
   await page.getByRole('button', { name: /Wed.*21/ }).click();
-  await expect(card).toContainText('13:00–14:00');
+  await expect(card).toContainText('13:00–13:15');
   await card.getByRole('button', { name: 'Cancel reservation' }).click();
   await page
     .getByRole('dialog')

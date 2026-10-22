@@ -18,6 +18,12 @@ const bookingUrl = new URL(
 export function Display() {
   const [data, setData] = useState<DisplaySnapshot>();
   const [error, setError] = useState('');
+  const [compact, setCompact] = useState(window.innerHeight < 850);
+  useEffect(() => {
+    const resize = () => setCompact(window.innerHeight < 850);
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
   const now = useClock();
   useEffect(() => {
     let alive = true;
@@ -52,14 +58,19 @@ export function Display() {
   const upcoming = bookings.filter((b) => Date.parse(b.startAt) > now.getTime());
   // Page long queues automatically; no reservation is hidden indefinitely.
   // Long names need more lines. Rotate fewer reservations instead of clipping their text.
-  const queueSize = upcoming.some((b) => b.owner.length + b.participants.join(' · ').length > 80)
-    ? 2
-    : 3;
+  const queueSize =
+    compact || upcoming.some((b) => b.owner.length + b.participants.join(' · ').length > 80)
+      ? 2
+      : 3;
   const pageCount = Math.max(1, Math.ceil(upcoming.length / queueSize));
   const queuePage = Math.floor(now.getTime() / 15000) % pageCount;
-  const resultSize = data?.results.some((r) => r.home.length + r.away.length > 80) ? 2 : 3;
+  const resultSize =
+    compact || data?.results.some((r) => r.home.length + r.away.length > 80) ? 2 : 3;
   const resultPages = Math.max(1, Math.ceil((data?.results.length ?? 0) / resultSize));
   const resultPage = Math.floor(now.getTime() / 15000) % resultPages;
+  const fixtureSize = compact ? 2 : 3;
+  const fixturePages = Math.max(1, Math.ceil((data?.fixtures.length ?? 0) / fixtureSize));
+  const fixturePage = Math.floor(now.getTime() / 15000) % fixturePages;
   const config = data?.config;
   const open =
     config &&
@@ -253,18 +264,20 @@ export function Display() {
           </div>
           <div className="tv-result-column">
             <h2 className="tv-fixtures-title">Upcoming fixtures</h2>
-            {data?.fixtures.map((f) => (
-              <div className="tv-fixture" key={f.id}>
-                <strong>
-                  {f.home} <span>v</span> {f.away}
-                </strong>
-                <small>
-                  {f.bookedAt
-                    ? `Table booked · ${bookingDayLabel(londonDate(f.bookedAt))} ${londonTime(f.bookedAt)}`
-                    : `Due ${bookingDayLabel(f.dueDate)} · Table not reserved`}
-                </small>
-              </div>
-            ))}
+            {data?.fixtures
+              .slice(fixturePage * fixtureSize, (fixturePage + 1) * fixtureSize)
+              .map((f) => (
+                <div className="tv-fixture" key={f.id}>
+                  <strong>
+                    {f.home} <span>v</span> {f.away}
+                  </strong>
+                  <small>
+                    {f.bookedAt
+                      ? `Table booked · ${bookingDayLabel(londonDate(f.bookedAt))} ${londonTime(f.bookedAt)}`
+                      : `Due ${bookingDayLabel(f.dueDate)} · Table not reserved`}
+                  </small>
+                </div>
+              ))}
             {!data?.fixtures.length && <p className="tv-empty">No upcoming league fixtures.</p>}
           </div>
         </section>

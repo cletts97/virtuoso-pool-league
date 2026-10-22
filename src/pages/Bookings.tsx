@@ -4,7 +4,13 @@ import { CalendarPlus, Monitor, Settings2 } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
 import { useClock } from '../app/useClock';
 import { addDays } from '../domain/rules';
-import { availableSlots, bookingDayLabel, londonDate, londonTime } from '../domain/bookings';
+import {
+  availableSlots,
+  BOOKING_DURATIONS,
+  bookingDayLabel,
+  londonDate,
+  londonTime,
+} from '../domain/bookings';
 import type { Booking, BookingInput } from '../domain/types';
 import { Confirm, Empty, PageHeading, Section } from '../components/ui';
 import { BookingForm } from '../components/BookingForm';
@@ -147,7 +153,7 @@ export function Bookings() {
                 value={duration}
                 onChange={(e) => setDuration(Number(e.target.value) as BookingInput['duration'])}
               >
-                {[15, 30, 60].map((d) => (
+                {BOOKING_DURATIONS.map((d) => (
                   <option key={d} value={d}>
                     {d} minutes
                   </option>

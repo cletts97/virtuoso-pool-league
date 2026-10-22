@@ -44,7 +44,7 @@ describe('London booking time and availability', () => {
     expect(() => londonToUtc('2026-10-25', '01:30')).toThrow('daylight saving');
     expect(() => londonToUtc('2026-02-30', '12:00')).toThrow();
   });
-  it.each([15, 30, 60] as const)('allows a %i-minute reservation', (duration) => {
+  it.each([15, 30] as const)('allows a %i-minute reservation', (duration) => {
     const { state, input } = scenario();
     expect(() =>
       validateBooking(state, { ...input, duration }, state.currentUserId, now),
@@ -59,6 +59,7 @@ describe('London booking time and availability', () => {
     { startAt: '2026-10-24T10:00:00Z' },
     { startAt: '2026-10-20T16:45:00Z', duration: 30 },
     { duration: 45 },
+    { duration: 60 },
   ])('rejects invalid, past, off-grid, out-of-window and closed times: %j', (patch) => {
     const { state, input } = scenario();
     expect(() =>
@@ -122,15 +123,25 @@ describe('booking commands and membership', () => {
     const id = next.bookings[0].id;
     next = executeBookingCommand(
       next,
-      { type: 'saveBooking', id, booking: { ...input, duration: 60 } },
+      { type: 'saveBooking', id, booking: { ...input, duration: 15 } },
       now,
     );
-    expect(next.bookings[0].duration).toBe(60);
+    expect(next.bookings[0].duration).toBe(15);
     next = executeBookingCommand(next, { type: 'cancelBooking', id }, now);
     expect(next.bookings[0].status).toBe('cancelled');
     expect(next.fixtures).toEqual(state.fixtures);
     expect(standings(next.seasons[0], next.fixtures)).toEqual(before);
     expect(state.bookings).toEqual([]);
+  });
+  it('preserves existing 60-minute reservations and allows their cancellation', () => {
+    const { state, input } = scenario();
+    const next = executeBookingCommand(state, { type: 'saveBooking', booking: input }, now);
+    next.bookings[0].duration = 60;
+    expect(bookingEnd(next.bookings[0])).toBe(londonToUtc('2026-10-20', '12:00'));
+    expect(
+      executeBookingCommand(next, { type: 'cancelBooking', id: next.bookings[0].id }, now)
+        .bookings[0].status,
+    ).toBe('cancelled');
   });
   it('rejects collisions, including enclosing reservations', () => {
     const { state, input } = scenario();
@@ -141,7 +152,7 @@ describe('booking commands and membership', () => {
           next,
           {
             type: 'saveBooking',
-            booking: { ...input, startAt: londonToUtc('2026-10-20', start), duration: 60 },
+            booking: { ...input, startAt: londonToUtc('2026-10-20', start), duration: 30 },
           },
           now,
         ),
@@ -162,7 +173,7 @@ describe('booking commands and membership', () => {
     next.currentUserId = 'p01';
     next = executeBookingCommand(
       next,
-      { type: 'saveBooking', id, booking: { ...input, duration: 60 } },
+      { type: 'saveBooking', id, booking: { ...input, duration: 15 } },
       now,
     );
     expect(next.bookings[0].ownerId).toBe('colleague-01');

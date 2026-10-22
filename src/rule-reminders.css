@@ -53,14 +53,32 @@
 .tv-display .rule-reminders h2,
 .tv-display .rule-reminders h3,
 .tv-display .rule-reminders .text-link {
-  font-size: 0.8em;
+  font-size: 0.75em;
 }
 .tv-display .rule-reminders p {
-  font-size: 0.75em;
-  line-height: 1.35;
+  font-size: 0.7em;
+  line-height: 1.3;
 }
 .tv-display .rule-reminders ol {
   gap: 1vw;
+}
+.tv-display .rule-reminders-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 11vw);
+  gap: 1vw;
+  grid-gap: 1vw;
+  align-items: center;
+}
+.rule-rack {
+  display: block;
+  justify-self: center;
+}
+.rule-rack img {
+  display: block;
+  width: 100%;
+  max-height: 17vh;
+  object-fit: contain;
+  border-radius: 8px;
 }
 @media (max-width: 1100px) {
   .rule-reminders ol {
@@ -68,6 +86,15 @@
   }
 }
 @media (max-width: 700px) {
+  .tv-display .rule-reminders-content {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .rule-rack img {
+    max-height: 220px;
+    width: auto;
+    max-width: 100%;
+  }
   .tv-display .rule-reminders {
     padding: 20px;
   }

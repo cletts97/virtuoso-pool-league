@@ -145,7 +145,11 @@ test('short desktop viewports contain the TV QR tile and administrator sidebar f
     }
     await page.goto('/display');
     await expect(page.locator('.tv-qr svg')).toBeVisible();
-    await expect(page.locator('.rule-reminders h3')).toHaveCount(4);
+    await expect(page.locator('.rule-reminders h3')).toHaveCount(8);
+    await expect(page.getByRole('img', { name: /Pool rack:/ })).toBeVisible();
+    expect(
+      await page.locator('.rule-rack img').evaluate((img: HTMLImageElement) => img.naturalWidth),
+    ).toBeGreaterThan(0);
     const reminders = page.getByRole('region', { name: 'Rules to remember' });
     await expect(reminders).toBeInViewport({ ratio: 1 });
     expect(
@@ -161,7 +165,7 @@ test('short desktop viewports contain the TV QR tile and administrator sidebar f
           );
         });
       }),
-      `All four rules fit at ${width}x${height}`,
+      `All eight rules fit at ${width}x${height}`,
     ).toBe(true);
     expect(
       await page.locator('.tv-qr').evaluate((tile) => {

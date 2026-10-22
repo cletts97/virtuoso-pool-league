@@ -185,7 +185,7 @@ Virtuoso Pool League will include a booking system allowing colleagues to reserv
   - **League Match** — optionally associated with an existing league fixture.
   - **Casual Game** — available to anyone with an account, including colleagues not participating in the league.
 - Provide a calendar showing table availability.
-- Support 15, 30, and 60-minute bookings, defaulting to 30 minutes.
+- Support 15 and 30-minute bookings, defaulting to 30 minutes.
 - Allow bookings up to seven days in advance.
 - Prevent overlapping reservations.
 - Allow users to view, modify, and cancel their own bookings.
@@ -199,7 +199,7 @@ A league fixture does not require a table reservation, and casual bookings must 
 ### Booking Rules
 
 - All bookings must have a valid start time and duration.
-- Booking availability should respect configurable office hours.
+- Booking availability should respect configurable office hours. Existing 60-minute reservations remain readable and cancellable, but new or edited reservations use 15 or 30 minutes.
 - Overlapping reservations must be rejected.
 - Only the booking owner or an administrator can modify or cancel a reservation.
 - The backend must enforce these rules independently of frontend validation.
@@ -259,8 +259,8 @@ The HUD should prominently display:
    - Allow colleagues to quickly open the app on their phones.
 
 7. **Rules reminders**
-   - Show four persistent reminders on the TV and main dashboard: potting an opponent's ball, the cushion rule (including the white), foul-snooker nomination subject to its rules, and shooting in any direction from baulk.
-   - Link to the full rules and keep the TV reminders readable within the 1080p layout.
+   - Keep four reminders on the main dashboard. The TV shows eight reminders in two rows: opponent-ball fouls, the cushion rule, foul-snooker nomination, baulk direction, two visits after a foul, potting the black, black on the break, and feet/moving balls. Include the owner-supplied rack-layout image alongside the TV reminders, with a link to view it full-size.
+   - Link to the full rules and keep all TV sections within the 1080p layout. Rotate bookings, results and upcoming fixtures in smaller pages on shorter screens rather than clipping text. Retain the existing white Virtuoso logo.
 
 ### Future HUD Enhancements
 
