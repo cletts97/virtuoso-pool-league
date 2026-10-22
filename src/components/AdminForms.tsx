@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useLeague } from '../app/LeagueContext';
-import { dateOnly } from '../domain/rules';
+import { dateOnly, weekStart } from '../domain/rules';
 import type { Player } from '../domain/types';
 import { Modal } from './ui';
 
@@ -80,7 +80,7 @@ export function SeasonForm({ edit = false, onClose }: { edit?: boolean; onClose(
       name: player.name,
     }));
   const [name, setName] = useState(edit ? season.name : '');
-  const [startDate, setStartDate] = useState(edit ? season.startDate : dateOnly());
+  const [startDate, setStartDate] = useState(weekStart(edit ? season.startDate : dateOnly()));
   const [rounds, setRounds] = useState(edit ? season.config.roundsPerWeek : 2);
   const [selected, setSelected] = useState(available.map((p) => p.id));
   async function submit(e: FormEvent) {
@@ -120,13 +120,13 @@ export function SeasonForm({ edit = false, onClose }: { edit?: boolean; onClose(
         </label>
         <div className="form-grid">
           <label>
-            Starts on
+            Start week (Monday)
             <input
               required
               type="date"
               disabled={edit && season.status !== 'draft'}
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => e.target.value && setStartDate(weekStart(e.target.value))}
             />
           </label>
           <label>

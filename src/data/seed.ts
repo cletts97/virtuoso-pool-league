@@ -1,4 +1,11 @@
-import { addDays, dateOnly, generateRoundRobin, standings, winner } from '../domain/rules';
+import {
+  addDays,
+  dateOnly,
+  generateRoundRobin,
+  playoffWeek,
+  standings,
+  winner,
+} from '../domain/rules';
 import type { Fixture, LeagueState, Season } from '../domain/types';
 import { DEFAULT_BOOKING_CONFIG } from '../domain/bookings';
 import { casualColleague, seedBookings } from './bookingSeed';
@@ -125,7 +132,7 @@ export function createSeed(today = dateOnly()): LeagueState {
     round: 12,
     homeId: previous.qualifiers[h],
     awayId: previous.qualifiers[a],
-    dueDate: addDays(previous.startDate, 44),
+    dueDate: playoffWeek(previous, fixtures),
     stage: 'semifinal',
     bestOf: 5,
     status: 'scheduled',
@@ -138,7 +145,7 @@ export function createSeed(today = dateOnly()): LeagueState {
     round: 13,
     homeId: winner(semis[0])!,
     awayId: winner(semis[1])!,
-    dueDate: addDays(previous.startDate, 48),
+    dueDate: playoffWeek(previous, fixtures),
     stage: 'final',
     bestOf: 7,
     status: 'scheduled',

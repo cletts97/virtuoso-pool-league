@@ -62,6 +62,7 @@ export interface Fixture {
   round: number;
   homeId: ID;
   awayId: ID;
+  /** Monday identifying the playing week for new schedules; legacy dates use their containing week. */
   dueDate: string;
   stage: Stage;
   bestOf: 3 | 5 | 7;

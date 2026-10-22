@@ -11,6 +11,18 @@ export function addDays(date: string, days: number): string {
   value.setUTCDate(value.getUTCDate() + days);
   return value.toISOString().slice(0, 10);
 }
+/** ISO Monday–Sunday weeks. Legacy due_date values identify their containing week. */
+export function weekStart(date: string): string {
+  validateDate(date);
+  const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+  return addDays(date, -((weekday + 6) % 7));
+}
+export function weekEnd(date: string): string {
+  return addDays(weekStart(date), 6);
+}
+export function weekLabel(date: string): string {
+  return `Week commencing ${new Date(`${weekStart(date)}T12:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' })}`;
+}
 export function validateDate(value: string) {
   invariant(
     /^\d{4}-\d{2}-\d{2}$/.test(value) &&
@@ -54,8 +66,8 @@ export function generateRoundRobin(season: Season): Fixture[] {
   const fixtures: Fixture[] = [];
   for (let round = 1; round < rotation.length; round++) {
     const dueDate = addDays(
-      season.startDate,
-      Math.ceil((round * 7) / season.config.roundsPerWeek) - 1,
+      weekStart(season.startDate),
+      Math.floor((round - 1) / season.config.roundsPerWeek) * 7,
     );
     for (let i = 0; i < rotation.length / 2; i++) {
       const a = rotation[i],
@@ -78,6 +90,25 @@ export function generateRoundRobin(season: Season): Fixture[] {
     rotation.splice(1, 0, rotation.pop()!);
   }
   return fixtures;
+}
+export function playoffWeek(season: Season, fixtures: Fixture[]): string {
+  const regular = fixtures.filter((f) => f.seasonId === season.id && f.stage === 'regular');
+  // Draft brackets can show the planned week before any fixtures are published.
+  const rounds =
+    season.participantIds.length % 2
+      ? season.participantIds.length
+      : season.participantIds.length - 1;
+  const plannedLast = addDays(
+    weekStart(season.startDate),
+    Math.max(0, Math.ceil(rounds / season.config.roundsPerWeek) - 1) * 7,
+  );
+  const last = regular.length
+    ? regular.reduce(
+        (latest, f) => (weekStart(f.dueDate) > latest ? weekStart(f.dueDate) : latest),
+        weekStart(season.startDate),
+      )
+    : plannedLast;
+  return addDays(last, 7);
 }
 export function standings(season: Season, fixtures: Fixture[]): Standing[] {
   const rows = new Map(
@@ -216,7 +247,7 @@ export function requireAdmin(player: Player) {
   invariant(player.role === 'admin' && player.active, 'Administrator access is required.');
 }
 export function matchStatus(fixture: Fixture, today = dateOnly()): string {
-  return ['scheduled', 'postponed'].includes(fixture.status) && fixture.dueDate < today
+  return ['scheduled', 'postponed'].includes(fixture.status) && weekEnd(fixture.dueDate) < today
     ? 'overdue'
     : fixture.status;
 }

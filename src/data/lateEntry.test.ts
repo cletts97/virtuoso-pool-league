@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { executeCommand } from './commands';
 import { createSeed } from './seed';
-import { addDays, dateOnly, matchStatus, standings } from '../domain/rules';
+import { weekStart, weekEnd, addDays, dateOnly, matchStatus, standings } from '../domain/rules';
 
 function setup(count = 4) {
   let state = createSeed();
@@ -50,10 +50,13 @@ describe('mid-season player addition', () => {
       expect(added).toHaveLength(count);
       expect(
         added.every(
-          (f) => f.bestOf === 3 && f.status === 'postponed' && f.dueDate === command.dueDate,
+          (f) =>
+            f.bestOf === 3 && f.status === 'postponed' && f.dueDate === weekStart(command.dueDate),
         ),
       ).toBe(true);
-      expect(added.every((f) => matchStatus(f, addDays(f.dueDate, 1)) === 'overdue')).toBe(true);
+      expect(added.every((f) => matchStatus(f, addDays(weekEnd(f.dueDate), 1)) === 'overdue')).toBe(
+        true,
+      );
       const season = next.seasons.find((s) => s.id === command.seasonId)!;
       const matches = next.fixtures.filter((f) => f.seasonId === season.id);
       expect(matches).toHaveLength((count * (count + 1)) / 2);
@@ -95,9 +98,9 @@ describe('mid-season player addition', () => {
     expect(() => executeCommand(state, { ...command, playerId: state.players[0].id })).toThrow(
       'already',
     );
-    expect(() => executeCommand(state, { ...command, dueDate: addDays(dateOnly(), -1) })).toThrow(
-      'today',
-    );
+    expect(() =>
+      executeCommand(state, { ...command, dueDate: addDays(weekStart(dateOnly()), -7) }),
+    ).toThrow('current week');
   });
 
   it('ignores archived leave for new catch-up deadlines', () => {
@@ -111,7 +114,9 @@ describe('mid-season player addition', () => {
     });
     const next = executeCommand(state, command);
     expect(
-      next.fixtures.slice(state.fixtures.length).every((f) => f.dueDate === command.dueDate),
+      next.fixtures
+        .slice(state.fixtures.length)
+        .every((f) => f.dueDate === weekStart(command.dueDate)),
     ).toBe(true);
   });
 });

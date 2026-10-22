@@ -25,7 +25,7 @@ test('administrator can enroll in an older draft, delete an unused season and en
   await page.reload();
   await page.getByRole('button', { name: 'Add player to season', exact: true }).click();
   let dialog = page.getByRole('dialog');
-  await expect(dialog.getByLabel('Catch-up deadline')).toHaveCount(0);
+  await expect(dialog.getByLabel('Catch-up week (Monday)')).toHaveCount(0);
   await dialog.getByRole('combobox', { name: 'Player', exact: true }).selectOption('colleague-01');
   await dialog.getByRole('button', { name: 'Add player', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -174,7 +174,7 @@ test('administrator adds a late player without changing existing matches', async
   await page.getByRole('button', { name: 'Add player to season', exact: true }).click();
   await expect(page.getByRole('combobox', { name: 'Player', exact: true })).toBeEnabled();
   await page
-    .getByLabel('Catch-up deadline')
+    .getByLabel('Catch-up week (Monday)')
     .fill(new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10));
   await page
     .getByRole('button', {
@@ -342,8 +342,9 @@ test('administrator creates an odd-player season, publishes fixtures and postpon
   await page.goto('/admin');
   await page.getByRole('button', { name: 'Create season', exact: true }).click();
   await page.getByLabel('Season name').fill('Winter Test League');
-  await page.getByLabel('Starts on').fill('2027-01-04');
+  await page.getByLabel('Start week (Monday)').fill('2027-01-04');
   await page.getByRole('dialog').getByLabel('Charlotte Evans', { exact: true }).uncheck();
+  await page.getByRole('dialog').getByLabel('Riley Bennett', { exact: true }).uncheck();
   await page.getByRole('button', { name: 'Create draft season' }).click();
   await expect(
     page.getByRole('heading', { name: 'Winter Test League', exact: true }),
@@ -354,12 +355,19 @@ test('administrator creates an odd-player season, publishes fixtures and postpon
     .getByRole('button', { name: 'Generate fixtures', exact: true })
     .click();
   await expect(page.locator('.admin-season').first().first()).toContainText('55 league fixtures');
+  const future = await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    return state.fixtures.filter((f) => f.seasonId === state.selectedSeasonId);
+  });
+  expect(future.filter((f) => f.round <= 2).every((f) => f.dueDate === '2027-01-04')).toBe(true);
+  expect(future.filter((f) => f.round === 3).every((f) => f.dueDate === '2027-01-11')).toBe(true);
   await page.goto('/fixtures');
   await expect(page.locator('.match-card')).toHaveCount(55);
+  await expect(page.locator('.match-card').first()).toContainText('Week commencing 4 Jan 2027');
   await expect(page.getByText(/Bye this round:/)).toHaveCount(11);
   await page.locator('.match-card').first().click();
   await page.getByRole('button', { name: 'Postpone match' }).click();
-  await page.getByLabel('New due date').fill('2027-02-15');
+  await page.getByLabel('New fixture week (Monday)').fill('2027-02-15');
   await page.getByLabel('Reason', { exact: true }).fill('Annual leave agreed with both players');
   await page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click();
   await expect(page.locator('.page-heading .badge')).toHaveText('Postponed');
@@ -402,7 +410,11 @@ test('historical champion, themes, notifications and access boundaries work', as
   });
   await page.getByLabel('Select season').selectOption('summer-2026');
   await page.goto('/playoffs');
-  await expect(page.getByText('YOUR LEAGUE CHAMPION', { exact: true })).toBeVisible();
+  await expect(page.getByText('SEASON WINNER', { exact: true })).toBeVisible();
+  const weeks = await page.locator('.bracket-match-footer').allTextContents();
+  expect(weeks).toHaveLength(3);
+  expect(new Set(weeks.map((text) => text.split(' · ')[0].trim())).size).toBe(1);
+  expect(weeks.every((text) => text.includes('Week commencing'))).toBe(true);
   await page.getByLabel('Select season').selectOption('autumn-2026');
   await page.goto('/notifications');
   await page.getByRole('button', { name: 'Mark all as read' }).click();
@@ -496,9 +508,9 @@ test('bracket finalizes and advances through the final to a champion', async ({ 
   });
   await play(finalId);
   await page.goto('/playoffs');
-  await expect(page.getByText('YOUR LEAGUE CHAMPION', { exact: true })).toBeVisible();
+  await expect(page.getByText('SEASON WINNER', { exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByText('YOUR LEAGUE CHAMPION', { exact: true })).toBeVisible();
+  await expect(page.getByText('SEASON WINNER', { exact: true })).toBeVisible();
 });
 
 test('small phones and tablets retain navigation and contain wide tables', async ({ page }) => {

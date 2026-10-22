@@ -1,7 +1,7 @@
 import { ArrowRight, CalendarDays } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLeague } from '../app/LeagueContext';
-import { matchStatus, participantName, playedDate } from '../domain/rules';
+import { matchStatus, participantName, playedDate, weekLabel } from '../domain/rules';
 import type { Fixture } from '../domain/types';
 import { Avatar, Badge } from './ui';
 
@@ -39,13 +39,14 @@ export function MatchCard({ fixture, compact = false }: { fixture: Fixture; comp
       <div className="match-footer">
         <span>
           <CalendarDays size={13} />
-          {fixture.status === 'confirmed' ? 'Played' : 'Due'}{' '}
-          {new Date(
-            fixture.status === 'confirmed' ? playedDate(fixture) : `${fixture.dueDate}T12:00:00`,
-          ).toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-          })}{' '}
+          {fixture.status === 'confirmed'
+            ? 'Played ' +
+              new Date(playedDate(fixture)).toLocaleDateString('en-GB', {
+                timeZone: 'Europe/London',
+                day: 'numeric',
+                month: 'short',
+              })
+            : weekLabel(fixture.dueDate)}{' '}
           <span className="meta-divider">·</span> Best of {fixture.bestOf}
         </span>
         <ArrowRight size={16} />

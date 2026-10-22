@@ -40,7 +40,9 @@ Keep operating costs as close to zero as reasonably possible.
 - Automatically generate the fixture list.
 - Publish fixtures in advance.
 - Target approximately two rounds per week.
-- Players arrange their matches themselves without assigned times.
+- Fixtures are assigned to Monday–Sunday playing weeks, displayed as **Week commencing [Monday]**, with no assigned playing date or time. Default two rounds per week; rounds in the same week share its Monday anchor.
+- Administrators can generate and publish fixtures before the season starts, including future Monday starts. Selecting another start date normalizes it to that week's Monday.
+- Players arrange their matches themselves without assigned times. Table reservations remain separate and have exact dates/times.
 - Allow matches to be played ahead of schedule.
 - Regular-season matches use best-of-three frames.
 - A 2–0 win and a 2–1 win both count as one match won.
@@ -91,9 +93,9 @@ Display standings using the following columns:
 
 - Display Add player to season for administrators on every selected season, disabled with an explanation when closed. Existing seasons support the same controls regardless of creation date. Draft seasons allow enrollment without creating fixtures; regular seasons append catch-up matches.
 - Administrators may add an active account to a singles season while its regular season remains unfinalized. Closed seasons and seasons with playoff fixtures/locked qualifiers do not allow additions.
-- Create or reuse the individual's competition entry, and append one best-of-three fixture against every existing participant. Preserve all existing fixtures, results, rounds and dates. Reject duplicate enrollment/pairings.
-- Append separate catch-up rounds after the current rounds. These backlog fixtures share an administrator-selected deadline (default two weeks from today), rather than regenerating the normal two-rounds-per-week schedule.
-- Mark the new fixtures postponed with the selected catch-up deadline. Scheduled and postponed fixtures display as overdue after their agreed deadline; the stored result is unchanged and no loss is awarded automatically.
+- Create or reuse the individual's competition entry, and append one best-of-three fixture against every existing participant. Preserve all existing fixtures, results, rounds and weeks. Reject duplicate enrollment/pairings.
+- Append separate catch-up rounds after the current rounds. These backlog fixtures share an administrator-selected catch-up week (default the week containing two weeks from today), rather than regenerating the normal two-rounds-per-week schedule.
+- Mark the new fixtures postponed with the selected catch-up week. Scheduled and postponed fixtures display as overdue on the Monday after their playing week ends; the stored result is unchanged and no loss is awarded automatically.
 - The new participant starts with zero played/wins/losses. Only approved results affect standings; all new regular-season fixtures must be resolved before normal automatic playoff qualification.
 
 ### Postponements
@@ -119,6 +121,7 @@ Display standings using the following columns:
 - Semifinal 2: second place versus third place.
 - Semifinals use best-of-five frames.
 - Final uses best-of-seven frames.
+- Both semifinals and the final are assigned to the same playing week: the week immediately after the last regular-season fixture week (including catch-up weeks). Show the projected week before qualifiers are finalized; qualification safeguards remain unchanged. Explicit postponements can move individual playoff weeks.
 - Display a visual playoff bracket.
 - Record the season champion.
 
@@ -381,8 +384,8 @@ Defaults established for this iteration:
 - **Playoff qualification:** Top-four seeds lock automatically after all regular-season fixtures are confirmed, or through explicit administrator finalization with a reason and confirmation, provided no unresolved tie spans the qualification cutoff.
 - **Season finalization:** Explicit finalization closes unresolved fixtures without awarding wins, losses, points, or automatic defeats.
 - **Historical corrections:** Later historical corrections update standings but preserve finalized playoff seeds. Changes to semifinal winners cannot replace participants in an already started final.
-- **Scheduling:** Archived leave records do not adjust new fixtures. Participants or administrators explicitly postpone fixtures; existing agreed dates are preserved.
-- **Schedule configuration:** Draft seasons allow a configurable rounds-per-week target, defaulting to two. Published schedule settings are locked; individual fixture dates remain adjustable.
+- **Scheduling:** Archived leave records do not adjust new fixtures. Participants or administrators explicitly postpone fixtures; existing agreed weeks are preserved.
+- **Schedule configuration:** Draft seasons allow a configurable rounds-per-week target, defaulting to two. Published schedule settings are locked; individual fixture weeks remain adjustable. Existing stored fixture dates identify their containing Monday–Sunday week; new schedules store Monday anchors without rewriting historical data.
 - **Competition participants:** The competition participant model supports individual or team entries. The initial management UI is singles only; doubles management is deferred.
 
 See README.md for the complete architecture, local startup, workflow guide, backend integration boundaries, and demo limitations.

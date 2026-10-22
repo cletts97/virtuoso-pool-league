@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Crown, LockKeyhole, Trophy, ArrowRight } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
-import { participantName, standings } from '../domain/rules';
+import { participantName, standings, playoffWeek, weekLabel } from '../domain/rules';
 import type { Fixture } from '../domain/types';
 import { Avatar, Badge, PageHeading } from '../components/ui';
 import { QualificationNotice } from '../components/QualificationNotice';
@@ -11,11 +11,13 @@ function BracketMatch({
   seeds,
   label,
   bestOf,
+  week,
 }: {
   fixture?: Fixture;
   seeds?: string[];
   label: string;
   bestOf: number;
+  week: string;
 }) {
   const { state } = useLeague();
   const players = fixture ? [fixture.homeId, fixture.awayId] : seeds;
@@ -48,7 +50,10 @@ function BracketMatch({
         </div>
       ))}
       <div className="bracket-match-footer">
-        Best of {bestOf} frames {fixture && <ArrowRight size={14} />}
+        <span>
+          {weekLabel(fixture?.dueDate ?? week)} · Best of {bestOf}
+        </span>{' '}
+        {fixture && <ArrowRight size={14} />}
       </div>
     </>
   );
@@ -69,6 +74,7 @@ export function Playoffs() {
   const semis = state.fixtures.filter((f) => f.seasonId === season.id && f.stage === 'semifinal');
   const final = state.fixtures.find((f) => f.seasonId === season.id && f.stage === 'final');
   const locked = season.qualifiers.length > 0;
+  const week = playoffWeek(season, state.fixtures);
   const confirmed = state.fixtures.filter(
     (f) => f.seasonId === season.id && f.stage === 'regular' && f.status === 'confirmed',
   ).length;
@@ -80,7 +86,7 @@ export function Playoffs() {
       <PageHeading
         eyebrow="SEASON PLAYOFFS"
         title="Playoffs"
-        description="The top four players qualify for the semifinals."
+        description={`The top four qualify. Semifinals and final: ${weekLabel(week).replace('Week', 'week')}. Arrange playing times with your opponents.`}
         action={
           <span className="badge badge-playoffs">
             <Trophy size={16} />
@@ -127,12 +133,14 @@ export function Playoffs() {
                 seeds={qualifiers.length >= 4 ? [qualifiers[0], qualifiers[3]] : undefined}
                 label="1st seed vs 4th seed"
                 bestOf={5}
+                week={week}
               />
               <BracketMatch
                 fixture={semis[1]}
                 seeds={qualifiers.length >= 4 ? [qualifiers[1], qualifiers[2]] : undefined}
                 label="2nd seed vs 3rd seed"
                 bestOf={5}
+                week={week}
               />
             </div>
           </div>
@@ -143,7 +151,7 @@ export function Playoffs() {
               <small>FIRST TO 4</small>
             </div>
             <div className="final-slot">
-              <BracketMatch fixture={final} label="Final" bestOf={7} />
+              <BracketMatch fixture={final} label="Final" bestOf={7} week={week} />
             </div>
           </div>
           <div className="bracket-stage champion-stage">

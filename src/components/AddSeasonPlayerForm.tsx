@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useLeague } from '../app/LeagueContext';
-import { addDays, dateOnly } from '../domain/rules';
+import { addDays, dateOnly, weekStart } from '../domain/rules';
 import { Modal } from './ui';
 
 export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
@@ -12,7 +12,7 @@ export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
   );
   const available = state.players.filter((p) => p.active && !memberIds.has(p.id));
   const [playerId, setPlayerId] = useState(available[0]?.id ?? '');
-  const [dueDate, setDueDate] = useState(addDays(dateOnly(), 14));
+  const [dueDate, setDueDate] = useState(weekStart(addDays(dateOnly(), 14)));
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (
@@ -47,13 +47,13 @@ export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
         {!available.length && <p>Invite an active colleague who is not already in this season.</p>}
         {season.status !== 'draft' && (
           <label>
-            Catch-up deadline
+            Catch-up week (Monday)
             <input
               type="date"
               required
-              min={dateOnly()}
+              min={weekStart(dateOnly())}
               value={dueDate}
-              onChange={(event) => setDueDate(event.target.value)}
+              onChange={(event) => event.target.value && setDueDate(weekStart(event.target.value))}
             />
           </label>
         )}
@@ -64,7 +64,7 @@ export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
             <>
               Adds {season.participantIds.length} best-of-three fixtures in new catch-up rounds, one
               against each existing player. Existing matches and results stay unchanged. Matches are
-              marked postponed, then overdue after the deadline. You can adjust individual deadlines
+              marked postponed, then overdue after that week ends. You can adjust individual weeks
               later. No automatic losses are awarded.
             </>
           )}

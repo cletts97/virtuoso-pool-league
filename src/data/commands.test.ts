@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { executeCommand } from './commands';
 import { createSeed } from './seed';
-import { canApprove, standings, winner } from '../domain/rules';
+import { canApprove, standings, winner, playoffWeek } from '../domain/rules';
 import { LocalLeagueRepository, STORAGE_KEY } from './localRepository';
 import type { LeagueState } from '../domain/types';
 
@@ -235,6 +235,9 @@ describe('administration and playoffs', () => {
       [table[1].participantId, table[2].participantId],
     ]);
     expect(semis.every((f) => f.bestOf === 5)).toBe(true);
+    expect(semis.every((f) => f.dueDate === playoffWeek(source.seasons[0], source.fixtures))).toBe(
+      true,
+    );
     expect(() =>
       executeCommand(state, { type: 'finalize', seasonId: state.seasons[0].id, reason: 'Again' }),
     ).toThrow('regular');
@@ -271,6 +274,12 @@ describe('administration and playoffs', () => {
     const finals = state.fixtures.filter((f) => f.seasonId === seasonId && f.stage === 'final');
     expect(finals).toHaveLength(1);
     expect(finals[0].bestOf).toBe(7);
+    expect(finals[0].dueDate).toBe(playoffWeek(state.seasons[0], state.fixtures));
+    expect(
+      state.fixtures
+        .filter((f) => f.seasonId === seasonId && f.stage === 'semifinal')
+        .every((f) => f.dueDate === finals[0].dueDate),
+    ).toBe(true);
     state = play(state, finals[0].id, 4);
     expect(state.seasons[0].status).toBe('complete');
     expect(state.seasons[0].championId).toBe(

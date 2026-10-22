@@ -4,7 +4,7 @@ import type { User, SupabaseClient } from '@supabase/supabase-js';
 import type { LeagueState, Player } from '../../src/domain/types';
 import { executeCommand } from '../../src/data/commands';
 import { displaySnapshot } from '../../src/data/display';
-import { dateOnly, isParticipant } from '../../src/domain/rules';
+import { dateOnly, isParticipant, weekStart, weekEnd } from '../../src/domain/rules';
 import { normalizeNewIds, persistChanges } from './persist';
 import { privateSnapshot, readState } from './state';
 import { ApiError, requireCondition } from './errors';
@@ -243,7 +243,8 @@ export class LeagueService {
         today = dateOnly();
       let count = 0;
       for (const f of state.fixtures.filter(
-        (f) => ['scheduled', 'postponed'].includes(f.status) && f.dueDate <= today,
+        (f) =>
+          ['scheduled', 'postponed'].includes(f.status) && weekStart(f.dueDate) <= weekStart(today),
       )) {
         const season = state.seasons.find((s) => s.id === f.seasonId);
         if (
@@ -267,7 +268,10 @@ export class LeagueService {
             seasonId: f.seasonId,
             fixtureId: f.id,
             kind: 'upcoming',
-            title: f.dueDate < today ? 'A fixture needs a catch-up' : 'Your fixture is due today',
+            title:
+              weekEnd(f.dueDate) < today
+                ? 'A fixture needs a catch-up'
+                : 'Your fixture is scheduled this week',
             body: 'Arrange your match with your opponent. No automatic loss is applied.',
             createdAt: new Date().toISOString(),
             read: false,

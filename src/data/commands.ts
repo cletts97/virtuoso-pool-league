@@ -1,5 +1,8 @@
 import {
-  addDays,
+  weekStart,
+  weekEnd,
+  weekLabel,
+  playoffWeek,
   canApprove,
   dateOnly,
   invariant,
@@ -66,9 +69,7 @@ function seedPlayoffs(state: LeagueState, season: Season, force = false, reason?
         .filter((f) => f.seasonId === season.id && f.stage === 'regular')
         .map((f) => f.round),
     ) + 1;
-  const end = state.fixtures
-    .filter((f) => f.seasonId === season.id)
-    .reduce((max, f) => (f.dueDate > max ? f.dueDate : max), season.startDate);
+  const week = playoffWeek(season, state.fixtures);
   for (const [index, home, away] of [
     [0, 0, 3],
     [1, 1, 2],
@@ -79,7 +80,7 @@ function seedPlayoffs(state: LeagueState, season: Season, force = false, reason?
       round: semifinalRound,
       homeId: season.qualifiers[home],
       awayId: season.qualifiers[away],
-      dueDate: addDays(end, 4),
+      dueDate: week,
       stage: 'semifinal',
       bestOf: 5,
       status: 'scheduled',
@@ -105,12 +106,9 @@ export function progressPlayoffs(state: LeagueState, season: Season) {
       round: Math.max(...semis.map((f) => f.round)) + 1,
       homeId: winner(semis[0])!,
       awayId: winner(semis[1])!,
-      dueDate: addDays(
-        semis
-          .map((f) => f.dueDate)
-          .sort()
-          .at(-1)!,
-        4,
+      dueDate: semis.reduce(
+        (latest, f) => (weekStart(f.dueDate) > latest ? weekStart(f.dueDate) : latest),
+        playoffWeek(season, state.fixtures),
       ),
       stage: 'final',
       bestOf: 7,
@@ -283,24 +281,24 @@ export function executeCommand(
           );
         validateDate(command.dueDate);
         invariant(
-          command.dueDate >= season.startDate,
-          'The due date must be on or after the season starts.',
+          weekStart(command.dueDate) >= weekStart(season.startDate),
+          'The fixture week must be on or after the season start week.',
         );
         fixture.note = text(command.reason, 'Reason');
-        fixture.dueDate = command.dueDate;
+        fixture.dueDate = weekStart(command.dueDate);
         fixture.status = command.type === 'postpone' ? 'postponed' : 'scheduled';
         audit(
           fixture,
           actor.id,
           command.type === 'postpone' ? 'postponed' : 'rescheduled',
-          `${fixture.note} • Due ${fixture.dueDate}`,
+          `${fixture.note} • ${weekLabel(fixture.dueDate)}`,
         );
         notifications.publish(state, players, {
           seasonId: season.id,
           fixtureId: fixture.id,
           kind: 'postponement',
           title: command.type === 'postpone' ? 'Fixture postponed' : 'Fixture rescheduled',
-          body: `${fixture.note}. New due date: ${fixture.dueDate}.`,
+          body: `${fixture.note}. ${weekLabel(fixture.dueDate)}.`,
         });
         break;
     }
@@ -323,7 +321,10 @@ export function executeCommand(
       );
       invariant(season.participantIds.length < 40, 'A season supports up to 40 players.');
       validateDate(command.dueDate);
-      invariant(command.dueDate >= dateOnly(), 'Choose a catch-up deadline of today or later.');
+      invariant(
+        weekEnd(command.dueDate) >= dateOnly(),
+        'Choose the current week or a later catch-up week.',
+      );
       const player = state.players.find((p) => p.id === command.playerId);
       invariant(player?.active, 'Choose an active colleague.');
       const opponents = season.participantIds.map((pid) =>
@@ -362,7 +363,7 @@ export function executeCommand(
           ),
           'This pairing already has a fixture.',
         );
-        const dueDate = command.dueDate;
+        const dueDate = weekStart(command.dueDate);
         const fixture: Fixture = {
           id: id(),
           seasonId: season.id,
@@ -383,7 +384,7 @@ export function executeCommand(
           fixtureId: fixture.id,
           kind: 'postponement',
           title: 'New catch-up fixture',
-          body: `${player.name} v ${opponent.name} · Due ${dueDate}. A player joined the season late.`,
+          body: `${player.name} v ${opponent.name} · ${weekLabel(dueDate)}. A player joined the season late.`,
         });
       }
       season.participantIds.push(entrant.id);
@@ -449,7 +450,7 @@ export function executeCommand(
       state.seasons.unshift({
         id: seasonId,
         name: text(command.name, 'Season name', 80),
-        startDate: command.startDate,
+        startDate: weekStart(command.startDate),
         participantIds,
         format: 'singles',
         status: 'draft',
@@ -471,7 +472,7 @@ export function executeCommand(
             command.roundsPerWeek <= 7,
           'Use one to seven rounds per week.',
         );
-        season.startDate = command.startDate;
+        season.startDate = weekStart(command.startDate);
         season.config.roundsPerWeek = command.roundsPerWeek;
       }
       break;

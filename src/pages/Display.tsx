@@ -8,6 +8,7 @@ import { liveMode } from '../auth/client';
 import { browserRepository } from '../data/browserRepository';
 import type { DisplaySnapshot } from '../data/display';
 import { bookingDayLabel, bookingLabel, londonDate, londonTime } from '../domain/bookings';
+import { weekLabel } from '../domain/rules';
 import { RuleReminders } from '../components/RuleReminders';
 
 const bookingUrl = new URL(
@@ -289,7 +290,7 @@ export function Display() {
                   <small>
                     {f.bookedAt
                       ? `Table booked · ${bookingDayLabel(londonDate(f.bookedAt))} ${londonTime(f.bookedAt)}`
-                      : `Due ${bookingDayLabel(f.dueDate)} · Table not reserved`}
+                      : `${weekLabel(f.dueDate)} · Table not reserved`}
                   </small>
                 </div>
               ))}

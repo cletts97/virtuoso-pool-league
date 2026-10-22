@@ -154,3 +154,7 @@ Playwright uses installed Google Chrome (`channel: chrome`) for desktop and a mo
 The mock browser configuration starts/reuses Vite on 5173. Do not reuse an API-mode server for that suite. Local integration tests require running disposable Supabase; live browser tests start the API on 7071 and api-mode Vite on 5174. Stop a development API first. Helpers refuse cloud endpoints and capture local credentials in memory. Test records are retained for audit, test identities deactivated/deleted, and test bookings cancelled. Screenshots and traces are ignored under `.tools/screenshots/` and `test-results/`. Avoid source edits during browser runs.
 
 See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for current scope and intentionally deferred integrations, and [public/brand/README.md](public/brand/README.md) for verified branding sources.
+
+### Weekly fixture schedules
+
+Publish draft schedules before their start week. Fixtures use Monday–Sunday playing weeks (two rounds per week by default), displayed as “Week commencing …”; players arrange times or reserve the table separately. Semifinals and the final share the week after the last regular-season week. Overdue status begins the following Monday. Existing PostgreSQL `due_date` values identify their containing week; new schedules store Monday anchors. No migration or rewrite of existing results/bookings is needed. Deploy the frontend and API together.

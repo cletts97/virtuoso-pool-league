@@ -93,7 +93,7 @@ describe('scheduled league operations', () => {
     fixture.status = 'scheduled';
     fixture.dueDate = '2026-11-02';
     expect(newsletterEmailIntents(state, now, 'https://pool.example')).toEqual([]);
-    fixture.dueDate = '2026-10-26';
+    fixture.dueDate = '2026-11-01'; // Legacy Sunday date belongs to the same playing week.
     state.players[0].name = '<img onerror="bad">';
     state.players[1].active = false;
     const jobs = newsletterEmailIntents(state, now, 'https://pool.example');
@@ -107,6 +107,8 @@ describe('scheduled league operations', () => {
     expect(jobs[0].html).toContain('&lt;img');
     expect(jobs[0].html).not.toContain('<img onerror');
     expect(jobs[0].html).toContain('/brand/virtuoso-white.png');
+    expect(jobs[0].body).toContain('Week commencing 26 Oct 2026');
+    expect(jobs[0].body).not.toContain('Due ');
     expect(newsletterEmailIntents(state, now, 'https://pool.example')[0].eventId).toBe(
       jobs[0].eventId,
     );

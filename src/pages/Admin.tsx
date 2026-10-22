@@ -4,7 +4,7 @@ import { AccountManagement, ReminderAction } from '../components/AccountManageme
 import { Link } from 'react-router-dom';
 import { ChevronRight, Edit3, Megaphone, Plus, ShieldCheck, WandSparkles } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
-import { matchStatus } from '../domain/rules';
+import { matchStatus, weekLabel } from '../domain/rules';
 import { Avatar, Badge, Confirm, Empty, PageHeading, Section, Stat } from '../components/ui';
 import { AnnouncementForm, FinalizeForm, PlayerForm, SeasonForm } from '../components/AdminForms';
 import { MatchCard } from '../components/MatchCard';
@@ -141,8 +141,7 @@ export function Admin() {
                       <Badge status={season.status} />
                       <h2>{season.name}</h2>
                       <p>
-                        {season.participantIds.length} players · Starts{' '}
-                        {new Date(`${season.startDate}T12:00:00`).toLocaleDateString('en-GB')} ·{' '}
+                        {season.participantIds.length} players · {weekLabel(season.startDate)} ·{' '}
                         {fixtures.filter((f) => f.stage === 'regular').length} league fixtures
                       </p>
                       <div className="admin-actions">
@@ -199,7 +198,7 @@ export function Admin() {
                       {season.status === 'draft' && (
                         <p className="field-help">
                           This season is a draft. Add players here, then generate fixtures to begin
-                          the regular season.
+                          the regular season, even before its start week.
                         </p>
                       )}
                       {seasonDeletionBlock(state, season) && (
@@ -248,7 +247,7 @@ export function Admin() {
                       <div>
                         <strong>{s.name}</strong>
                         <small>
-                          {s.participantIds.length} players · {s.startDate}
+                          {s.participantIds.length} players · {weekLabel(s.startDate)}
                         </small>
                       </div>
                       <Badge status={s.status} />
@@ -397,7 +396,7 @@ export function Admin() {
             </Section>
             <Section
               title="Overdue fixtures"
-              subtitle="Contact the players and agree a new date. No automatic loss is applied."
+              subtitle="Contact the players and agree a new week. No automatic loss is applied."
             >
               <div className="match-grid">
                 {overdue.map((f) => (
@@ -462,7 +461,7 @@ export function Admin() {
             ? season.participantIds.length
             : season.participantIds.length - 1}{' '}
           rounds, targeting {season.config.roundsPerWeek} rounds per week. The season’s schedule
-          settings will then be locked.
+          settings will then be locked. No playing date or time is assigned.
         </Confirm>
       )}
     </>

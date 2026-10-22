@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   addDays,
+  weekStart,
+  weekEnd,
+  weekLabel,
+  playoffWeek,
   canApprove,
   generateRoundRobin,
   matchStatus,
@@ -50,10 +54,34 @@ describe('round-robin generation', () => {
   );
   it('targets two rounds a week without specifying match times', () => {
     const f = generateRoundRobin(makeSeason(12));
-    expect(f.find((x) => x.round === 1)?.dueDate).toBe('2026-10-04');
-    expect(f.find((x) => x.round === 2)?.dueDate).toBe('2026-10-07');
-    expect(f.find((x) => x.round === 3)?.dueDate).toBe('2026-10-11');
+    expect(f.find((x) => x.round === 1)?.dueDate).toBe('2026-09-28');
+    expect(f.find((x) => x.round === 2)?.dueDate).toBe('2026-09-28');
+    expect(f.find((x) => x.round === 3)?.dueDate).toBe('2026-10-05');
   });
+  it('anchors future Monday starts and weekly blocks without a playing time', () => {
+    const future = { ...makeSeason(12), startDate: '2027-01-04' };
+    const fixtures = generateRoundRobin(future);
+    expect(fixtures.filter((f) => f.round <= 2).every((f) => f.dueDate === '2027-01-04')).toBe(
+      true,
+    );
+    expect(fixtures.filter((f) => f.round === 3).every((f) => f.dueDate === '2027-01-11')).toBe(
+      true,
+    );
+    expect(weekStart('2026-10-25')).toBe('2026-10-19');
+    expect(weekEnd('2026-10-26')).toBe('2026-11-01');
+    expect(weekLabel('2026-10-28')).toBe('Week commencing 26 Oct 2026');
+  });
+  it.each([11, 12])(
+    'projects the same playoff week before and after generating %i-player fixtures',
+    (count) => {
+      const season = { ...makeSeason(count), startDate: '2027-01-04' };
+      const fixtures = generateRoundRobin(season);
+      expect(playoffWeek(season, [])).toBe('2027-02-15');
+      expect(playoffWeek(season, fixtures)).toBe('2027-02-15');
+      fixtures[0].dueDate = '2027-02-24';
+      expect(playoffWeek(season, fixtures)).toBe('2027-03-01');
+    },
+  );
   it('rejects duplicate entries and invalid dates', () => {
     expect(() =>
       generateRoundRobin({ ...makeSeason(4), participantIds: ['a', 'a', 'b', 'c'] }),
@@ -173,5 +201,7 @@ describe('approval, qualification and status', () => {
     expect(postponed.score).toBeUndefined();
     expect(matchStatus(postponed, fixture.dueDate)).toBe('postponed');
     expect(matchStatus(fixture, fixture.dueDate)).toBe('scheduled');
+    expect(matchStatus(fixture, weekEnd(fixture.dueDate))).toBe('scheduled');
+    expect(matchStatus(fixture, addDays(weekEnd(fixture.dueDate), 1))).toBe('overdue');
   });
 });

@@ -4,6 +4,8 @@ import { ArrowLeft, Check, Clock3, ShieldCheck } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
 import {
   addDays,
+  weekStart,
+  weekLabel,
   canApprove,
   dateOnly,
   isParticipant,
@@ -27,7 +29,7 @@ export function MatchDetails() {
   >();
   const [score, setScore] = useState<Score>();
   const [reason, setReason] = useState('');
-  const [dueDate, setDueDate] = useState(addDays(dateOnly(), 7));
+  const [dueDate, setDueDate] = useState(weekStart(addDays(dateOnly(), 7)));
   if (!fixture)
     return (
       <Empty title="Match not found">
@@ -52,7 +54,7 @@ export function MatchDetails() {
   const launch = (next: typeof action) => {
     setScore(match.score);
     setReason('');
-    setDueDate(match.dueDate > dateOnly() ? match.dueDate : addDays(dateOnly(), 7));
+    setDueDate(weekStart(match.dueDate > dateOnly() ? match.dueDate : addDays(dateOnly(), 7)));
     setAction(next);
   };
   async function submit(event: React.FormEvent) {
@@ -112,7 +114,7 @@ export function MatchDetails() {
               ? 'Final'
               : 'Semifinals'
         }
-        description={`Best of ${match.bestOf} frames · First to ${Math.ceil(match.bestOf / 2)} wins · Due ${new Date(`${match.dueDate}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+        description={`Best of ${match.bestOf} frames · First to ${Math.ceil(match.bestOf / 2)} wins · ${weekLabel(match.dueDate)}`}
         action={<Badge status={matchStatus(match)} />}
       />
       <section className="match-centre panel">
@@ -188,7 +190,7 @@ export function MatchDetails() {
           <p className="match-message">
             Table reserved · {bookingDayLabel(londonDate(reservation.startAt))} ·{' '}
             {londonTime(reservation.startAt)}–{londonTime(bookingEnd(reservation))} Europe/London.
-            Manage this separately from the fixture due date.
+            Manage this separately from the fixture week.
           </p>
         )}
         {match.status === 'pending' && !state.readOnly && (
@@ -324,13 +326,15 @@ export function MatchDetails() {
             )}
             {(action === 'postpone' || action === 'reschedule') && (
               <label>
-                New due date
+                New fixture week (Monday)
                 <input
                   required
                   type="date"
                   value={dueDate}
-                  min={season.startDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  min={weekStart(season.startDate)}
+                  onChange={(e) => {
+                    if (e.target.value) setDueDate(weekStart(e.target.value));
+                  }}
                 />
               </label>
             )}

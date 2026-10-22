@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
-import { matchStatus, participantName } from '../domain/rules';
+import { matchStatus, participantName, weekLabel } from '../domain/rules';
 import { Badge, Empty, PageHeading } from '../components/ui';
 import { MatchCard } from '../components/MatchCard';
 
@@ -31,7 +31,7 @@ export function Fixtures() {
       <PageHeading
         eyebrow="SCHEDULE"
         title="Fixtures & results"
-        description="Browse scheduled matches and results, or submit a score."
+        description="Fixtures are assigned to a Monday–Sunday week. Arrange a time with your opponent or play early."
         action={<Badge status={season.status} />}
       />
       <div className="filter-bar">
@@ -133,7 +133,8 @@ export function Fixtures() {
                   )}
                 </h2>
                 <span>
-                  {roundMatches.length} {roundMatches.length === 1 ? 'match' : 'matches'}{' '}
+                  {weekLabel(roundMatches[0].dueDate)} · {roundMatches.length}{' '}
+                  {roundMatches.length === 1 ? 'match' : 'matches'}{' '}
                   <span className="meta-divider">·</span> Best of {roundMatches[0].bestOf}
                 </span>
               </div>
