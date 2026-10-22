@@ -207,6 +207,12 @@ test('rules are public, complete, responsive and navigable from the app and TV',
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Virtuoso Pool League — Rules');
   await expect(page.locator('.rules-section')).toHaveCount(8);
   await expect(page.locator('.rules-section li')).toHaveCount(47);
+  await expect(page.locator('#general')).toContainText('Only one foot needs to touch the floor');
+  await expect(page.locator('#normal-play')).toContainText('properly nominated foul-snooker');
+  await expect(page.locator('#normal-play')).toContainText('pot a ball on');
+  await expect(page.locator('#snookers')).toContainText('first shot only');
+  await expect(page.locator('#snookers')).toContainText('group is already cleared');
+  await expect(page.locator('#starting')).toContainText('opponent breaks with two visits');
   expect(await page.evaluate(() => localStorage.getItem('virtuoso-pool-league.v1'))).toBeNull();
   const source = page.getByRole('link', { name: /Read the official rules/ });
   await expect(source).toHaveAttribute(
@@ -232,6 +238,11 @@ test('rules are public, complete, responsive and navigable from the app and TV',
     }
   }
   await page.goto('/display');
+  await expect(page.locator('.rule-reminders')).toContainText('normally a foul');
+  await expect(page.locator('.rule-reminders')).toContainText('first shot only');
+  await expect(page.locator('.rule-reminders')).toContainText(
+    'Confirmed total snookers are exempt',
+  );
   await page.getByRole('link', { name: 'Rules', exact: true }).click();
   await expect(page).toHaveURL(/\/rules\?from=display$/);
   expect(

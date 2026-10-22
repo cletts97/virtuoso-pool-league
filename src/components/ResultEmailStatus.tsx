@@ -28,7 +28,7 @@ export function ResultEmailStatus() {
   return (
     <div className="admin-season">
       <h3>Score-review emails</h3>
-      <p>Resend delivery for league and casual submissions.</p>
+      <p>Resend delivery for result reviews and administrator dispute alerts.</p>
       <div className="admin-actions">
         <button className="button secondary small" disabled={busy} onClick={() => void refresh()}>
           Check email queue

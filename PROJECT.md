@@ -151,6 +151,7 @@ The application should eventually support:
 - Links to fixtures within the web application.
 - Notifications when a score requires confirmation.
 - Score approval and dispute notifications.
+- When result email delivery is enabled, email all active administrators once for each new league/casual dispute, linking to its protected review page. Recheck administrator access before delivery and skip superseded/resolved disputes.
 - Reminders for overdue fixtures.
 
 Email links must not bypass authentication or authorization.
@@ -171,6 +172,7 @@ Visitors may browse the dashboard, published seasons, standings, player profiles
 8. Table Bookings — calendar, availability, booking creation and management.
 9. Office HUD — dedicated full-screen TV dashboard.
 10. Rules — public playing-rules reference, with the owner-supplied WEPF-based summary and official EPA PDF source, accessible from the app and TV dashboard.
+    Keep the concise rules page and shared dashboard/TV reminders aligned with the linked EPA-hosted WEPF World Rules poster (abridged January 2020), including nomination/snooker/break exceptions. Only one foot must touch the floor; do not imply both feet are required. This playing-rule reference does not alter competition scoring or result-approval logic.
 
 ## Pool Table Booking System
 

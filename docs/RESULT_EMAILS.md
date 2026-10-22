@@ -20,6 +20,7 @@ Supabase SMTP sends invitation/password emails only. Score-review emails now use
 
 ## Behaviour and retries
 
+- A new league or casual dispute also queues one alert per active administrator, linking directly to that game. Dispute reasons stay inside the signed-in application, not the email. The worker rechecks administrator role before sending and skips resolved/superseded disputes or demoted/inactive accounts. This uses the existing outbox and `ALLOW_RESULT_EMAIL` setting; no new migration or credentials are needed. Existing disputes are not emailed retroactively.
 - New league/casual submissions and casual resubmissions create one queue entry per active opposing player in the same PostgreSQL transaction as the result. A submitter or doubles teammate never receives a review request for their own submission. Old pending results are not automatically emailed when enabling the feature.
 - After commit, the API attempts at most two due messages. Provider failure does not undo or falsely fail a saved result. The email contains a pending-score summary and a match link requiring sign-in; it never approves/disputes anything by clicking it.
 - Failed attempts use exponential backoff, at most five attempts. Retries run on subsequent successful command requests or via the administrator's **Retry due emails** button; there is no background scheduler in the managed Free Functions backend. The button processes at most two due messages per click, respecting backoff. Queue counts distinguish pending, failed/expired and messages accepted by Resend.

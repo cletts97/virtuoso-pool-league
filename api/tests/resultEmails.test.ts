@@ -4,7 +4,57 @@ import { ResendEmailDelivery } from '../src/email';
 import { readConfig } from '../src/config';
 import { createSeed } from '../../src/data/seed';
 import { executeCommand } from '../../src/data/commands';
+import { canApprove } from '../../src/domain/rules';
 describe('review email delivery', () => {
+  it.each([false, true])(
+    'emails active administrators once for a new dispute (casual=%s)',
+    (casual) => {
+      let before = createSeed();
+      before.players.find((p) => p.id === 'p03')!.role = 'admin';
+      before.players.find((p) => p.id === 'p03')!.active = false;
+      before.players.find((p) => p.id === 'p05')!.role = 'admin';
+      let id: string;
+      if (casual) {
+        id = crypto.randomUUID();
+        before.currentUserId = 'p02';
+        before = executeCommand(before, {
+          type: 'submitCasual',
+          result: {
+            id,
+            homePlayerIds: ['p02', 'p06'],
+            awayPlayerIds: ['p04', 'p07'],
+            playedOn: '2026-01-01',
+            bestOf: 3,
+            score: { home: 2, away: 1 },
+          },
+        });
+        before.currentUserId = 'p04';
+      } else {
+        const fixture = before.fixtures.find((f) => f.status === 'pending')!;
+        id = fixture.id;
+        before.currentUserId = before.players.find((p) =>
+          canApprove(fixture, p.id, before.participants),
+        )!.id;
+      }
+      const next = executeCommand(
+        before,
+        casual
+          ? { type: 'reviewCasual', id, approve: false, reason: 'PRIVATE_REASON' }
+          : { type: 'review', fixtureId: id, approve: false, reason: 'PRIVATE_REASON' },
+      );
+      const jobs = reviewEmailIntents(before, next, 'https://pool.example');
+      expect(jobs.map((j) => j.recipientId).sort()).toEqual(['p01', 'p05']);
+      expect(
+        jobs.every(
+          (j) =>
+            j.subject.includes('disputed') &&
+            j.body.includes(id) &&
+            !j.body.includes('PRIVATE_REASON'),
+        ),
+      ).toBe(true);
+      expect(reviewEmailIntents(next, next, 'https://pool.example')).toEqual([]);
+    },
+  );
   it('targets only opposing doubles players, and deduplicates existing submission events', () => {
     const before = createSeed();
     before.currentUserId = 'p02';

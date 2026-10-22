@@ -1,5 +1,17 @@
 # Implementation status — Virtuoso Pool League
 
+## Playing-rule accuracy review — 22 October 2026
+
+- Checked the eight-section playing reference against the owner-linked EPA WEPF World Rules poster, whose footer identifies the abridged January 2020 version. Clarified the existing “both feet off” foul wording: one grounded foot is sufficient; both are not required (K18). Corrected/qualified fair-break penalties and colour nomination (F/H), legal-pot/cushion and total-snooker requirements (G), opponent-ball foul exceptions (K3), first-shot-only foul-snooker nominations and baulk rechecks/black restrictions (P/Q), and black-on-break exceptions (F5/M). Kept the same eight sections and 47 bullets rather than reproducing the full rulebook.
+- Moved the page summaries and four shared dashboard/TV reminders into `src/content/playingRules.ts`; both renderers use that reference. Updated the on-page source/version description. Existing email-related working-tree changes were preserved; no competition, data, authentication or email behaviour changed in this task.
+- Validation: TypeScript, targeted ESLint/whitespace checks and three focused desktop browser tests passed, covering corrected text/public rule navigation, reminders/QR/sidebar at four viewport sizes, and 1080p long names/current bookings. No full suite/build, database changes, real emails, commit, push or deployment performed. Actual LG TV rendering was not tested.
+
+## Administrator dispute emails — 22 October 2026
+
+- Extended the existing Resend outbox to enqueue one alert per active administrator for each new league or casual dispute event. Messages include players/score and a protected game link; dispute reasons remain in the signed-in application. Existing disputes are not emailed retroactively. Uses the existing result-email enablement/settings and schema, without a new migration.
+- Delivery identifies dispute events from their immutable audit IDs, rechecks current administrator role and active/invited/confirmed identity, and skips demoted accounts or resolved/superseded disputes. Existing deduplication, leases, bounded retries and post-commit failure isolation remain unchanged. Updated operator documentation and administrator queue description.
+- Validation: six focused email unit tests, one disposable local Supabase integration test with a fake sender (18 unrelated tests skipped), TypeScript, targeted ESLint, whitespace checks and API build passed. Tests cover both game types, active administrator selection, duplicate prevention, demotion and resolved-dispute suppression. No new dependencies, migration, full suite/browser tests/frontend build, cloud changes, real email, commit, push or deployment performed.
+
 ## Resend review emails and combined recent results — 22 October 2026
 
 - Added a Resend HTTPS `EmailDelivery` adapter without new dependencies, separately gated by `ALLOW_RESULT_EMAIL`, `RESEND_API_KEY`, `RESULT_EMAIL_FROM` and existing `APP_URL`. Supabase Auth SMTP remains unchanged. New league/casual submissions and casual resubmissions queue protected sign-in-required review links only for active opposing players (both opponents in doubles, never a teammate). Runtime delivery occurs after commit; provider errors do not undo a saved score.

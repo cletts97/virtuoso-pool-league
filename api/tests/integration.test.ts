@@ -65,6 +65,128 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       }
       await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[0]]);
     }, 60000);
+    it('emails current administrators about new disputes and skips demoted or resolved recipients', async () => {
+      const delivered: EmailMessage[] = [];
+      let unavailable = true;
+      const queue = new ResultEmailQueue(
+        pool,
+        auth,
+        {
+          send: async (m) => {
+            if (unavailable) throw new Error('Fake outage');
+            delivered.push(m);
+          },
+        },
+        true,
+        config.appUrl,
+        config.emailDomains,
+      );
+      const enabled = new LeagueService(pool, auth, config.emailDomains, queue);
+      await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[3]]);
+      const id = crypto.randomUUID();
+      await command(
+        {
+          type: 'submitCasual',
+          result: {
+            id,
+            homePlayerIds: [profiles[1]],
+            awayPlayerIds: [profiles[2]],
+            playedOn: '2026-01-01',
+            bestOf: 3,
+            score: { home: 2, away: 1 },
+          },
+        },
+        users[1],
+      );
+      let state = await service.load(users[2]);
+      await enabled.execute(
+        users[2],
+        { type: 'reviewCasual', id, approve: false, reason: 'Private correction reason' },
+        state.revision!,
+      );
+      expect(
+        (
+          await pool.query(
+            'SELECT recipient_id FROM public.result_email_outbox WHERE match_id=$1 ORDER BY recipient_id',
+            [id],
+          )
+        ).rows.map((r) => r.recipient_id),
+      ).toEqual([profiles[0], profiles[3]].sort());
+      await pool.query("UPDATE public.profiles SET role='colleague' WHERE id=$1", [profiles[3]]);
+      await pool.query(
+        'UPDATE public.result_email_outbox SET next_attempt_at=now() WHERE match_id=$1',
+        [id],
+      );
+      unavailable = false;
+      expect(await queue.flush()).toEqual({ sent: 1, failed: 0, skipped: 1 });
+      expect(delivered).toHaveLength(1);
+      expect(delivered[0].subject).toContain('disputed');
+      expect(delivered[0].text).not.toContain('Private correction reason');
+      await queue.flush();
+      expect(delivered).toHaveLength(1);
+
+      state = await command({
+        type: 'createSeason',
+        name: `${prefix} disputed email`,
+        startDate: londonDate(new Date()),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const season = state.selectedSeasonId;
+      state = await command({ type: 'generate', seasonId: season });
+      const fixture = state.fixtures.find((f) => f.seasonId === season)!;
+      const home = state.participants.find((p) => p.id === fixture.homeId)!.playerIds[0];
+      const away = state.participants.find((p) => p.id === fixture.awayId)!.playerIds[0];
+      await command(
+        { type: 'submit', fixtureId: fixture.id, score: { home: 2, away: 0 } },
+        users[profiles.indexOf(home)],
+      );
+      state = await service.load(users[profiles.indexOf(away)]);
+      await enabled.execute(
+        users[profiles.indexOf(away)],
+        { type: 'review', fixtureId: fixture.id, approve: false, reason: 'Needs checking' },
+        state.revision!,
+      );
+      expect(delivered).toHaveLength(2);
+      expect(delivered[1].text).toContain('/fixtures/' + fixture.id);
+
+      // A dispute resolved during a delivery outage must not later send a stale alert.
+      unavailable = true;
+      const secondId = crypto.randomUUID();
+      await command(
+        {
+          type: 'submitCasual',
+          result: {
+            id: secondId,
+            homePlayerIds: [profiles[1]],
+            awayPlayerIds: [profiles[2]],
+            playedOn: '2026-01-01',
+            bestOf: 3,
+            score: { home: 2, away: 0 },
+          },
+        },
+        users[1],
+      );
+      state = await service.load(users[2]);
+      await enabled.execute(
+        users[2],
+        { type: 'reviewCasual', id: secondId, approve: false, reason: 'Check it' },
+        state.revision!,
+      );
+      await command({
+        type: 'resolveCasual',
+        id: secondId,
+        score: { home: 2, away: 0 },
+        reason: 'Confirmed with players',
+      });
+      await pool.query(
+        'UPDATE public.result_email_outbox SET next_attempt_at=now() WHERE match_id=$1',
+        [secondId],
+      );
+      unavailable = false;
+      expect((await queue.flush()).skipped).toBe(1);
+      expect(delivered).toHaveLength(2);
+    });
     it('durably retries score emails without rolling back submissions or sending stale duplicates', async () => {
       const accepted: EmailMessage[] = [];
       let fail = true;

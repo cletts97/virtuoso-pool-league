@@ -35,6 +35,7 @@ export function reviewEmailIntents(before: LeagueState, next: LeagueState, appUr
     away: string,
     homeScore: number,
     awayScore: number,
+    disputed = false,
   ) => {
     const url = new URL(
       kind === 'league' ? `/fixtures/${matchId}` : `/casual?result=${matchId}`,
@@ -47,35 +48,44 @@ export function reviewEmailIntents(before: LeagueState, next: LeagueState, appUr
           recipientId,
           kind,
           matchId,
-          subject: 'Please review a pool match result',
-          body: `A ${kind} result needs your confirmation.\n\n${home} ${homeScore} – ${awayScore} ${away}\n\nThis score is pending. Sign in to review it, then confirm or dispute it:\n${url}\n\nOnly confirmed results count towards records. This link does not approve the result or bypass sign-in.`,
+          subject: disputed
+            ? 'A pool match result has been disputed'
+            : 'Please review a pool match result',
+          body: disputed
+            ? `A ${kind} result has been disputed and needs administrator review.\n\n${home} ${homeScore} – ${awayScore} ${away}\n\nSign in to review the dispute and result history:\n${url}\n\nDisputed scores do not count towards records. This link does not change the result or bypass sign-in.`
+            : `A ${kind} result needs your confirmation.\n\n${home} ${homeScore} – ${awayScore} ${away}\n\nThis score is pending. Sign in to review it, then confirm or dispute it:\n${url}\n\nOnly confirmed results count towards records. This link does not approve the result or bypass sign-in.`,
         });
   };
   for (const f of next.fixtures) {
     const event = f.history.at(-1);
     if (
-      f.status !== 'pending' ||
+      !['pending', 'disputed'].includes(f.status) ||
       !f.score ||
-      event?.action !== 'submitted' ||
+      event?.action !== (f.status === 'disputed' ? 'disputed' : 'submitted') ||
       before.fixtures.find((old) => old.id === f.id)?.history.some((h) => h.id === event.id)
     )
       continue;
     add(
       event.id,
-      next.players.filter((p) => canApprove(f, p.id, next.participants)).map((p) => p.id),
+      next.players
+        .filter((p) =>
+          f.status === 'disputed' ? p.role === 'admin' : canApprove(f, p.id, next.participants),
+        )
+        .map((p) => p.id),
       'league',
       f.id,
       participantName(next, f.homeId),
       participantName(next, f.awayId),
       f.score.home,
       f.score.away,
+      f.status === 'disputed',
     );
   }
   for (const r of next.casualResults ?? []) {
     const event = r.history.at(-1);
     if (
-      r.status !== 'pending' ||
-      event?.action !== 'submitted' ||
+      !['pending', 'disputed'].includes(r.status) ||
+      event?.action !== (r.status === 'disputed' ? 'disputed' : 'submitted') ||
       before.casualResults?.find((old) => old.id === r.id)?.history.some((h) => h.id === event.id)
     )
       continue;
@@ -83,13 +93,16 @@ export function reviewEmailIntents(before: LeagueState, next: LeagueState, appUr
       ids.map((id) => next.players.find((p) => p.id === id)?.name ?? 'Colleague').join(' & ');
     add(
       event.id,
-      next.players.filter((p) => canReviewCasual(r, p.id)).map((p) => p.id),
+      next.players
+        .filter((p) => (r.status === 'disputed' ? p.role === 'admin' : canReviewCasual(r, p.id)))
+        .map((p) => p.id),
       'casual',
       r.id,
       name(r.homePlayerIds),
       name(r.awayPlayerIds),
       r.score.home,
       r.score.away,
+      r.status === 'disputed',
     );
   }
   return intents;
@@ -125,7 +138,17 @@ export class ResultEmailQueue {
       : { pending: 0, failed: 0, sent: 0 };
     return { enabled: this.enabled, ready, ...counts };
   }
-  private async stillReviewable(job: ResultEmailJob) {
+  private async stillReviewable(job: ResultEmailJob, role: string) {
+    // The immutable event identifies review requests vs administrator dispute alerts.
+    // Recheck the role at delivery time so demoted administrators cannot receive alerts.
+    if (role === 'admin') {
+      const sql =
+        job.match_kind === 'league'
+          ? `SELECT 1 FROM public.fixtures f JOIN public.result_events e ON e.fixture_id=f.id AND e.id=$2 AND e.action='disputed'
+          WHERE f.id=$1 AND f.status='disputed' AND e.fixture_revision=(SELECT max(fixture_revision) FROM public.result_events WHERE fixture_id=f.id)`
+          : `SELECT 1 FROM public.casual_results WHERE id=$1 AND status='disputed' AND history->-1->>'id'=$2 AND history->-1->>'action'='disputed'`;
+      if ((await this.pool.query(sql, [job.match_id, job.event_id])).rows.length) return true;
+    }
     if (job.match_kind === 'league') {
       const { rows } = await this.pool.query(
         `SELECT 1 FROM public.fixtures f
@@ -164,11 +187,12 @@ export class ResultEmailQueue {
       let outcome: 'sent' | 'skipped' | 'pending' | 'failed' = 'skipped';
       try {
         const profile = (
-          await this.pool.query('SELECT auth_user_id FROM public.profiles WHERE id=$1 AND active', [
-            job.recipient_id,
-          ])
+          await this.pool.query(
+            'SELECT auth_user_id,role FROM public.profiles WHERE id=$1 AND active',
+            [job.recipient_id],
+          )
         ).rows[0];
-        if (profile?.auth_user_id && (await this.stillReviewable(job))) {
+        if (profile?.auth_user_id && (await this.stillReviewable(job, profile.role))) {
           const { data, error } = await this.auth.auth.admin.getUserById(profile.auth_user_id);
           if (error) throw new Error('Recipient lookup failed.');
           const user = data.user;
