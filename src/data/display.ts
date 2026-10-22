@@ -1,5 +1,5 @@
 import { recentResults, type RecentResult } from '../domain/recentResults';
-import type { BookingConfig, LeagueState } from '../domain/types';
+import type { BookingConfig, BookingSport, LeagueState } from '../domain/types';
 import { bookingEnd, isBookableFixture, todaysBookings } from '../domain/bookings';
 import { participantName, standings } from '../domain/rules';
 
@@ -8,6 +8,7 @@ export interface DisplayBooking {
   owner: string;
   participants: string[];
   kind: 'casual' | 'league';
+  sport?: BookingSport;
   startAt: string;
   endAt: string;
   duration: number;
@@ -60,6 +61,7 @@ export function displaySnapshot(state: LeagueState, now = new Date()): DisplaySn
           ? [participantName(state, fixture.homeId), participantName(state, fixture.awayId)]
           : b.guestIds.map((id) => state.players.find((p) => p.id === id)?.name ?? 'Colleague'),
         kind: b.kind,
+        sport: b.sport ?? 'pool',
         startAt: b.startAt,
         endAt: bookingEnd(b),
         duration: b.duration,

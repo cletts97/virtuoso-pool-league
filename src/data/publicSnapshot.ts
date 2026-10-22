@@ -62,6 +62,7 @@ export function publicSnapshot(source: LeagueState, now = new Date()): LeagueSta
       id: b.id,
       ownerId: b.ownerId,
       kind: b.kind,
+      sport: b.sport ?? 'pool',
       startAt: b.startAt,
       duration: b.duration,
       fixtureId: fixtures.some((f) => f.id === b.fixtureId) ? b.fixtureId : undefined,

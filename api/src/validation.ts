@@ -72,6 +72,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     id: id.optional(),
     booking: z.strictObject({
       kind: z.enum(['league', 'casual']),
+      sport: z.enum(['pool', 'table_tennis']).optional(),
       startAt: z.iso.datetime(),
       duration: z.union([z.literal(15), z.literal(30)]),
       fixtureId: id.optional(),

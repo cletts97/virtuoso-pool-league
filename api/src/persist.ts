@@ -174,6 +174,7 @@ export async function persistChanges(
       id: b.id,
       owner_id: b.ownerId,
       kind: b.kind,
+      sport: b.sport ?? 'pool',
       fixture_id: b.fixtureId,
       start_at: b.startAt,
       end_at: bookingEnd(b),

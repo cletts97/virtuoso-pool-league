@@ -1,6 +1,13 @@
 import type { Booking, BookingConfig, BookingInput, Fixture, LeagueState } from './types';
 import { addDays, invariant, isParticipant, validateDate } from './rules';
 
+export function bookingLabel(booking: Pick<BookingInput, 'kind' | 'sport'>): string {
+  return (
+    (booking.sport === 'table_tennis' ? 'Table tennis' : 'Pool') +
+    ' · ' +
+    (booking.kind === 'league' ? 'League match' : 'Casual game')
+  );
+}
 export const BOOKING_DURATIONS = [15, 30] as const;
 export const DEFAULT_BOOKING_CONFIG: BookingConfig = {
   timeZone: 'Europe/London',
@@ -124,6 +131,14 @@ export function validateBooking(
     'Choose a time within office opening hours.',
   );
   invariant(['league', 'casual'].includes(input.kind), 'Choose a booking type.');
+  invariant(
+    input.sport === undefined || input.sport === 'pool' || input.sport === 'table_tennis',
+    'Choose pool or table tennis.',
+  );
+  invariant(
+    input.kind !== 'league' || (input.sport ?? 'pool') === 'pool',
+    'League bookings must be for pool.',
+  );
   invariant(
     state.players.some((p) => p.id === ownerId && p.active),
     'The booking owner must have an active account.',

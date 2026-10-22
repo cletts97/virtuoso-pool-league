@@ -7,12 +7,40 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Table bookings' })).toBeVisible();
 });
 
+test('table tennis bookings persist and show the activity in the TV queue and current booking', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Reserve the table', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Activity', exact: true })).toHaveValue('pool');
+  await page.getByRole('combobox', { name: 'Activity', exact: true }).selectOption('table_tennis');
+  await expect(page.getByLabel('Booking type')).toHaveValue('casual');
+  await expect(page.getByLabel('Booking type').locator('option[value="league"]')).toHaveJSProperty(
+    'disabled',
+    true,
+  );
+  await page.getByLabel('Available start time').selectOption({ label: '11:00' });
+  await page.getByRole('button', { name: 'Confirm reservation' }).click();
+  await page.reload();
+  const card = page.locator('.booking-card').filter({ hasText: '11:00–11:15' });
+  await expect(card).toContainText('Table tennis');
+  await card.getByRole('button', { name: 'Edit reservation' }).click();
+  await expect(page.getByRole('combobox', { name: 'Activity', exact: true })).toHaveValue(
+    'table_tennis',
+  );
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.goto('/display');
+  await expect(page.locator('.tv-queue')).toContainText('Table tennis');
+  await page.clock.setSystemTime(new Date('2026-10-20T10:05:00Z'));
+  await page.clock.runFor(31_000);
+  await expect(page.locator('.tv-game-type')).toHaveText('Table tennis · Casual game');
+});
+
 test('casual colleague reserves, edits, refreshes and cancels without joining the league', async ({
   page,
 }) => {
   await page.getByLabel('Playing as').selectOption('colleague-01');
   await page.getByRole('button', { name: 'Reserve the table', exact: true }).click();
-  await expect(page.getByRole('combobox', { name: 'Duration', exact: true })).toHaveValue('30');
+  await expect(page.getByRole('combobox', { name: 'Duration', exact: true })).toHaveValue('15');
   await page.getByLabel('Booking date').fill('2026-10-21');
   await page.getByLabel('Available start time').selectOption({ label: '11:00' });
   await page.getByRole('dialog').getByLabel('Priya Shah', { exact: true }).check();
@@ -21,7 +49,7 @@ test('casual colleague reserves, edits, refreshes and cancels without joining th
   // Calendar stays on the day being browsed; choose the reservation's date.
   await page.getByRole('button', { name: /Wed.*21/ }).click();
   const card = page.locator('.booking-card').filter({ hasText: 'Riley Bennett' });
-  await expect(card).toContainText('11:00–11:30');
+  await expect(card).toContainText('11:00–11:15');
   await expect(card).toContainText('Priya Shah');
   await card.getByRole('button', { name: 'Edit reservation' }).click();
   await page.getByRole('combobox', { name: 'Duration', exact: true }).selectOption('15');
@@ -69,7 +97,7 @@ test('slot selection, owner controls and admin opening hours work', async ({ pag
   await page.getByLabel('Available start time').selectOption({ label: '11:30' });
   await page.getByRole('button', { name: 'Save reservation' }).click();
   await expect(page.locator('.booking-card').filter({ hasText: 'Priya Shah' })).toContainText(
-    '11:30–12:00',
+    '11:30–11:45',
   );
   await page.getByRole('button', { name: 'Opening hours' }).click();
   await page.getByLabel('Closes at').fill('12:00');
@@ -110,7 +138,7 @@ test('upcoming league fixture can reserve the table without changing its match r
   await page.getByRole('button', { name: 'Confirm reservation' }).click();
   await page.goto('/fixtures/autumn-2026-r7-0');
   await expect(page.getByRole('link', { name: 'View table reservation' })).toBeVisible();
-  await expect(page.locator('.match-message')).toContainText('11:00–11:30');
+  await expect(page.locator('.match-message')).toContainText('11:00–11:15');
   await expect(page.getByRole('button', { name: 'Submit result', exact: true })).toBeVisible();
 });
 

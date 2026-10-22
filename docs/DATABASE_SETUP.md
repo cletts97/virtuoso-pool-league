@@ -142,3 +142,9 @@ Subsequent write operations must validate the user, enforce permissions, and com
 - Auth/user profiles: https://supabase.com/docs/guides/auth/managing-user-data
 - Row Level Security: https://supabase.com/docs/guides/database/postgres/row-level-security
 - PostgreSQL range exclusion constraints: https://www.postgresql.org/docs/current/rangetypes.html
+## Pool / table-tennis booking activity
+
+Before deploying the booking-activity update, apply `supabase/migrations/20261022000300_booking_sport.sql` to the cloud project through the established migration process (or run that file in the Supabase SQL Editor). Do not re-run the initial schema. Then deploy the frontend and API together.
+
+This adds `table_bookings.sport`, defaulting all existing bookings to `pool`, with checks for supported activities and Pool-only league reservations. The existing overlap exclusion still protects the single table across both activities. No Storage, Auth, email or environment-variable changes are needed. The application API expects this migration to be applied before deployment.
+

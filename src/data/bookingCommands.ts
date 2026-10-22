@@ -58,6 +58,7 @@ export function executeBookingCommand(
   validateBooking(state, command.booking, existing?.ownerId ?? actor.id, now, existing?.id);
   const values = {
     ...command.booking,
+    sport: command.booking.sport ?? 'pool',
     startAt: new Date(command.booking.startAt).toISOString(),
     updatedAt: now.toISOString(),
   };

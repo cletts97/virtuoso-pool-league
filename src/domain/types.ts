@@ -131,7 +131,10 @@ export interface BookingConfig {
   closesAt: string;
   weekdays: number[];
 }
+export type BookingSport = 'pool' | 'table_tennis';
 export interface BookingInput {
+  /** Missing on historical mock saves; defaults to pool. */
+  sport?: BookingSport;
   kind: 'league' | 'casual';
   startAt: string;
   // Keep historical 60-minute records readable; new/edited bookings are validated as 15 or 30.

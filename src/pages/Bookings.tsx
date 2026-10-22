@@ -25,7 +25,7 @@ export function Bookings() {
   const [selected, setSelected] = useState(today);
   const date = selected < today ? today : selected;
   const [filter, setFilter] = useState('all');
-  const [duration, setDuration] = useState<BookingInput['duration']>(30);
+  const [duration, setDuration] = useState<BookingInput['duration']>(15);
   const [form, setForm] = useState<Booking | 'new'>();
   const [slot, setSlot] = useState<string>();
   const [cancel, setCancel] = useState<Booking>();
@@ -55,7 +55,7 @@ export function Bookings() {
       <PageHeading
         eyebrow="TABLE BOOKINGS"
         title="Table bookings"
-        description="View availability and reserve the table for league or casual games."
+        description="View availability and reserve the table for pool or table tennis."
         action={
           state.readOnly ? (
             <Link className="button primary" to="/login" state={{ from: '/bookings' }}>

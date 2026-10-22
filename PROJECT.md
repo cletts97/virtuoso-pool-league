@@ -181,11 +181,12 @@ Virtuoso Pool League will include a booking system allowing colleagues to reserv
 ### Booking Requirements
 
 - Allow authenticated users to book the pool table.
+- Offer Pool (default) or Table tennis as the booking activity. Both reserve the same convertible table and cannot overlap, regardless of activity. Existing bookings are Pool. Show the activity on reservation cards and on both current/upcoming TV bookings. Table tennis uses casual bookings; league fixtures remain Pool-only. Do not introduce table-tennis results or standings through this booking choice.
 - Support two booking types:
   - **League Match** — optionally associated with an existing league fixture.
   - **Casual Game** — available to anyone with an account, including colleagues not participating in the league.
 - Provide a calendar showing table availability.
-- Support 15 and 30-minute bookings, defaulting to 30 minutes.
+- Support 15 and 30-minute bookings, defaulting to 15 minutes.
 - Allow bookings up to seven days in advance.
 - Prevent overlapping reservations.
 - Allow users to view, modify, and cancel their own bookings.

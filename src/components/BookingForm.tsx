@@ -33,9 +33,10 @@ export function BookingForm({
   const [kind, setKind] = useState<BookingInput['kind']>(
     booking?.kind ?? (fixtureId ? 'league' : 'casual'),
   );
+  const [sport, setSport] = useState<NonNullable<BookingInput['sport']>>(booking?.sport ?? 'pool');
   const [date, setDate] = useState(booking ? londonDate(booking.startAt) : initialDate);
   const [duration, setDuration] = useState<BookingInput['duration']>(
-    booking?.duration === 60 ? 30 : (booking?.duration ?? initialDuration ?? 30),
+    booking?.duration === 60 ? 30 : (booking?.duration ?? initialDuration ?? 15),
   );
   const [start, setStart] = useState(booking?.startAt ?? initialStart ?? '');
   const [linked, setLinked] = useState(booking?.fixtureId ?? fixtureId ?? '');
@@ -56,6 +57,7 @@ export function BookingForm({
         id: booking?.id,
         booking: {
           kind,
+          sport,
           duration,
           startAt: start,
           guestIds: kind === 'league' && linked ? [] : guestIds,
@@ -73,10 +75,29 @@ export function BookingForm({
           Booked by {owner.name} · All times Europe/London. Reserve up to seven days ahead.
         </p>
         <label>
+          Activity
+          <select
+            value={sport}
+            onChange={(e) => {
+              const next = e.target.value as NonNullable<BookingInput['sport']>;
+              setSport(next);
+              if (next === 'table_tennis') {
+                setKind('casual');
+                setLinked('');
+              }
+            }}
+          >
+            <option value="pool">Pool</option>
+            <option value="table_tennis">Table tennis</option>
+          </select>
+        </label>
+        <label>
           Booking type
           <select value={kind} onChange={(e) => setKind(e.target.value as BookingInput['kind'])}>
             <option value="casual">Casual game</option>
-            <option value="league">League match</option>
+            <option value="league" disabled={sport === 'table_tennis'}>
+              League match (pool)
+            </option>
           </select>
         </label>
         {kind === 'league' && (

@@ -639,7 +639,7 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       );
       expect(totals.rows[0].wins).toBe(2);
     });
-    it('serializes concurrent casual reservations and enforces owner/admin access', async () => {
+    it('serializes pool/table-tennis reservations and enforces owner/admin access', async () => {
       const state = await service.load(users[4]);
       let slot: string | undefined;
       for (let i = 0; i <= 7 && !slot; i++)
@@ -652,13 +652,38 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         guestIds: [],
       };
       const results = await Promise.allSettled(
-        [1, 2].map(() =>
-          service.execute(users[4], { type: 'saveBooking', booking }, state.revision!),
+        (['pool', 'table_tennis'] as const).map((sport) =>
+          service.execute(
+            users[4],
+            { type: 'saveBooking', booking: { ...booking, sport } },
+            state.revision!,
+          ),
         ),
       );
       expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
       const next = await service.load(users[4]);
       const b = next.bookings.find((b) => b.ownerId === profiles[4] && b.status === 'reserved')!;
+      expect(['pool', 'table_tennis']).toContain(b.sport);
+      const tennis = await command(
+        { type: 'saveBooking', id: b.id, booking: { ...booking, sport: 'table_tennis' } },
+        users[4],
+      );
+      expect(tennis.bookings.find((row) => row.id === b.id)!.sport).toBe('table_tennis');
+      expect((await service.publicState()).bookings.find((row) => row.id === b.id)!.sport).toBe(
+        'table_tennis',
+      );
+      await expect(
+        pool.query("UPDATE public.table_bookings SET sport='invalid' WHERE id=$1", [b.id]),
+      ).rejects.toMatchObject({ code: '23514' });
+      await expect(
+        pool.query("UPDATE public.table_bookings SET kind='league' WHERE id=$1", [b.id]),
+      ).rejects.toMatchObject({ code: '23514' });
+      await expect(
+        pool.query(
+          "INSERT INTO public.table_bookings(owner_id,kind,sport,start_at,end_at,duration) SELECT owner_id,kind,'pool',start_at,end_at,duration FROM public.table_bookings WHERE id=$1",
+          [b.id],
+        ),
+      ).rejects.toMatchObject({ code: '23P01' });
       await expect(command({ type: 'cancelBooking', id: b.id }, users[1])).rejects.toThrow('owner');
       await command({ type: 'cancelBooking', id: b.id }, users[4]);
     });

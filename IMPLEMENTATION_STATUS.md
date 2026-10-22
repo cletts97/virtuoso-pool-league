@@ -1,5 +1,16 @@
 # Implementation status — Virtuoso Pool League
 
+## Pool / table-tennis bookings — 22 October 2026
+
+- Added a Pool (default) / Table tennis activity selector. Table tennis automatically selects casual booking and clears any pool fixture link; league reservations remain Pool-only, enforced by shared business logic and PostgreSQL. Existing mock saves without an activity remain Pool. New/edited bookings persist the activity, and public reservation cards plus current/upcoming TV bookings label it explicitly. Activities share one table and the existing overlap protection. No table-tennis scoring or league changes were introduced.
+- Added `supabase/migrations/20261022000300_booking_sport.sql`, applied **only to disposable local Supabase**. Adds a non-null `sport` column defaulting existing reservations to Pool, with supported-value and Pool-only league constraints. No existing migration, grants or exclusion constraint changed. **Apply this migration to Supabase Cloud before deploying the frontend and API together.** No new environment variables or external services required; rollout instructions are in `docs/DATABASE_SETUP.md`.
+- Validation: 35 focused unit/security tests, one local Supabase integration test (18 unrelated tests skipped), four focused desktop browser checks, TypeScript, targeted ESLint, whitespace checks and frontend modern/legacy plus API builds passed. Integration covers persistence/public projection, concurrent cross-activity reservations, ownership and direct SQL constraint/exclusion failures; browser checks cover default selection, Table tennis create/edit/refresh, TV queue/current labels, pool fixture bookings and existing short/full-HD long-name layouts. Existing bundle-size warning remains. No cloud migration, real email, commit, push or deployment performed.
+
+## Default booking duration — 22 October 2026
+
+- New reservations and the calendar availability selector now default to 15 minutes; 30 minutes remains available. Editing an existing booking preserves its supported duration. Updated the product requirement and booking browser expectations.
+- Three focused desktop browser checks passed for direct bookings, calendar-slot bookings and fixture-linked reservations. No database change, commit or deployment.
+
 ## Unified TV booking-card appearance — 22 October 2026
 
 - Removed the contrasting availability-panel background so current availability and upcoming bookings share one continuous card surface. Added a subtle inset divider between sections, horizontal when stacked on mobile. Preserved the existing layout, all information, opening hours and behaviour.

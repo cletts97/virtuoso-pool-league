@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Clock3 } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
-import { bookingEnd, londonTime } from '../domain/bookings';
+import { bookingEnd, bookingLabel, londonTime } from '../domain/bookings';
 import { participantName } from '../domain/rules';
 import type { Booking } from '../domain/types';
 import { Avatar } from './ui';
@@ -38,9 +38,7 @@ export function BookingCard({
       className={`booking-card ${booking.kind} ${live ? 'is-live' : ''} ${booking.status === 'cancelled' ? 'is-cancelled' : ''}`}
     >
       <div className="booking-card-top">
-        <span className="eyebrow">
-          {booking.kind === 'league' ? 'League match' : 'Casual game'}
-        </span>
+        <span className="eyebrow">{bookingLabel(booking)}</span>
         <span className={live ? 'positive' : 'muted'}>
           {booking.status === 'cancelled'
             ? 'Cancelled'

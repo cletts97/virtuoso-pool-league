@@ -115,6 +115,49 @@ describe('London booking time and availability', () => {
   });
 });
 describe('booking commands and membership', () => {
+  it('defaults old inputs to pool and shares collision protection across activities', () => {
+    const { state, input } = scenario();
+    const pool = executeBookingCommand(state, { type: 'saveBooking', booking: input }, now);
+    expect(pool.bookings[0].sport).toBe('pool');
+    expect(() =>
+      executeBookingCommand(
+        pool,
+        { type: 'saveBooking', booking: { ...input, sport: 'table_tennis' } },
+        now,
+      ),
+    ).toThrow('already reserved');
+    const tennis = executeBookingCommand(
+      pool,
+      {
+        type: 'saveBooking',
+        id: pool.bookings[0].id,
+        booking: { ...input, sport: 'table_tennis' },
+      },
+      now,
+    );
+    expect(tennis.bookings[0].sport).toBe('table_tennis');
+    expect(displaySnapshot(tennis, now).bookings[0].sport).toBe('table_tennis');
+    expect(tennis.fixtures).toEqual(state.fixtures);
+  });
+  it('rejects unsupported activities and table-tennis league bookings', () => {
+    const { state, input } = scenario();
+    expect(() =>
+      validateBooking(
+        state,
+        { ...input, sport: 'other' } as unknown as BookingInput,
+        state.currentUserId,
+        now,
+      ),
+    ).toThrow('pool or table tennis');
+    expect(() =>
+      validateBooking(
+        state,
+        { ...input, sport: 'table_tennis', kind: 'league' },
+        state.currentUserId,
+        now,
+      ),
+    ).toThrow('League bookings must be for pool');
+  });
   it('lets a non-league colleague book, edit and cancel without changing league data', () => {
     const { state, input } = scenario();
     expect(state.participants.some((p) => p.playerIds.includes(state.currentUserId))).toBe(false);

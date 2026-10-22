@@ -7,7 +7,7 @@ import { useClock } from '../app/useClock';
 import { liveMode } from '../auth/client';
 import { browserRepository } from '../data/browserRepository';
 import type { DisplaySnapshot } from '../data/display';
-import { bookingDayLabel, londonDate, londonTime } from '../domain/bookings';
+import { bookingDayLabel, bookingLabel, londonDate, londonTime } from '../domain/bookings';
 import { RuleReminders } from '../components/RuleReminders';
 
 const bookingUrl = new URL(
@@ -135,9 +135,7 @@ export function Display() {
             </h1>
             {current ? (
               <>
-                <p className="tv-game-type">
-                  {current.kind === 'league' ? 'League match' : 'Casual game'}
-                </p>
+                <p className="tv-game-type">{bookingLabel(current)}</p>
                 {current.participants.length > 0 && (
                   <p className="tv-participants">
                     {current.participants.join(current.kind === 'league' ? ' v ' : ' · ')}
@@ -187,7 +185,7 @@ export function Display() {
                 <div>
                   <h3>{b.owner}</h3>
                   <p>
-                    {b.kind === 'league' ? 'League match' : 'Casual game'} · {b.duration} min
+                    {bookingLabel(b)} · {b.duration} min
                   </p>
                   {!!b.participants.length && <small>{b.participants.join(' · ')}</small>}
                 </div>
