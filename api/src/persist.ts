@@ -101,7 +101,7 @@ export async function persistChanges(
         champion_id: s.championId,
         finalized_reason: s.finalizedReason,
         ...(s.qualifiers.length && !old?.qualifiers.length
-          ? { finalized_at: new Date().toISOString(), finalized_by: next.currentUserId }
+          ? { finalized_at: new Date().toISOString(), finalized_by: next.currentUserId || null }
           : {}),
       });
     for (const [i, id] of s.participantIds.entries())
@@ -122,7 +122,9 @@ export async function persistChanges(
     if (!changed(f, old)) continue;
     const confirmation = [...f.history]
       .reverse()
-      .find((h) => h.action === 'approved' || h.action === 'corrected');
+      .find(
+        (h) => h.action === 'approved' || h.action === 'auto_approved' || h.action === 'corrected',
+      );
     const confirmed = f.status === 'confirmed';
     const result = await upsert('fixtures', {
       id: f.id,
@@ -142,12 +144,16 @@ export async function persistChanges(
       confirmed_by: confirmed ? confirmation?.actorId : null,
       confirmed_at: confirmed ? confirmation?.at : null,
       confirmation_kind: confirmed
-        ? confirmation?.action === 'corrected'
-          ? 'admin_override'
-          : 'opponent'
+        ? confirmation?.action === 'auto_approved'
+          ? 'automatic'
+          : confirmation?.action === 'corrected'
+            ? 'admin_override'
+            : 'opponent'
         : null,
       override_reason:
-        confirmed && confirmation?.action === 'corrected' ? confirmation.reason : null,
+        confirmed && ['corrected', 'auto_approved'].includes(confirmation?.action ?? '')
+          ? confirmation?.reason
+          : null,
     });
     const events = f.history.filter((h) => !old?.history.some((o) => o.id === h.id));
     if (events.length > 1) throw new Error('Each fixture transition must append one event.');

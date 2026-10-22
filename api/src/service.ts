@@ -12,6 +12,12 @@ import type { ApiCommand } from './validation';
 import { allowedEmail } from './access';
 import { AvatarStorage } from './avatars';
 import { publicSnapshot } from '../../src/data/publicSnapshot';
+import { automaticallyConfirmResults } from '../../src/data/automaticResults';
+import {
+  mondayNewsletterWindow,
+  newsletterEmailIntents,
+  reminderEmailIntents,
+} from './scheduledEmails';
 import type { ResultEmailQueue } from './resultEmails';
 
 export class LeagueService {
@@ -20,7 +26,46 @@ export class LeagueService {
     private auth: SupabaseClient,
     private emailDomains: string[],
     private resultEmails?: ResultEmailQueue,
+    private automationAppUrl?: string,
   ) {}
+  async runAutomation(task: 'results' | 'weekly', now = new Date()) {
+    requireCondition(this.resultEmails?.enabled, 503, 'Scheduled email delivery is disabled.');
+    const appUrl = this.automationAppUrl;
+    requireCondition(appUrl, 503, 'The automation app URL is not configured.');
+    if (task === 'weekly' && !mondayNewsletterWindow(now))
+      return { skipped: true, confirmed: 0, eligibleEmails: 0 };
+    const result = await this.transaction(async (client) => {
+      // Same advisory lock as player/admin mutations: a dispute and timeout cannot race.
+      const before = await readState(client);
+      const next =
+        task === 'results' ? automaticallyConfirmResults(before, now) : structuredClone(before);
+      const intents =
+        task === 'weekly'
+          ? newsletterEmailIntents(next, now, appUrl)
+          : reminderEmailIntents(next, now, appUrl);
+      normalizeNewIds(before, next);
+      await persistChanges(client, before, next);
+      await this.resultEmails!.enqueueScheduled(client, intents);
+      const confirmed =
+        next.fixtures.filter(
+          (f) =>
+            f.history.at(-1)?.action === 'auto_approved' &&
+            before.fixtures.find((old) => old.id === f.id)?.status === 'pending',
+        ).length +
+        (next.casualResults ?? []).filter(
+          (r) =>
+            r.history.at(-1)?.action === 'auto_approved' &&
+            before.casualResults?.find((old) => old.id === r.id)?.status === 'pending',
+        ).length;
+      return { confirmed, eligibleEmails: intents.length };
+    }, true);
+    // Failure here must not roll back saved confirmations or queued messages.
+    try {
+      return { ...result, delivery: await this.resultEmails.flush(20) };
+    } catch {
+      return { ...result, deliveryDeferred: true };
+    }
+  }
   async identity(token: string): Promise<User> {
     const { data, error } = await this.auth.auth.getUser(token);
     requireCondition(

@@ -1,5 +1,7 @@
 # Virtuoso Pool League
 
+Scheduled newsletter, 24-hour reminders and 48-hour automatic confirmation: see [Supabase Cron setup](docs/SCHEDULED_AUTOMATION.md). Requires its additive migration and explicit operator activation; uses the existing Resend sender and Azure HTTP API.
+
 A Virtuoso-branded office singles league, table booking calendar and TV dashboard. React, strict TypeScript, Vite and Tailwind power the frontend; the API uses Azure Functions, Supabase Auth and PostgreSQL. Both isolated mock mode and shared API mode are available. The existing cloud schema is unchanged. Cloud deployment and real email delivery have not been performed.
 
 ## Run locally

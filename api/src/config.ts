@@ -1,4 +1,6 @@
 export interface ApiConfig {
+  automationEnabled?: boolean;
+  automationSecret?: string;
   databaseUrl: string;
   supabaseUrl: string;
   supabaseKey: string;
@@ -20,6 +22,9 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   const supabaseUrl = required('SUPABASE_URL');
   const appUrl = required('APP_URL');
   const allowResultEmail = env.ALLOW_RESULT_EMAIL === 'true';
+  const automationEnabled = env.AUTOMATION_ENABLED === 'true';
+  if (automationEnabled && (env.AUTOMATION_SECRET ?? '').trim().length < 32)
+    throw new Error('Automation requires an AUTOMATION_SECRET of at least 32 characters.');
   if (allowResultEmail) {
     required('RESEND_API_KEY');
     const from = required('RESULT_EMAIL_FROM');
@@ -35,6 +40,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
       throw new Error('HTTPS is required outside localhost.');
   }
   return {
+    automationEnabled,
+    automationSecret: env.AUTOMATION_SECRET,
     databaseUrl: required('DATABASE_URL'),
     supabaseUrl,
     supabaseKey: required('SUPABASE_SECRET_KEY'),

@@ -42,8 +42,15 @@ export interface ResultRevision {
   id: ID;
   score?: Score;
   action:
-    'submitted' | 'approved' | 'disputed' | 'corrected' | 'postponed' | 'rescheduled' | 'cancelled';
-  actorId: ID;
+    | 'submitted'
+    | 'approved'
+    | 'auto_approved'
+    | 'disputed'
+    | 'corrected'
+    | 'postponed'
+    | 'rescheduled'
+    | 'cancelled';
+  actorId: ID | null;
   at: string;
   reason?: string;
 }

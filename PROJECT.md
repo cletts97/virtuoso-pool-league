@@ -129,6 +129,7 @@ Display standings using the following columns:
 - The opponent can approve or dispute the submitted result.
 - Only an approved result updates the league standings.
 - Administrators can resolve disputes and correct results.
+- When scheduled automation is enabled, send each opposing active player one reminder after 24 hours from the latest pending submission. Automatically confirm valid still-pending league/casual scores after 48 hours, checked hourly. Never auto-confirm disputed/cancelled results or closed league stages. Record a separate system audit event without impersonating a player; apply the existing standings and playoff progression rules. Resubmitting a disputed casual score restarts its clock.
 - Maintain basic result history for accountability.
 - Prevent duplicate submissions and self-approval.
 
@@ -153,10 +154,13 @@ The application should eventually support:
 - Score approval and dispute notifications.
 - When result email delivery is enabled, email all active administrators once for each new league/casual dispute, linking to its protected review page. Recheck administrator access before delivery and skip superseded/resolved disputes.
 - Reminders for overdue fixtures.
+- A Monday 07:00 Europe/London HTML/plain-text newsletter goes to every active invited/confirmed account, including casual-only colleagues. Include scheduled/postponed published league fixtures due that Monday–Sunday, highlight the recipient's fixtures and label playoff stages. Include league results confirmed/corrected in the previous Monday–Sunday, when present. Skip the newsletter entirely when there are no upcoming league fixtures that week, even if last week had results.
 
 Email links must not bypass authentication or authorization.
 
 Score-review email uses the existing Resend provider via its API, separately configured from Supabase Auth SMTP. Queue jobs atomically with submissions, deliver after commit, deduplicate/retry with bounded leases/backoff and recheck current identity/eligibility before sending. No automatic real email or paid resource provisioning during development. See `docs/RESULT_EMAILS.md` for operator enablement and manual retry behaviour; ACS remains a future adapter option.
+
+Scheduled automation uses Supabase Cron/pg_net to call secret-protected HTTP endpoints on the existing Azure Functions API. Store the scheduler key in Azure settings and Supabase Vault, not frontend variables or job text. Keep it disabled until the additive migration, deployment and explicit operator activation are complete. See `docs/SCHEDULED_AUTOMATION.md`.
 
 ## Application Pages
 

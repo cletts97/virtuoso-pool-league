@@ -2,6 +2,8 @@
 
 For additive migrations and production rollout, see [Casual results setup](CASUAL_RESULTS.md) and [Result-email setup](RESULT_EMAILS.md). The original schema below remains deployed; do not reapply it.
 
+For migration `20261022000400_scheduled_automation.sql` and the separately activated Supabase Cron jobs, see [Scheduled automation setup](SCHEDULED_AUTOMATION.md).
+
 
 ## Current integration status (21 October 2026)
 

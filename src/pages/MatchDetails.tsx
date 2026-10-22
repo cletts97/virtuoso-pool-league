@@ -230,11 +230,16 @@ export function MatchDetails() {
                   <span className="timeline-dot" />
                   <div>
                     <strong>
-                      {h.action.charAt(0).toUpperCase() + h.action.slice(1)}
+                      {h.action === 'auto_approved'
+                        ? 'Automatically confirmed'
+                        : h.action.charAt(0).toUpperCase() + h.action.slice(1)}
                       {h.score && ` · ${h.score.home}–${h.score.away}`}
                     </strong>
                     <p>
-                      {state.players.find((p) => p.id === h.actorId)?.name} ·{' '}
+                      {h.actorId === null
+                        ? 'System'
+                        : state.players.find((p) => p.id === h.actorId)?.name}{' '}
+                      ·{' '}
                       {new Date(h.at).toLocaleString('en-GB', {
                         dateStyle: 'medium',
                         timeStyle: 'short',

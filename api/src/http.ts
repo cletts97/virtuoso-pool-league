@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ZodError } from 'zod';
 import type { ApiConfig } from './config';
@@ -25,6 +26,26 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
           throw new ApiError(400, 'Invalid JSON request.');
         }
       };
+      if (path.startsWith('/automation/')) {
+        requireCondition(
+          config.automationEnabled && config.automationSecret,
+          404,
+          'Automation is disabled.',
+        );
+        const token = request.headers.get('X-VPL-Automation-Key') ?? '';
+        const digest = (value: string) => createHash('sha256').update(value).digest();
+        requireCondition(
+          token.length <= 1024 && timingSafeEqual(digest(token), digest(config.automationSecret)),
+          401,
+          'Invalid automation key.',
+        );
+        requireCondition(
+          request.method === 'POST' && ['/automation/results', '/automation/weekly'].includes(path),
+          404,
+          'Automation route not found.',
+        );
+        return json(await service.runAutomation(path.endsWith('/weekly') ? 'weekly' : 'results'));
+      }
       if (request.method === 'GET' && path === '/display') {
         requireCondition(config.publicDisplay, 404, 'Public display is disabled.');
         return json(await service.display());

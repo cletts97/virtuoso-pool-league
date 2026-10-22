@@ -268,8 +268,12 @@ export function CasualGames() {
                   <ul>
                     {r.history.map((h) => (
                       <li key={h.id}>
-                        {h.at.slice(0, 10)} · {h.action} ·{' '}
-                        {state.players.find((p) => p.id === h.actorId)?.name ?? 'Former account'}
+                        {h.at.slice(0, 10)} ·{' '}
+                        {h.action === 'auto_approved' ? 'Automatically confirmed' : h.action} ·{' '}
+                        {h.actorId === null
+                          ? 'System'
+                          : (state.players.find((p) => p.id === h.actorId)?.name ??
+                            'Former account')}
                         {h.score ? ` · ${h.score.home}–${h.score.away}` : ''}
                         {h.reason ? ` · ${h.reason}` : ''}
                       </li>

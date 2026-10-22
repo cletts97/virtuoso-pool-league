@@ -87,7 +87,7 @@ function seedPlayoffs(state: LeagueState, season: Season, force = false, reason?
     });
   }
 }
-function progressPlayoffs(state: LeagueState, season: Season) {
+export function progressPlayoffs(state: LeagueState, season: Season) {
   if (
     season.status === 'regular' &&
     season.participantIds.length >= 4 &&

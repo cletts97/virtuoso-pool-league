@@ -5,7 +5,8 @@ import { readConfig } from '../src/config';
 import { LeagueService } from '../src/service';
 import { createHandler } from '../src/http';
 import type { ApiCommand } from '../src/validation';
-import { availableSlots, londonDate } from '../../src/domain/bookings';
+import { availableSlots, londonDate, londonToUtc } from '../../src/domain/bookings';
+import { mondayOfWeek } from '../src/scheduledEmails';
 import { addDays, standings } from '../../src/domain/rules';
 import { ResultEmailQueue } from '../src/resultEmails';
 import type { EmailMessage } from '../src/email';
@@ -64,6 +65,154 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         profiles.push((await service.me(result.data.user!)).id);
       }
       await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[0]]);
+    }, 60000);
+    it('runs scheduled newsletters, reminders and automatic confirmations idempotently', async () => {
+      const sent: EmailMessage[] = [];
+      const queue = new ResultEmailQueue(
+        pool,
+        auth,
+        {
+          send: async (m) => {
+            sent.push(m);
+          },
+        },
+        true,
+        config.appUrl,
+        config.emailDomains,
+      );
+      const scheduler = new LeagueService(pool, auth, config.emailDomains, queue, config.appUrl);
+      const monday = mondayOfWeek(new Date());
+      let state = await command({
+        type: 'createSeason',
+        name: `${prefix} scheduled`,
+        startDate: monday,
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const season = state.selectedSeasonId;
+      state = await command({ type: 'generate', seasonId: season });
+      const weeklyAt = new Date(londonToUtc(monday, '07:00'));
+      await Promise.all([
+        scheduler.runAutomation('weekly', weeklyAt),
+        scheduler.runAutomation('weekly', weeklyAt),
+      ]);
+      for (let attempt = 0; attempt < 5; attempt++) await queue.flush(20);
+      const newsletters = await pool.query(
+        "SELECT recipient_id,status,html FROM public.result_email_outbox WHERE purpose='newsletter' AND recipient_id=ANY($1::uuid[])",
+        [profiles],
+      );
+      expect(newsletters.rows).toHaveLength(5);
+      expect(
+        newsletters.rows.every((r) => r.status === 'sent' && r.html.includes('Virtuoso')),
+      ).toBe(true);
+      expect(sent.filter((m) => m.subject.includes('Fixtures for week'))).toHaveLength(5);
+
+      // Seed original past submissions, never edit immutable audit events.
+      const at = new Date(),
+        old = new Date(at.getTime() - 49 * 3_600_000).toISOString();
+      for (const f of state.fixtures.filter((f) => f.seasonId === season)) {
+        const owner = state.participants.find((p) => p.id === f.homeId)!.playerIds[0];
+        const row = await pool.query(
+          "UPDATE public.fixtures SET status='pending',home_score=2,away_score=0,submitted_by=$2 WHERE id=$1 RETURNING revision",
+          [f.id, owner],
+        );
+        await pool.query(
+          "INSERT INTO public.result_events(fixture_id,fixture_revision,action,actor_id,home_score,away_score,occurred_at) VALUES($1,$2,'submitted',$3,2,0,$4)",
+          [f.id, row.rows[0].revision, owner, old],
+        );
+      }
+      const casualId = crypto.randomUUID(),
+        disputedId = crypto.randomUUID();
+      const submission = {
+        id: crypto.randomUUID(),
+        action: 'submitted',
+        actorId: profiles[0],
+        at: new Date(at.getTime() - 25 * 3_600_000).toISOString(),
+        score: { home: 2, away: 1 },
+      };
+      const insertCasual = (id: string, status: string, history: unknown[]) =>
+        pool.query(
+          'INSERT INTO public.casual_results(id,home_player_id,home_partner_id,away_player_id,away_partner_id,played_on,best_of,home_score,away_score,status,submitted_by,history) VALUES($1,$2,$3,$4,$5,current_date,3,2,1,$6,$2,$7)',
+          [id, profiles[0], profiles[1], profiles[2], profiles[3], status, JSON.stringify(history)],
+        );
+      await insertCasual(casualId, 'pending', [submission]);
+      // The original review and the later reminder must coexist under the
+      // original two-column unique constraint (backwards-compatible migration).
+      await pool.query(
+        "INSERT INTO public.result_email_outbox(event_id,recipient_id,match_kind,match_id,subject,body) VALUES($1,$2,'casual',$3,'Initial review','Review the score')",
+        [submission.id, profiles[2], casualId],
+      );
+      await insertCasual(disputedId, 'disputed', [
+        { ...submission, at: old },
+        { ...submission, id: crypto.randomUUID(), action: 'disputed', actorId: profiles[2] },
+      ]);
+      await Promise.all([
+        scheduler.runAutomation('results', at),
+        scheduler.runAutomation('results', at),
+      ]);
+      state = await service.load(users[0]);
+      const league = state.fixtures.filter((f) => f.seasonId === season && f.stage === 'regular');
+      expect(
+        league.every(
+          (f) =>
+            f.status === 'confirmed' &&
+            f.history.at(-1)?.action === 'auto_approved' &&
+            f.history.at(-1)?.actorId === null,
+        ),
+      ).toBe(true);
+      expect(state.seasons.find((s) => s.id === season)!.qualifiers).toHaveLength(4);
+      expect(
+        state.fixtures.filter((f) => f.seasonId === season && f.stage === 'semifinal'),
+      ).toHaveLength(2);
+      const metadata = await pool.query(
+        "SELECT confirmation_kind,confirmed_by FROM public.fixtures WHERE season_id=$1 AND stage='regular'",
+        [season],
+      );
+      expect(
+        metadata.rows.every((r) => r.confirmation_kind === 'automatic' && r.confirmed_by === null),
+      ).toBe(true);
+      const reminders = await pool.query(
+        "SELECT recipient_id FROM public.result_email_outbox WHERE purpose='reminder' AND match_id=$1",
+        [casualId],
+      );
+      expect(reminders.rows.map((r) => r.recipient_id).sort()).toEqual(
+        [profiles[2], profiles[3]].sort(),
+      );
+      expect(state.casualResults!.find((r) => r.id === disputedId)!.status).toBe('disputed');
+      expect(state.casualResults!.find((r) => r.id === casualId)!.status).toBe('pending');
+      await scheduler.runAutomation('results', new Date(at.getTime() + 24 * 3_600_000));
+      state = await service.load(users[0]);
+      expect(state.casualResults!.find((r) => r.id === casualId)!.history.at(-1)).toMatchObject({
+        action: 'auto_approved',
+        actorId: null,
+      });
+      expect(state.casualResults!.find((r) => r.id === disputedId)!.status).toBe('disputed');
+      const jobCounts = await pool.query(
+        "SELECT count(*)::int AS n FROM public.result_email_outbox WHERE purpose='reminder' AND match_id=$1",
+        [casualId],
+      );
+      expect(jobCounts.rows[0].n).toBe(2);
+      const raceId = crypto.randomUUID();
+      await insertCasual(raceId, 'pending', [{ ...submission, id: crypto.randomUUID(), at: old }]);
+      const revision = (await service.load(users[2])).revision!;
+      await Promise.allSettled([
+        service.execute(
+          users[2],
+          { type: 'reviewCasual', id: raceId, approve: false, reason: 'Racing dispute' },
+          revision,
+        ),
+        scheduler.runAutomation('results', at),
+      ]);
+      const raced = (await service.load(users[0])).casualResults!.find((r) => r.id === raceId)!;
+      expect(raced.history).toHaveLength(2);
+      expect(['disputed', 'auto_approved']).toContain(raced.history.at(-1)!.action);
+      expect(raced.status).toBe(
+        raced.history.at(-1)!.action === 'disputed' ? 'disputed' : 'confirmed',
+      );
+      const clientAccess = await pool.query(
+        "SELECT has_table_privilege('authenticated','public.result_email_outbox','SELECT') AS allowed",
+      );
+      expect(clientAccess.rows[0].allowed).toBe(false);
     }, 60000);
     it('emails current administrators about new disputes and skips demoted or resolved recipients', async () => {
       const delivered: EmailMessage[] = [];
