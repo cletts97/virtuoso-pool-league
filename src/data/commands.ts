@@ -553,9 +553,9 @@ export function executeCommand(
     case 'createSeason': {
       validateDate(command.startDate);
       invariant(
-        command.participantIds.length >= 4 &&
+        command.participantIds.length <= 40 &&
           new Set(command.participantIds).size === command.participantIds.length,
-        'Select at least four unique players.',
+        'Select unique players (maximum 40).',
       );
       // Existing entry IDs remain valid; first-time entrants can be selected by account ID.
       const participantIds = command.participantIds.map((selection) => {
@@ -581,7 +581,7 @@ export function executeCommand(
       });
       invariant(
         new Set(participantIds).size === participantIds.length,
-        'Select at least four unique players.',
+        'Select unique players (maximum 40).',
       );
       invariant(
         Number.isInteger(command.roundsPerWeek) &&
@@ -623,6 +623,10 @@ export function executeCommand(
     case 'generate': {
       const season = state.seasons.find((s) => s.id === command.seasonId);
       invariant(season?.status === 'draft', 'Fixtures can only be generated for a draft season.');
+      invariant(
+        season.participantIds.length >= 4,
+        'At least four players must join before fixtures can be generated.',
+      );
       invariant(
         !state.fixtures.some((f) => f.seasonId === season.id),
         'This season already has fixtures.',

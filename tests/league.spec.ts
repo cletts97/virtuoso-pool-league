@@ -680,3 +680,27 @@ test('dashboard clearly states when no league is scheduled', async ({ page }) =>
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Recent results', exact: true })).toBeVisible();
 });
+
+test('administrator creates an empty draft for dashboard sign-ups', async ({ page }) => {
+  await page.goto('/admin');
+  await page.getByRole('button', { name: 'Create season', exact: true }).click();
+  const modal = page.getByRole('dialog');
+  await modal.getByLabel('Season name').fill('Open sign-ups');
+  const players = modal.getByRole('checkbox');
+  for (let i = 0; i < (await players.count()); i++) await players.nth(i).uncheck();
+  await modal.getByRole('button', { name: 'Create draft season', exact: true }).click();
+  await expect(modal).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Generate fixtures', exact: true })).toBeDisabled();
+  await expect(
+    page.getByText('At least four players must join before fixtures can be generated.', {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.getByLabel('Playing as').selectOption('colleague-01');
+  await page.goto('/');
+  const card = page
+    .locator('.admin-season')
+    .filter({ has: page.getByRole('heading', { name: 'Open sign-ups', exact: true }) });
+  await card.getByRole('button', { name: 'Join league', exact: true }).click();
+  await expect(card).toHaveCount(0);
+});

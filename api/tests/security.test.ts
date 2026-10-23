@@ -4,6 +4,17 @@ import { commandSchema, requestSchema } from '../src/validation';
 import { privateSnapshot } from '../src/state';
 import { createSeed } from '../../src/data/seed';
 describe('API security boundary', () => {
+  it('accepts an empty participant list for draft creation', () => {
+    expect(
+      commandSchema.safeParse({
+        type: 'createSeason',
+        name: 'Open sign-up',
+        startDate: '2026-10-26',
+        participantIds: [],
+        roundsPerWeek: 2,
+      }).success,
+    ).toBe(true);
+  });
   it('only accepts exact configured work-email domains', () => {
     expect(allowedEmail('name@virtuoso.tech', ['virtuoso.tech'])).toBe(true);
     for (const email of [

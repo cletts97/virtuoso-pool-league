@@ -1,5 +1,14 @@
 # Implementation status — Virtuoso Pool League
 
+## Empty draft seasons for sign-ups — 23 October 2026
+
+- Fixed the zero-selected-player creation error: API validation and shared draft creation now allow empty participant lists (while preserving uniqueness and the 40-player maximum). Moved the minimum-four requirement to fixture publication, keeping drafts open for dashboard self-enrollment. Disabled Generate fixtures below four players and added clear guidance in both create/admin forms. No database change.
+- Validation passed: 37 focused season/command/join/security tests, one disposable local Supabase integration test (23 unrelated tests skipped) covering empty creation → four self-joins → six fixtures, one desktop browser check reproducing empty form creation and dashboard signup, TypeScript, targeted ESLint, whitespace checks and API production build. No full suite/frontend build, cloud changes, commit or deployment. Deploy frontend and API together.
+
+## Newsletter count wording — 23 October 2026
+
+- Preview now distinguishes newsletter recipients from the separate active-user total. Empty weeks show zero recipients without implying that accounts are inactive. Confirmation guidance is hidden when there is nothing to send; queued-message wording also uses recipients. No migration or delivery behaviour change.
+
 ## Manual newsletter preview/send and empty dashboard — 23 October 2026
 
 - Added Weekly newsletter controls under administrator League communications. Active administrators can preview a personalized sandboxed HTML email/plain text and active-user count, then explicitly confirm a real send. Backend GET/POST endpoints enforce current identity/role; POST accepts only a preview hash and revalidates current content/recipients. Empty weeks and disabled email delivery cannot be sent; no caller-selected recipients, dates or HTML. Mock mode explains the backend requirement.

@@ -154,10 +154,19 @@ export function Admin() {
                           Season settings
                         </button>
                         {season.status === 'draft' && (
-                          <button className="button primary" onClick={() => setModal('generate')}>
+                          <button
+                            className="button primary"
+                            disabled={season.participantIds.length < 4}
+                            onClick={() => setModal('generate')}
+                          >
                             <WandSparkles size={15} />
                             Generate fixtures
                           </button>
+                        )}
+                        {season.status === 'draft' && season.participantIds.length < 4 && (
+                          <p className="field-help">
+                            At least four players must join before fixtures can be generated.
+                          </p>
                         )}
                         {
                           <button

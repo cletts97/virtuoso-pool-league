@@ -473,6 +473,25 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         command({ type: 'deleteSeason', seasonId: ended, confirmName: `${prefix} ended` }),
       ).rejects.toThrow('history');
     });
+    it('creates an empty draft and allows colleagues to join before fixture generation', async () => {
+      let state = await command({
+        type: 'createSeason',
+        name: prefix + ' empty draft',
+        startDate: londonDate(new Date()),
+        participantIds: [],
+        roundsPerWeek: 2,
+      });
+      const id = state.selectedSeasonId;
+      expect(state.seasons.find((s) => s.id === id)!.participantIds).toHaveLength(0);
+      await expect(command({ type: 'generate', seasonId: id })).rejects.toThrow(
+        'At least four players',
+      );
+      for (const user of users.slice(0, 4))
+        await command({ type: 'joinSeason', seasonId: id }, user);
+      state = await command({ type: 'generate', seasonId: id });
+      expect(state.seasons.find((s) => s.id === id)!.participantIds).toHaveLength(4);
+      expect(state.fixtures.filter((f) => f.seasonId === id)).toHaveLength(6);
+    });
     it('previews and manually sends the weekly newsletter once with administrator authorization', async () => {
       // The disposable database retains earlier test weeks; isolate this newsletter run.
       await pool.query("DELETE FROM public.result_email_outbox WHERE purpose='newsletter'");

@@ -51,7 +51,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     type: z.literal('createSeason'),
     name: text.max(80),
     startDate: date,
-    participantIds: z.array(id).min(4).max(40),
+    participantIds: z.array(id).max(40),
     roundsPerWeek: z.number().int().min(1).max(7),
   }),
   z.strictObject({

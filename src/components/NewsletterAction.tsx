@@ -30,7 +30,7 @@ export function NewsletterAction() {
         previewKey: preview.previewKey,
       });
       setMessage(
-        `Newsletter queued for ${result.queued} active users. Check the email queue for delivery progress or retries.`,
+        `Newsletter queued for ${result.queued} recipients. Check the email queue for delivery progress or retries.`,
       );
       setPreview({ ...preview, alreadyQueued: true });
     } catch (e) {
@@ -64,8 +64,10 @@ export function NewsletterAction() {
         >
           <div className="form-stack">
             <p>
-              <strong>{preview.recipientCount} active users</strong> · Week commencing{' '}
-              {preview.week}. Each recipient's email highlights their own fixtures.
+              <strong>{preview.recipientCount} recipients</strong> · {preview.activeUserCount}{' '}
+              active users · Week commencing {preview.week}.{' '}
+              {preview.recipientCount > 0 &&
+                "Each recipient's email highlights their own fixtures."}
             </p>
             {!preview.recipientCount ? (
               <p>No upcoming published league fixtures this week. No newsletter will be sent.</p>
@@ -102,10 +104,12 @@ export function NewsletterAction() {
             )}
             {message && <p role="status">{message}</p>}
             {error && <p role="alert">{error}</p>}
-            <p className="field-help">
-              Confirm below to queue real emails to all active users. This shares duplicate
-              protection with the scheduled Monday newsletter.
-            </p>
+            {preview.recipientCount > 0 && (
+              <p className="field-help">
+                Confirm below to queue real emails to all active users. This shares duplicate
+                protection with the scheduled Monday newsletter.
+              </p>
+            )}
             <div className="form-actions">
               <button
                 className="button secondary"

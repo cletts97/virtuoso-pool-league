@@ -14,6 +14,27 @@ function draft() {
   });
 }
 describe('season management', () => {
+  it('creates an empty draft, accepts self-enrollment and waits for four players before publishing', () => {
+    let state = executeCommand(createSeed(), {
+      type: 'createSeason',
+      name: 'Open sign-up',
+      startDate: dateOnly(),
+      participantIds: [],
+      roundsPerWeek: 2,
+    });
+    const id = state.selectedSeasonId;
+    expect(state.seasons[0].participantIds).toEqual([]);
+    expect(() => executeCommand(state, { type: 'generate', seasonId: id })).toThrow(
+      'At least four players',
+    );
+    for (const actor of ['p01', 'p02', 'p03', 'p04']) {
+      state.currentUserId = actor;
+      state = executeCommand(state, { type: 'joinSeason', seasonId: id });
+    }
+    state.currentUserId = 'p01';
+    state = executeCommand(state, { type: 'generate', seasonId: id });
+    expect(state.fixtures.filter((f) => f.seasonId === id)).toHaveLength(6);
+  });
   it('adds players to an existing draft before generating fixtures', () => {
     const before = draft(),
       id = before.selectedSeasonId;

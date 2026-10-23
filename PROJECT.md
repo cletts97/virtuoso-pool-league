@@ -35,6 +35,7 @@ Keep operating costs as close to zero as reasonably possible.
 - Store profile photos in private Supabase Storage with server-authorized uploads and short-lived image URLs; do not expose private photo URLs through the public TV response.
 - Keep public.profiles.name authoritative. Self-service display-name changes and administrator name edits also update the linked Supabase Auth user_metadata.name, preserving unrelated metadata and roles. Existing accounts synchronize when their name is next saved; no automatic bulk backfill.
 - Support multiple seasons and historical results.
+- Draft seasons may be created with zero players so colleagues can join from their dashboards. Player selection at creation is optional; require at least four enrolled players before generating/publishing fixtures, enforced by the API/shared business logic and explained in the administration UI.
 - When creating a season, administrators select from all active accounts. Create or reuse individual competition entries automatically; no separate Add to league enrollment step is required.
 
 ### Regular Season

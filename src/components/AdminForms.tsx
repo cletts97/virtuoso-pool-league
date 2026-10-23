@@ -155,6 +155,12 @@ export function SeasonForm({ edit = false, onClose }: { edit?: boolean; onClose(
             </div>
           </fieldset>
         )}
+        {!edit && (
+          <p className="field-help">
+            You can leave all players unselected and let colleagues join from their dashboard. At
+            least four players are needed before you generate fixtures.
+          </p>
+        )}
         <p className="field-help">
           Singles round-robin · Best of 3 · Top 4 playoffs. Scheduling settings lock when fixtures
           are generated. Administrators can add players during the regular season. An odd number of

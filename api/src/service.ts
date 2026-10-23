@@ -307,6 +307,7 @@ export class LeagueService {
         previewKey: key,
         week: weekStart(dateOnly(now)),
         recipientCount: intents.length,
+        activeUserCount: state.players.filter((p) => p.active).length,
         enabled: !!this.resultEmails?.enabled,
         alreadyQueued,
         subject: sample?.subject ?? '',
