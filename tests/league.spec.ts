@@ -595,7 +595,7 @@ test('dashboard advertises leagues and administrators approve join requests', as
   await page.getByLabel('Playing as').selectOption('colleague-01');
   await page.goto('/');
   const card = page
-    .locator('.admin-season')
+    .locator('.league-join-card')
     .filter({ has: page.getByRole('heading', { name: 'Autumn League 2026', exact: true }) });
   await expect(card).toContainText('League in progress');
   await card.getByRole('button', { name: 'Request to join', exact: true }).click();
@@ -626,7 +626,7 @@ test('dashboard advertises leagues and administrators approve join requests', as
   await expect(card).toHaveCount(0);
 });
 
-test('dashboard advertises the start week for an upcoming league', async ({ page }) => {
+test('dashboard advertises the start week for an upcoming league', async ({ page }, testInfo) => {
   await page.evaluate(() => {
     const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!);
     state.seasons.push({
@@ -643,11 +643,16 @@ test('dashboard advertises the start week for an upcoming league', async ({ page
   });
   await page.goto('/');
   const card = page
-    .locator('.admin-season')
+    .locator('.league-join-card')
     .filter({ has: page.getByRole('heading', { name: 'Winter sign-up', exact: true }) });
   await expect(card).toContainText('Upcoming league');
   await expect(card).toContainText('Starts week commencing 4 Jan 2027');
   await expect(card.getByRole('button', { name: 'Join league', exact: true })).toBeEnabled();
+  await expect(page.locator('body')).toHaveJSProperty(
+    'scrollWidth',
+    await page.locator('body').evaluate((el) => el.clientWidth),
+  );
+  await card.screenshot({ path: `.tools/screenshots/join-league-${testInfo.project.name}.png` });
   await card.getByRole('button', { name: 'Join league', exact: true }).click();
   await expect(card).toHaveCount(0);
   await page.goto('/notifications');
@@ -699,7 +704,7 @@ test('administrator creates an empty draft for dashboard sign-ups', async ({ pag
   await page.getByLabel('Playing as').selectOption('colleague-01');
   await page.goto('/');
   const card = page
-    .locator('.admin-season')
+    .locator('.league-join-card')
     .filter({ has: page.getByRole('heading', { name: 'Open sign-ups', exact: true }) });
   await card.getByRole('button', { name: 'Join league', exact: true }).click();
   await expect(card).toHaveCount(0);

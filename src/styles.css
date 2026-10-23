@@ -544,6 +544,133 @@ select option {
 .text-link:hover {
   text-decoration: underline;
 }
+/* Dashboard sign-up cards share the league's orange accent without admin-form spacing. */
+.league-join {
+  display: grid;
+  gap: 14px;
+}
+.league-join-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  padding: 26px 30px;
+  border: 1px solid #ff79384d;
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  background: var(--surface);
+  background: linear-gradient(110deg, var(--orange-wash), var(--surface) 65%);
+  box-shadow: var(--shadow);
+}
+.league-join-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--orange-wash);
+  color: var(--accent);
+  border: 1px solid #ff793833;
+}
+.league-join-copy {
+  min-width: 0;
+}
+.league-join-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: var(--orange-wash);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.league-join-copy h3 {
+  margin: 9px 0 10px;
+  font-size: 24px;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+}
+.league-join-meta {
+  display: flex;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 12px;
+}
+.league-join-meta > span {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 20px;
+  margin-top: 4px;
+}
+.league-join-meta svg {
+  flex-shrink: 0;
+  margin-right: 7px;
+}
+.league-join-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.league-join-cta {
+  min-width: 190px;
+  min-height: 48px;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 5px 18px #ff5c0026;
+}
+.league-join-cta:not(:disabled):hover {
+  box-shadow: 0 7px 24px #ff5c0040;
+}
+.league-join-cta:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+.league-join-action small {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+.league-join-card.is-pending {
+  border-left-color: var(--subtle);
+}
+@media (max-width: 700px) {
+  .league-join-card {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 14px;
+    padding: 20px;
+  }
+  .league-join-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+  .league-join-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+  .league-join-copy h3 {
+    font-size: 21px;
+  }
+  .league-join-meta > span {
+    margin-right: 0;
+    margin-top: 6px;
+  }
+  .league-join-action {
+    grid-column: 1 / -1;
+    align-items: stretch;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+  .league-join-cta {
+    width: 100%;
+  }
+}
+
 .dashboard-hero {
   position: relative;
   display: grid;

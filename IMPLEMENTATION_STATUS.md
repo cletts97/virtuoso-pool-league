@@ -1,5 +1,10 @@
 # Implementation status — Virtuoso Pool League
 
+## Dashboard league signup card polish — 23 October 2026
+
+- Replaced the tall nested administrator-style join panel with compact dedicated signup cards: subtle orange border/wash, trophy icon, status pill, larger season title, calendar/player metadata and a prominent arrow CTA with clear approval guidance. Mobile places the full-width button below the details; pending requests keep a disabled waiting state. Uses existing theme colours, icons and buttons; enrollment rules/API unchanged.
+- Six focused desktop/mobile browser checks passed for upcoming/direct joining, active requests/admin acceptance, empty-draft signup and overflow. Captured and visually reviewed desktop/mobile signup-card screenshots under .tools/screenshots/join-league-*.png. TypeScript and targeted ESLint passed; no full suite/build, backend or database change, commit or deployment.
+
 ## Empty draft seasons for sign-ups — 23 October 2026
 
 - Fixed the zero-selected-player creation error: API validation and shared draft creation now allow empty participant lists (while preserving uniqueness and the 40-player maximum). Moved the minimum-four requirement to fixture publication, keeping drafts open for dashboard self-enrollment. Disabled Generate fixtures below four players and added clear guidance in both create/admin forms. No database change.

@@ -1,3 +1,4 @@
+import { ArrowRight, CalendarDays, CheckCheck, Clock3, Trophy, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useLeague } from '../app/LeagueContext';
 import { addDays, dateOnly, weekStart, weekLabel } from '../domain/rules';
@@ -19,59 +20,84 @@ export function JoinLeagueCards() {
   if (!seasons.length) return null;
   const today = dateOnly();
   return (
-    <Section
-      className="mb-6"
-      title="Join a league"
-      subtitle="Join upcoming leagues directly. Leagues already in progress require administrator approval."
-    >
-      <div className="match-grid">
-        {seasons.map((s) => {
-          const request = state.joinRequests?.find(
-            (r) => r.seasonId === s.id && r.playerId === state.currentUserId,
-          );
-          const upcoming = canJoinSeasonDirectly(s, today);
-          return (
-            <div className="admin-season" key={s.id}>
-              <span className="eyebrow">{upcoming ? 'Upcoming league' : 'League in progress'}</span>
-              <h3>{s.name}</h3>
-              <p>
-                {upcoming ? 'Starts' : 'Started'} {weekLabel(s.startDate).replace('Week', 'week')} ·{' '}
-                {s.participantIds.length} players
-              </p>
-              {!upcoming && (
-                <p>
-                  You can join after approval. Your existing opponents will get catch-up fixtures.
-                </p>
-              )}
+    <section className="league-join mb-6" aria-label="Join a league">
+      {seasons.map((season) => {
+        const request = state.joinRequests?.find(
+          (r) => r.seasonId === season.id && r.playerId === state.currentUserId,
+        );
+        const upcoming = canJoinSeasonDirectly(season, today);
+        const waiting = !upcoming && request?.status === 'pending';
+        const label = upcoming
+          ? 'Join league'
+          : request
+            ? request.status === 'pending'
+              ? 'Request pending'
+              : request.status === 'rejected'
+                ? 'Request declined'
+                : 'Request accepted'
+            : 'Request to join';
+        return (
+          <div className={`league-join-card ${waiting ? 'is-pending' : ''}`} key={season.id}>
+            <div className="league-join-icon" aria-hidden="true">
+              <Trophy size={27} />
+            </div>
+            <div className="league-join-copy">
+              <span className="league-join-status">
+                {upcoming ? 'Upcoming league' : 'League in progress'}
+              </span>
+              <h3>{season.name}</h3>
+              <div className="league-join-meta">
+                <span>
+                  <CalendarDays size={15} aria-hidden="true" />
+                  {upcoming ? 'Starts' : 'Started'}{' '}
+                  {weekLabel(season.startDate).replace('Week', 'week')}
+                </span>
+                <span>
+                  <Users size={15} aria-hidden="true" />
+                  {season.participantIds.length}{' '}
+                  {season.participantIds.length === 1 ? 'player' : 'players'} joined
+                </span>
+              </div>
+            </div>
+            <div className="league-join-action">
               <button
-                className="button primary"
+                className="button primary league-join-cta"
                 disabled={busy || (!upcoming && !!request)}
                 onClick={() =>
                   void run(
-                    { type: upcoming ? 'joinSeason' : 'requestSeasonJoin', seasonId: s.id },
+                    { type: upcoming ? 'joinSeason' : 'requestSeasonJoin', seasonId: season.id },
                     upcoming
                       ? 'You have joined the league.'
                       : 'Your request has been sent to the administrators.',
                   )
                 }
               >
-                {upcoming
-                  ? 'Join league'
-                  : request
-                    ? request.status === 'pending'
-                      ? 'Request pending'
-                      : request.status === 'rejected'
-                        ? 'Request declined'
-                        : 'Request accepted'
-                    : 'Request to join'}
+                {busy ? 'Working…' : label}
+                {waiting ? (
+                  <Clock3 size={18} aria-hidden="true" />
+                ) : !upcoming && request ? (
+                  <CheckCheck size={18} aria-hidden="true" />
+                ) : (
+                  <ArrowRight size={18} aria-hidden="true" />
+                )}
               </button>
+              <small>
+                {upcoming
+                  ? 'Join instantly · No approval needed'
+                  : waiting
+                    ? 'Your request is awaiting review'
+                    : request?.status === 'rejected'
+                      ? 'Contact an administrator to discuss joining'
+                      : 'Administrator approval required'}
+              </small>
             </div>
-          );
-        })}
-      </div>
-    </Section>
+          </div>
+        );
+      })}
+    </section>
   );
 }
+
 export function AdminJoinRequests() {
   const { state, run, busy } = useLeague();
   const [selected, setSelected] = useState<SeasonJoinRequest>();
