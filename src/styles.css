@@ -3595,16 +3595,10 @@ a.bracket-match:hover {
 }
 
 /* Installation remains secondary to league and booking actions. */
-.pwa-install-nav {
-  margin-bottom: 14px;
-}
 .pwa-install-button {
   justify-content: center;
 }
-.pwa-install-nav .pwa-install-button {
-  width: 100%;
-}
-.pwa-install-footer {
+.pwa-install-mobile {
   display: none;
 }
 .pwa-install-heading {
@@ -3654,12 +3648,32 @@ a.bracket-match:hover {
   .app-footer {
     flex-wrap: wrap;
   }
-  .pwa-install-footer {
-    display: block;
-    width: 100%;
-  }
 }
 @media (max-width: 600px) {
+  .topbar {
+    gap: 10px;
+  }
+  .season-control {
+    flex: 1;
+  }
+  .season-control select {
+    min-width: 0;
+    width: 100%;
+    text-overflow: ellipsis;
+  }
+  .season-control > svg,
+  .topbar-actions {
+    flex-shrink: 0;
+  }
+  .pwa-install-mobile {
+    display: block;
+  }
+  .pwa-install-mobile .pwa-install-button {
+    padding: 7px 8px;
+    gap: 5px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
   .pwa-status {
     left: 14px;
     right: 14px;
@@ -3669,8 +3683,7 @@ a.bracket-match:hover {
   }
 }
 
-.pwa-install-nav:empty,
-.pwa-install-footer:empty {
+.pwa-install-mobile:empty {
   display: none;
 }
 .pwa-install-content {

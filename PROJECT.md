@@ -379,7 +379,7 @@ The HUD should prominently display:
 
 ### Installable mobile web app
 
-- Offer installation from the desktop navigation footer and mobile/tablet site footer, without requiring app stores.
+- Offer installation beside the theme button in the mobile header, hidden in standalone mode and on larger layouts, without requiring app stores. Desktop users may use their browser's installation menu.
 - Use the browser installation prompt where supported; show Safari Add to Home Screen instructions on iPhone/iPad. Installed launches use a standalone window.
 - Keep authentication, shared data and mutations online-only. Cache public static assets only; offline launches show a reconnect page. Never service-worker-cache API responses or account/invitation documents.
 - Ask before reloading to activate an update. Preserve the existing online-only legacy TV display behavior.

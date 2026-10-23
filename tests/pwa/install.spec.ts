@@ -34,6 +34,7 @@ test('production manifest, icons and hosting headers support installation', asyn
 });
 
 test('Android-compatible install prompt is invoked only after a click', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await controlled(page);
   await page.evaluate(() => {
     const event = new Event('beforeinstallprompt', { cancelable: true });
@@ -51,7 +52,7 @@ test('Android-compatible install prompt is invoked only after a click', async ({
   await expect(page.getByRole('button', { name: 'Install app', exact: true })).toHaveCount(0);
 });
 
-test('iPhone users see home-screen instructions in the mobile footer', async ({ browser }) => {
+test('iPhone users see home-screen instructions from the mobile header', async ({ browser }) => {
   const context = await browser.newContext({
     baseURL: 'http://127.0.0.1:5175',
     viewport: { width: 390, height: 844 },

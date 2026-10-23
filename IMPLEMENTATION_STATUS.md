@@ -1,5 +1,10 @@
 # Implementation status — Virtuoso Pool League
 
+## Mobile header install action
+
+- Moved Install app next to the theme button in the mobile header (up to 600px). Removed the desktop navigation/footer install actions; the button remains hidden inside the installed app. Desktop browser installation menus still work. Season selection can shrink to keep header actions within phone widths. Removed the duplicate Inbox navigation link; the header bell remains.
+- Checked visibility, opening/closing instructions and page overflow at 360px, 390px and 430px, hidden desktop control at 1440px, and hidden control in simulated standalone mode. Reviewed mobile screenshot; TypeScript and targeted ESLint passed. Updated PWA instructions/requirements and existing prompt tests for the new location. No production build, cloud changes or deployment.
+
 ## Mobile navigation spacing
 
 - Mobile navigation buttons now retain their natural label width and at least 72px touch-target width, with consistent gaps. The bar scrolls horizontally rather than shrinking all pages into the viewport; browser and installed-app layouts share this CSS. Desktop and TV layouts are unchanged.

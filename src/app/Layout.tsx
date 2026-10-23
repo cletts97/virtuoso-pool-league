@@ -74,13 +74,6 @@ export function Layout() {
               <span>{label}</span>
             </NavLink>
           ))}
-          {!state.readOnly && (
-            <NavLink to="/notifications" aria-label="Notifications" title="Notifications">
-              <Bell size={19} />
-              <span>Notifications</span>
-              {unread > 0 && <span className="nav-count">{unread}</span>}
-            </NavLink>
-          )}
           {user.role === 'admin' && (
             <>
               <div className="nav-label admin-label">MANAGEMENT</div>
@@ -92,9 +85,6 @@ export function Layout() {
           )}
         </nav>
         <div className="sidebar-bottom">
-          <div className="pwa-install-nav">
-            <InstallApp />
-          </div>
           <div className="league-note">
             <div className="small-ball">8</div>
             <p>
@@ -141,6 +131,9 @@ export function Layout() {
             <ChevronDown size={14} />
           </div>
           <div className="topbar-actions">
+            <div className="pwa-install-mobile">
+              <InstallApp />
+            </div>
             <button
               className="icon-button"
               onClick={() => void preferences({ theme: state.theme === 'dark' ? 'light' : 'dark' })}
@@ -242,9 +235,6 @@ export function Layout() {
           <span>Virtuoso Pool League</span>
           <span>Fixtures, results and bookings.</span>
           <span>{liveMode ? 'Shared league workspace' : 'Demo workspace · Local data'}</span>
-          <div className="pwa-install-footer">
-            <InstallApp />
-          </div>
         </footer>
       </div>
       {!liveMode && confirmReset && (

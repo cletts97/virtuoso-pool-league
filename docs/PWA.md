@@ -4,7 +4,7 @@ Virtuoso Pool League is an installable progressive web app (PWA), using the exis
 
 ## Installing
 
-Choose **Install app** at the bottom of the desktop navigation or in the mobile/tablet site footer. The control disappears inside the installed app. The TV display has no installation controls and does not register a service worker.
+Choose **Install app** beside the theme button in the mobile header (up to 600px wide). The control is hidden on larger layouts and inside the installed app. The TV display has no installation controls and does not register a service worker. Supported desktop browsers can still install through their own browser menu.
 
 - **Android / supported desktop browsers:** the button opens the browser's native installation prompt when available. Otherwise it shows instructions for the browser's Install app / Add to Home screen menu.
 - **iPhone / iPad:** the button shows instructions: open the site in Safari, choose Share → Add to Home Screen, keep Open as Web App enabled if shown, then Add. The icon launches a standalone web app, rather than an ordinary browser bookmark. iOS does not provide the same programmatic installation prompt as Chromium. A separate sign-in may be needed after installation.
