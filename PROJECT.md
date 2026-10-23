@@ -171,6 +171,7 @@ The application should eventually support:
 - Score approval and dispute notifications.
 - When result email delivery is enabled, email all active administrators once for each new league/casual dispute, linking to its protected review page. Recheck administrator access before delivery and skip superseded/resolved disputes.
 - Reminders for overdue fixtures.
+- Administrators can preview and manually send the current week’s newsletter from Administration → Season & configuration → League communications. Preview shows a personalized HTML/plain-text example and active-recipient count, with explicit send confirmation. No published upcoming fixtures means sending is disabled. Revalidate preview content/recipients and administrator access on send; share weekly deduplication with scheduled delivery, so a newsletter can only be queued once per week. Queue only after confirmation; failed delivery uses existing email retry controls.
 - A Monday 07:00 Europe/London HTML/plain-text newsletter goes to every active invited/confirmed account, including casual-only colleagues. Include scheduled/postponed published league fixtures due that Monday–Sunday, highlight the recipient's fixtures and label playoff stages. Include league results confirmed/corrected in the previous Monday–Sunday, when present. Skip the newsletter entirely when there are no upcoming league fixtures that week, even if last week had results.
 
 Email links must not bypass authentication or authorization.
@@ -183,7 +184,7 @@ Scheduled automation uses Supabase Cron/pg_net to call secret-protected HTTP end
 
 Visitors may browse the dashboard, published seasons, standings, player profiles, fixtures/results, playoffs, rules and upcoming table reservations without signing in. Sign-in is required for all changes, booking/cancellation, result actions, personal notifications, profile editing and administration. Anonymous data must be explicitly allowlisted: exclude draft seasons, private account details, leave records, audit notes and private profile-photo URLs. Unapproved full records remain filtered; the recent-results feed explicitly publishes names, scores and statuses for league/casual submissions, with clear unconfirmed labels. The TV can navigate to the main public dashboard without an account.
 
-1. Dashboard — current standings, upcoming fixtures, recent results, and league highlights.
+1. Dashboard — current standings, upcoming fixtures, recent results, and league highlights. Without a real selected season, clearly display “No league scheduled”, retain bookings/casual results/rules and hide fallback draft badges, zero-player competition statistics and season-only panels.
 2. League Table — rankings, wins, losses, frame difference, and player statistics.
 3. Fixtures — upcoming, completed, and postponed matches.
 4. Match Details — match information, score entry, and approval.

@@ -92,3 +92,13 @@ Do not manually invoke `/automation/results` as a read-only test: it really conf
 - To remove the jobs, use the Cron dashboard or `cron.unschedule('vpl-weekly-newsletter')` / `cron.unschedule('vpl-hourly-results')`. Leave audit/outbox records intact.
 
 No cloud migration, live Cron registration, production deployment or real email was performed automatically.
+
+## Manually preview and send this week’s newsletter
+
+In **Administration → Season & configuration → League communications → Weekly newsletter**, click **Preview this week’s newsletter**. Review the active-recipient count, a personalized HTML example and its plain-text version. Each recipient’s own fixtures are highlighted. Click **Confirm and send newsletter** to queue real emails. Preview alone never queues or sends email.
+
+This is useful when fixtures are generated on Tuesday after an empty Monday: the manual action bypasses only the Monday 07:00 scheduling guard, using the current Europe/London week and the same content rules. There must be upcoming published fixtures this week; drafts are excluded. It sends to all active accounts through the existing Resend queue, not just season participants.
+
+Manual and scheduled newsletters share the same weekly deduplication key. Once any newsletter for that week is queued, the manual button is disabled; use existing email queue controls for delivery retries. Concurrent manual/automatic requests cannot enqueue duplicate messages for the same recipient. If content or recipients change after preview, refresh the preview before sending. Queue confirmation does not mean every email has already arrived: bounded delivery batches, skips and retries still apply.
+
+The protected GET/POST `/api/admin/newsletter` endpoints require an active administrator session. POST accepts only the preview fingerprint, never client-provided recipients, content, dates or delivery credentials. Newsletter HTML is displayed inside a sandboxed iframe with a plain-text fallback. Manual sending uses existing `ALLOW_RESULT_EMAIL`, Resend and `APP_URL` settings and does not require `AUTOMATION_ENABLED=true`. No new migration or environment variable is needed. Mock mode labels this action as requiring the backend.

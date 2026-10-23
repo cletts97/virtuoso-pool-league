@@ -655,3 +655,28 @@ test('dashboard advertises the start week for an upcoming league', async ({ page
     page.getByRole('heading', { name: 'League membership confirmed', exact: true }),
   ).toBeVisible();
 });
+
+test('dashboard clearly states when no league is scheduled', async ({ page }) => {
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!);
+    state.seasons = [];
+    state.fixtures = [];
+    state.participants = [];
+    state.notifications = [];
+    state.selectedSeasonId = '';
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: 'No league scheduled.', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('.dashboard-hero')).not.toContainText('Draft');
+  await expect(page.locator('.dashboard-hero')).not.toContainText('0 players');
+  await expect(
+    page.locator('.dashboard-hero').getByRole('link', { name: 'Book the table' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Today at the table', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Recent results', exact: true })).toBeVisible();
+});

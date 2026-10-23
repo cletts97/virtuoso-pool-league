@@ -1,3 +1,4 @@
+import { NewsletterAction } from '../components/NewsletterAction';
 import { AdminJoinRequests } from '../components/LeagueJoinRequests';
 import { useState } from 'react';
 import { liveMode } from '../auth/client';
@@ -262,6 +263,7 @@ export function Admin() {
             </div>
             <div className="stack">
               <Section title="League communications">
+                <NewsletterAction />
                 <div className="admin-season">
                   <Megaphone className="accent" size={28} />
                   <h3>League announcements</h3>

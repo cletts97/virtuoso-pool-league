@@ -84,8 +84,9 @@ export function newsletterEmailIntents(
   state: LeagueState,
   now: Date,
   appUrl: string,
+  manual = false,
 ): ScheduledEmailIntent[] {
-  if (!mondayNewsletterWindow(now)) return [];
+  if (!manual && !mondayNewsletterWindow(now)) return [];
   const monday = mondayOfWeek(now),
     sunday = addDays(monday, 6);
   const seasons = state.seasons.filter((s) => ['regular', 'playoffs'].includes(s.status));

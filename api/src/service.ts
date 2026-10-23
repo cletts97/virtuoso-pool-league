@@ -1,3 +1,4 @@
+import type { NewsletterPreview } from '../../src/data/newsletter';
 import { createHash } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import type { User, SupabaseClient } from '@supabase/supabase-js';
@@ -260,6 +261,68 @@ export class LeagueService {
         console.warn('Result email delivery deferred; check the administrator email queue.');
       }
     return new AvatarStorage(this.auth).decorate(state);
+  }
+  async adminNewsletter(
+    user: User,
+    previewKey?: string,
+    now = new Date(),
+  ): Promise<NewsletterPreview | { queued: number }> {
+    const result = await this.transaction(async (client) => {
+      const actor = await this.actor(client, user);
+      requireCondition(actor.role === 'admin', 403, 'Administrator access required.');
+      requireCondition(this.automationAppUrl, 503, 'The application URL is not configured.');
+      const state = await readState(client, actor.id);
+      const intents = newsletterEmailIntents(state, now, this.automationAppUrl, true);
+      const key = createHash('sha256').update(JSON.stringify(intents)).digest('hex');
+      const sample = intents.find((i) => i.recipientId === actor.id) ?? intents[0];
+      const alreadyQueued = sample
+        ? (
+            await client.query(
+              `SELECT 1 FROM public.result_email_outbox WHERE event_id=$1 AND purpose='newsletter' LIMIT 1`,
+              [sample.eventId],
+            )
+          ).rows.length > 0
+        : false;
+      if (previewKey) {
+        requireCondition(this.resultEmails?.enabled, 503, 'Newsletter email delivery is disabled.');
+        requireCondition(
+          intents.length > 0,
+          400,
+          'There are no upcoming published league fixtures this week.',
+        );
+        requireCondition(
+          key === previewKey,
+          409,
+          'Newsletter content or recipients changed. Refresh the preview before sending.',
+        );
+        requireCondition(
+          !alreadyQueued,
+          409,
+          'This week’s newsletter has already been queued. Use email queue controls to retry delivery.',
+        );
+        await this.resultEmails.enqueueScheduled(client, intents);
+        return { queued: intents.length };
+      }
+      return {
+        previewKey: key,
+        week: weekStart(dateOnly(now)),
+        recipientCount: intents.length,
+        enabled: !!this.resultEmails?.enabled,
+        alreadyQueued,
+        subject: sample?.subject ?? '',
+        body: sample?.body ?? '',
+        html: sample?.html ?? '',
+        sampleRecipient: state.players.find((p) => p.id === sample?.recipientId)?.name ?? '',
+      };
+    }, !!previewKey);
+    if (previewKey) {
+      try {
+        await this.resultEmails!.flush(20);
+      } catch {
+        /* Already committed; delivery can be retried using the existing email queue. */
+      }
+    }
+    return result;
   }
   async resultEmailStatus(user: User, send = false) {
     const actor = await this.me(user);

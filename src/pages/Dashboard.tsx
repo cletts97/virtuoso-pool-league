@@ -38,6 +38,7 @@ export function Dashboard() {
   );
   const ownEntry = state.participants.find((p) => p.playerIds.includes(user.id));
   const own = table.find((r) => r.participantId === ownEntry?.id);
+  const hasSeason = !!season.id;
   const progress = fixtures.length ? Math.round((confirmed.length / fixtures.length) * 100) : 0;
   return (
     <>
@@ -49,14 +50,16 @@ export function Dashboard() {
             : `Welcome, ${user.name.split(' ')[0]}.`
         }
         description={
-          season.status === 'complete'
-            ? 'View the final standings, results and playoff matches.'
-            : 'View league standings, fixtures, results and table bookings.'
+          !hasSeason
+            ? 'No league is scheduled. You can still book the table and record casual games.'
+            : season.status === 'complete'
+              ? 'View the final standings, results and playoff matches.'
+              : 'View league standings, fixtures, results and table bookings.'
         }
         action={
-          <Link className="button secondary" to="/fixtures">
+          <Link className="button secondary" to={hasSeason ? '/fixtures' : '/bookings'}>
             <CalendarDays size={16} />
-            View fixtures
+            {hasSeason ? 'View fixtures' : 'Book the table'}
           </Link>
         }
       />
@@ -65,11 +68,19 @@ export function Dashboard() {
         <div className="hero-copy">
           <div className="hero-eyebrow">
             <span className="live-dot" />
-            {season.format.toUpperCase()} COMPETITION <span> / </span>{' '}
-            <Badge status={season.status} />
+            {hasSeason ? (
+              <>
+                {season.format.toUpperCase()} COMPETITION <span> / </span>{' '}
+                <Badge status={season.status} />
+              </>
+            ) : (
+              'OFFICE TABLE'
+            )}
           </div>
           <h2>
-            {season.status === 'complete' ? (
+            {!hasSeason ? (
+              'No league scheduled.'
+            ) : season.status === 'complete' ? (
               <>
                 Season complete.
                 <br />
@@ -84,15 +95,23 @@ export function Dashboard() {
             )}
           </h2>
           <p>
-            {season.status === 'complete' && season.championId
-              ? `${participantName(state, season.championId)} won the season. View the final results.`
-              : `${season.participantIds.length} players. View the schedule, results and playoff places.`}
+            {!hasSeason
+              ? 'Book the table for pool or table tennis, or record a casual pool result. Upcoming leagues will appear here.'
+              : season.status === 'complete' && season.championId
+                ? `${participantName(state, season.championId)} won the season. View the final results.`
+                : `${season.participantIds.length} players. View the schedule, results and playoff places.`}
           </p>
           <Link
             className="button primary"
-            to={season.status === 'complete' ? '/playoffs' : '/standings'}
+            to={
+              !hasSeason ? '/bookings' : season.status === 'complete' ? '/playoffs' : '/standings'
+            }
           >
-            {season.status === 'complete' ? 'View season winner' : 'View standings'}
+            {!hasSeason
+              ? 'Book the table'
+              : season.status === 'complete'
+                ? 'View season winner'
+                : 'View standings'}
             <ArrowUpRight size={17} />
           </Link>
         </div>
@@ -118,49 +137,51 @@ export function Dashboard() {
         </Link>
       )}
       <RuleReminders />
-      <div className="stats-grid">
-        <Stat
-          label="In the competition"
-          value={season.participantIds.length}
-          detail="Players in this season."
-          icon={<Users size={18} />}
-        />
-        <Stat
-          label="Matches played"
-          value={
-            <>
-              {confirmed.length}
-              <span> / {fixtures.length}</span>
-            </>
-          }
-          detail={`${progress}% of the regular season complete`}
-          icon={<CheckCheck size={18} />}
-        />
-        <Stat
-          label={state.readOnly ? 'Season progress' : 'Your position'}
-          value={state.readOnly ? `${progress}%` : own?.played ? `#${own.position}` : '—'}
-          detail={
-            state.readOnly
-              ? 'Browse the competition · Sign in to participate'
-              : own?.played
-                ? `${own.won} wins · ${own.lost} losses`
-                : ownEntry
-                  ? 'No matches played yet'
-                  : 'Casual bookings are open to you'
-          }
-          icon={<Flag size={18} />}
-        />
-        <Stat
-          label="League leader"
-          value={leader ? participantName(state, leader.participantId).split(' ')[0] : '—'}
-          detail={
-            leader
-              ? `${leader.won} wins · ${leader.difference > 0 ? '+' : ''}${leader.difference} frame difference`
-              : 'No players yet'
-          }
-          icon={<Trophy size={18} />}
-        />
-      </div>
+      {hasSeason && (
+        <div className="stats-grid">
+          <Stat
+            label="In the competition"
+            value={season.participantIds.length}
+            detail="Players in this season."
+            icon={<Users size={18} />}
+          />
+          <Stat
+            label="Matches played"
+            value={
+              <>
+                {confirmed.length}
+                <span> / {fixtures.length}</span>
+              </>
+            }
+            detail={`${progress}% of the regular season complete`}
+            icon={<CheckCheck size={18} />}
+          />
+          <Stat
+            label={state.readOnly ? 'Season progress' : 'Your position'}
+            value={state.readOnly ? `${progress}%` : own?.played ? `#${own.position}` : '—'}
+            detail={
+              state.readOnly
+                ? 'Browse the competition · Sign in to participate'
+                : own?.played
+                  ? `${own.won} wins · ${own.lost} losses`
+                  : ownEntry
+                    ? 'No matches played yet'
+                    : 'Casual bookings are open to you'
+            }
+            icon={<Flag size={18} />}
+          />
+          <Stat
+            label="League leader"
+            value={leader ? participantName(state, leader.participantId).split(' ')[0] : '—'}
+            detail={
+              leader
+                ? `${leader.won} wins · ${leader.difference > 0 ? '+' : ''}${leader.difference} frame difference`
+                : 'No players yet'
+            }
+            icon={<Trophy size={18} />}
+          />
+        </div>
+      )}
       {approvals.length > 0 && (
         <Link className="action-banner" to={`/fixtures/${approvals[0].id}`}>
           <CheckCheck size={22} />
@@ -174,21 +195,23 @@ export function Dashboard() {
           <ArrowRight size={20} />
         </Link>
       )}
-      <div className="dashboard-columns">
+      <div className={hasSeason ? 'dashboard-columns' : 'stack'}>
         <div className="stack">
-          <Section
-            title="League table"
-            subtitle="Standings based on confirmed results."
-            link={{ to: '/standings', label: 'Full table' }}
-          >
-            <StandingsTable preview />
-            <div className="panel-footnote">
-              <span className="qualification-dot" />
-              {season.qualifiers.length
-                ? 'Confirmed playoff qualifiers highlighted'
-                : 'Top four · Provisional playoff positions'}
-            </div>
-          </Section>
+          {hasSeason && (
+            <Section
+              title="League table"
+              subtitle="Standings based on confirmed results."
+              link={{ to: '/standings', label: 'Full table' }}
+            >
+              <StandingsTable preview />
+              <div className="panel-footnote">
+                <span className="qualification-dot" />
+                {season.qualifiers.length
+                  ? 'Confirmed playoff qualifiers highlighted'
+                  : 'Top four · Provisional playoff positions'}
+              </div>
+            </Section>
+          )}
           <Section
             title="Recent results"
             subtitle="Latest league and casual scores · Unconfirmed scores may change."
@@ -225,44 +248,52 @@ export function Dashboard() {
           </Section>
         </div>
         <div className="stack">
-          <Section title="Your next match" subtitle="Your next scheduled fixture.">
-            {next ? (
-              <MatchCard fixture={next} />
-            ) : (
-              <Empty title="No upcoming matches">Check the full schedule for your season.</Empty>
-            )}
-          </Section>
-          <div className="notice-card">
-            <div className="eyebrow">
-              <Flame size={15} /> LEAGUE NOTICE
-            </div>
-            <h3>
-              {state.announcements.find((a) => a.seasonId === season.id)?.title ??
-                'League information'}
-            </h3>
-            <p>
-              {state.announcements.find((a) => a.seasonId === season.id)?.body ??
-                'Check your fixtures and confirm submitted results after each match.'}
-            </p>
-            <Link to="/notifications" className="text-link">
-              Visit your inbox
-              <ArrowUpRight size={15} />
-            </Link>
-          </div>
+          {hasSeason && (
+            <>
+              <Section title="Your next match" subtitle="Your next scheduled fixture.">
+                {next ? (
+                  <MatchCard fixture={next} />
+                ) : (
+                  <Empty title="No upcoming matches">
+                    Check the full schedule for your season.
+                  </Empty>
+                )}
+              </Section>
+              <div className="notice-card">
+                <div className="eyebrow">
+                  <Flame size={15} /> LEAGUE NOTICE
+                </div>
+                <h3>
+                  {state.announcements.find((a) => a.seasonId === season.id)?.title ??
+                    'League information'}
+                </h3>
+                <p>
+                  {state.announcements.find((a) => a.seasonId === season.id)?.body ??
+                    'Check your fixtures and confirm submitted results after each match.'}
+                </p>
+                <Link to="/notifications" className="text-link">
+                  Visit your inbox
+                  <ArrowUpRight size={15} />
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </div>
-      <Section
-        title="Upcoming fixtures"
-        subtitle="Scheduled matches for this season."
-        link={{ to: '/fixtures', label: 'Full schedule' }}
-      >
-        <div className="match-grid">
-          {upcoming.slice(0, 3).map((f) => (
-            <MatchCard key={f.id} fixture={f} compact />
-          ))}
-          {!upcoming.length && <Empty title="No upcoming fixtures" />}
-        </div>
-      </Section>
+      {hasSeason && (
+        <Section
+          title="Upcoming fixtures"
+          subtitle="Scheduled matches for this season."
+          link={{ to: '/fixtures', label: 'Full schedule' }}
+        >
+          <div className="match-grid">
+            {upcoming.slice(0, 3).map((f) => (
+              <MatchCard key={f.id} fixture={f} compact />
+            ))}
+            {!upcoming.length && <Empty title="No upcoming fixtures" />}
+          </div>
+        </Section>
+      )}
     </>
   );
 }

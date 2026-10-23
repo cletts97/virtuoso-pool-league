@@ -393,3 +393,37 @@ test('admin invitations and password-reset email are captured locally and their 
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
   await login(page, accounts.length - 1);
 });
+
+test('administrator previews a weekly newsletter without sending emails', async ({ page }) => {
+  await login(page, 0);
+  await page.goto('/admin');
+  await page.getByRole('button', { name: 'Create season', exact: true }).click();
+  await page.getByLabel('Season name').fill(prefix + ' newsletter preview');
+  await page.getByRole('button', { name: 'Create draft season', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Generate fixtures', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Generate fixtures', exact: true })
+    .click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Preview this week’s newsletter', exact: true }).click();
+  const modal = page.getByRole('dialog');
+  await expect(
+    modal.getByRole('heading', { name: 'Weekly newsletter preview', exact: true }),
+  ).toBeVisible();
+  await expect(modal).toContainText('active users');
+  await expect(
+    page
+      .frameLocator('iframe[title="Newsletter email preview"]')
+      .getByRole('heading', { name: 'This week in the league', exact: true }),
+  ).toBeVisible();
+  await expect(
+    modal.getByRole('button', { name: 'Confirm and send newsletter', exact: true }),
+  ).toBeDisabled();
+  await expect(modal).toContainText('Email delivery is disabled');
+  await modal.getByText('Plain-text version', { exact: true }).click();
+  await expect(modal.locator('pre')).toContainText('Week commencing');
+  await modal.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});

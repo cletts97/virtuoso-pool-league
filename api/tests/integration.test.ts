@@ -473,6 +473,67 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         command({ type: 'deleteSeason', seasonId: ended, confirmName: `${prefix} ended` }),
       ).rejects.toThrow('history');
     });
+    it('previews and manually sends the weekly newsletter once with administrator authorization', async () => {
+      // The disposable database retains earlier test weeks; isolate this newsletter run.
+      await pool.query("DELETE FROM public.result_email_outbox WHERE purpose='newsletter'");
+      const messages: EmailMessage[] = [];
+      const queue = new ResultEmailQueue(
+        pool,
+        auth,
+        {
+          send: async (m) => {
+            messages.push(m);
+          },
+        },
+        true,
+        config.appUrl,
+        config.emailDomains,
+      );
+      const newsletters = new LeagueService(pool, auth, config.emailDomains, queue, config.appUrl);
+      let created = await command({
+        type: 'createSeason',
+        name: prefix + ' manual newsletter',
+        startDate: londonDate(new Date()),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const newsletterSeasonId = created.selectedSeasonId;
+      created = await command({ type: 'generate', seasonId: newsletterSeasonId });
+      await expect(newsletters.adminNewsletter(users[1])).rejects.toThrow('Administrator');
+      const preview = await newsletters.adminNewsletter(users[0]);
+      if (!('previewKey' in preview)) throw new Error('Expected preview');
+      expect(preview.recipientCount).toBeGreaterThanOrEqual(5);
+      expect(preview.html).toContain('/brand/virtuoso-white.png');
+      expect(preview.alreadyQueued).toBe(false);
+      expect(messages).toHaveLength(0);
+      const fixture = created.fixtures.find((f) => f.seasonId === newsletterSeasonId)!;
+      await command({
+        type: 'postpone',
+        fixtureId: fixture.id,
+        dueDate: fixture.dueDate,
+        reason: 'Updated after preview',
+      });
+      await expect(newsletters.adminNewsletter(users[0], preview.previewKey)).rejects.toThrow(
+        'changed',
+      );
+      const updated = await newsletters.adminNewsletter(users[0]);
+      if (!('previewKey' in updated)) throw new Error('Expected preview');
+      await expect(newsletters.adminNewsletter(users[1], updated.previewKey)).rejects.toThrow(
+        'Administrator',
+      );
+      const attempts = await Promise.allSettled(
+        [1, 2].map(() => newsletters.adminNewsletter(users[0], updated.previewKey)),
+      );
+      expect(attempts.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(messages).toHaveLength(updated.recipientCount);
+      expect(new Set(messages.map((m) => m.recipient)).size).toBe(messages.length);
+      expect(
+        ((await newsletters.adminNewsletter(users[0])) as { alreadyQueued: boolean }).alreadyQueued,
+      ).toBe(true);
+      await expect(newsletters.adminNewsletter(users[0], updated.previewKey)).rejects.toThrow(
+        'already been queued',
+      );
+    });
     it('persists private join requests, alerts administrators and accepts draft/active enrollment atomically', async () => {
       const sent: EmailMessage[] = [];
       const queue = new ResultEmailQueue(

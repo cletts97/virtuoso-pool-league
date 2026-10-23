@@ -3,7 +3,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ZodError } from 'zod';
 import type { ApiConfig } from './config';
 import { ApiError, requireCondition } from './errors';
-import { avatarSchema, inviteSchema, requestSchema, resetSchema } from './validation';
+import {
+  avatarSchema,
+  inviteSchema,
+  requestSchema,
+  resetSchema,
+  newsletterSendSchema,
+} from './validation';
 import type { LeagueService } from './service';
 import { allowedEmail } from './access';
 export function createHandler(service: LeagueService, auth: SupabaseClient, config: ApiConfig) {
@@ -91,6 +97,13 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
       if (request.method === 'POST' && path === '/commands') {
         const { command, expectedRevision } = requestSchema.parse(await body());
         return json(await service.execute(user, command, expectedRevision));
+      }
+      if (path === '/admin/newsletter' && ['GET', 'POST'].includes(request.method)) {
+        const previewKey =
+          request.method === 'POST'
+            ? newsletterSendSchema.parse(await body()).previewKey
+            : undefined;
+        return json(await service.adminNewsletter(user, previewKey));
       }
       if (request.method === 'POST' && path === '/admin/reminders')
         return json(await service.reminders(user));

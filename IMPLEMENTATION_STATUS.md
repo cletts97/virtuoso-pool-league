@@ -1,10 +1,16 @@
 # Implementation status — Virtuoso Pool League
 
+## Manual newsletter preview/send and empty dashboard — 23 October 2026
+
+- Added Weekly newsletter controls under administrator League communications. Active administrators can preview a personalized sandboxed HTML email/plain text and active-user count, then explicitly confirm a real send. Backend GET/POST endpoints enforce current identity/role; POST accepts only a preview hash and revalidates current content/recipients. Empty weeks and disabled email delivery cannot be sent; no caller-selected recipients, dates or HTML. Mock mode explains the backend requirement.
+- Manual generation uses the current London week on any weekday while retaining Monday 07:00 guards for automation. Reuses the existing newsletter template, Resend queue, retry controls and weekly event UUID. Existing queued/sent/failed weekly jobs block a second manual batch; scheduled/manual concurrency remains serialized and per-recipient deduplicated. Preview never sends. Successful sends report queued counts; delivery failures leave durable jobs for retry. No migration, dependency, environment variable or infrastructure required; scheduler enablement is independent of authorized manual sending.
+- Dashboard now displays No league scheduled for the empty-season fallback, offers table booking, and preserves casual results, bookings, approval prompts and rules. Hides misleading draft/zero-player league stats and empty season-only panels; existing historical/current season displays remain.
+- Validation passed: 17 focused automation/security/public-privacy tests; one local Supabase integration test (22 unrelated tests skipped) using fake email delivery for preview, stale-content rejection, admin authorization and concurrent/manual duplicate protection; desktop/mobile empty-dashboard browser checks; one authenticated local API/Supabase browser test covering sandboxed HTML/plain-text preview with delivery disabled. TypeScript and targeted ESLint passed. No full suite, cloud change, real emails, commit or deployment. Modern/legacy frontend and API production builds passed; bundle-size warnings remain.
+
 ## Casual history submission ordering — 23 October 2026
 
 - Casual history retains newest playing-day grouping, then sorts each day by the latest submitted-event timestamp instead of random UUID order. Review/correction timestamps do not move a game; resubmission does. Stable ID ordering remains only for equal/missing timestamps. Anonymous snapshots publish the submission timestamp without audit identities/history so public ordering matches signed-in ordering. No database migration.
 - Added focused regressions for UUID-independent order, day grouping, later reviews, resubmission and public snapshots. Validation passed: 13 focused tests, TypeScript, targeted ESLint and whitespace checks. No full suite, browser tests or production build run for this narrow ordering fix. Deploy frontend and API together; no commit or deployment.
-
 
 ## Direct upcoming enrollment and membership emails — 23 October 2026
 

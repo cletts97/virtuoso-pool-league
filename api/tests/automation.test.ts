@@ -115,6 +115,21 @@ describe('scheduled league operations', () => {
     state.seasons.find((s) => s.id === fixture.seasonId)!.status = 'draft';
     expect(newsletterEmailIntents(state, now, 'https://pool.example')).toEqual([]);
   });
+  it('allows administrator-generated Tuesday previews with the same weekly deduplication key', () => {
+    const { state, fixture } = scenario(0);
+    state.fixtures = [fixture];
+    fixture.status = 'scheduled';
+    fixture.dueDate = '2026-10-26';
+    const tuesday = new Date('2026-10-27T10:00:00Z');
+    expect(newsletterEmailIntents(state, tuesday, 'https://pool.example')).toEqual([]);
+    const manual = newsletterEmailIntents(state, tuesday, 'https://pool.example', true);
+    expect(manual.length).toBeGreaterThan(0);
+    expect(manual[0].eventId).toBe(
+      newsletterEmailIntents(state, now, 'https://pool.example')[0].eventId,
+    );
+    state.fixtures = [];
+    expect(newsletterEmailIntents(state, tuesday, 'https://pool.example', true)).toEqual([]);
+  });
   it('requires a separate automation secret, never an app login or public request', async () => {
     const runAutomation = vi.fn(async () => ({ confirmed: 0 }));
     const identity = vi.fn();

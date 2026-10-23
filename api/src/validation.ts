@@ -102,3 +102,7 @@ export const inviteSchema = z.strictObject({ email: z.email().max(254), name: te
 export const resetSchema = z.strictObject({ email: z.email().max(254) });
 export const avatarSchema = z.strictObject({ image: z.string().min(1).max(349528).nullable() });
 export type ApiCommand = z.infer<typeof commandSchema>;
+
+export const newsletterSendSchema = z.strictObject({
+  previewKey: z.string().regex(/^[a-f0-9]{64}$/),
+});
