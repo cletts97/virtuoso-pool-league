@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "Virtuoso Pool League",
+  "short_name": "Virtuoso Pool",
+  "description": "League fixtures, casual pool results and pool or table tennis bookings.",
+  "lang": "en-GB",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0c121c",
+  "theme_color": "#101824",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

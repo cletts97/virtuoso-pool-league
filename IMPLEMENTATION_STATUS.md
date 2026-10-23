@@ -1,5 +1,12 @@
 # Implementation status — Virtuoso Pool League
 
+## Installable phone/desktop PWA — 23 October 2026
+
+- Added Install app to the desktop navigation footer and mobile/tablet footer. Chromium uses its native installation prompt where available; iPhone/iPad receive Safari Share → Add to Home Screen instructions. Standalone launches hide install controls. Reused the existing eight-ball favicon for app icons; no company branding changes.
+- Added a manifest, build-generated versioned worker and standalone reconnect page with no new dependencies. Only public static assets are cached; API responses, documents, auth links and query-string requests are excluded. Shared data and mutations require connectivity. Updates wait for explicit consent before reloading the accepting tab. Legacy TVs and direct `/display` visits do not register a worker.
+- Updated Static Web Apps fallback/cache headers. No migration, new environment variable, backend change or infrastructure is required. Deploy the frontend through the existing workflow. Setup, cache decisions, deployment and hardware smoke checks are in docs/PWA.md; requirements and README updated.
+- Validation passed: 10 focused unit/security tests, six production PWA browser tests, three existing desktop navigation/theme/signup browser regressions, TypeScript, targeted ESLint, whitespace checks and the normal modern/legacy production build. Inspected the mobile instructions screenshot. Existing bundle-size warnings remain. PWA tests use an isolated mock build and synthetic install events/iPhone user agent, not physical phone testing. Actual Android/iPhone installation, standalone sign-in and email-link smoke checks remain after deployment. No full suite, cloud changes, real email, commit or deployment.
+
 ## Dashboard league signup card polish — 23 October 2026
 
 - Replaced the tall nested administrator-style join panel with compact dedicated signup cards: subtle orange border/wash, trophy icon, status pill, larger season title, calendar/player metadata and a prominent arrow CTA with clear approval guidance. Mobile places the full-width button below the details; pending requests keep a disabled waiting state. Uses existing theme colours, icons and buttons; enrollment rules/API unchanged.

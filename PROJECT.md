@@ -377,6 +377,14 @@ The HUD should prominently display:
 
 ## Guiding Principles
 
+### Installable mobile web app
+
+- Offer installation from the desktop navigation footer and mobile/tablet site footer, without requiring app stores.
+- Use the browser installation prompt where supported; show Safari Add to Home Screen instructions on iPhone/iPad. Installed launches use a standalone window.
+- Keep authentication, shared data and mutations online-only. Cache public static assets only; offline launches show a reconnect page. Never service-worker-cache API responses or account/invitation documents.
+- Ask before reloading to activate an update. Preserve the existing online-only legacy TV display behavior.
+- Phone push notifications and native store distribution are outside this iteration.
+
 Build a reliable, maintainable application rather than merely a prototype.
 
 Prioritize correctness of league rules, intuitive workflows, security, and visual quality.

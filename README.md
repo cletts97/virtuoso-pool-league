@@ -130,6 +130,8 @@ Mock browser persistence retains the key `virtuoso-pool-league.v1` for compatibi
 
 ## Backend and deployment
 
+The website is also installable on supported phones and desktop browsers. See [PWA.md](docs/PWA.md) for install locations, iPhone instructions, cache/privacy decisions, updates and focused production checks.
+
 The API implements identity/profile mapping, shared league data, fixtures/results, approvals/disputes/corrections, seasons/playoffs, administration, reservations, notifications and a sanitized display endpoint. Short writes are serialized and revision-checked; PostgreSQL independently enforces structural invariants and booking collisions. Clients poll shared data every 30 seconds and update immediately after their own writes.
 
 See [BACKEND_SETUP.md](docs/BACKEND_SETUP.md) for every environment variable, invitation-only Supabase settings, local startup, SMTP templates, first-admin bootstrap, API routes, concurrency decisions, and Azure artifact/upload instructions. `npm run package:api` prepares a runtime package; it does not deploy. Private credentials stay exclusively in API environment settings.

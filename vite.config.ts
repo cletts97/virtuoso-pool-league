@@ -1,3 +1,4 @@
+import { pwaPlugin } from './scripts/pwa-plugin.ts';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
@@ -18,6 +19,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      pwaPlugin(),
       tailwindcss(),
       legacy({
         // webOS 4.x uses Chromium 53. This targets JavaScript, not CSS support.

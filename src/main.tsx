@@ -1,3 +1,5 @@
+import { startPwa } from './pwa/client';
+import { PwaStatus } from './pwa/PwaStatus';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
@@ -28,12 +30,14 @@ import './rules.css';
 import './legacy-display.css';
 
 applyBrowserCompatibility();
+startPwa();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
         <ScrollToTop />
+        <PwaStatus />
         <AuthLanding>
           <Routes>
             <Route path="display" element={<Display />} />

@@ -3592,3 +3592,94 @@ a.bracket-match:hover {
     animation: none !important;
   }
 }
+
+/* Installation remains secondary to league and booking actions. */
+.pwa-install-nav {
+  margin-bottom: 14px;
+}
+.pwa-install-button {
+  justify-content: center;
+}
+.pwa-install-nav .pwa-install-button {
+  width: 100%;
+}
+.pwa-install-footer {
+  display: none;
+}
+.pwa-install-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+}
+.pwa-instructions {
+  padding-left: 22px;
+  line-height: 1.8;
+}
+.pwa-instructions li {
+  margin-bottom: 8px;
+}
+.pwa-instructions svg {
+  display: inline;
+  vertical-align: middle;
+}
+.pwa-status {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 390px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.pwa-status > svg {
+  flex-shrink: 0;
+  color: var(--accent);
+  margin-top: 2px;
+}
+.pwa-status p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 6px 0 12px;
+}
+@media (max-width: 1050px) {
+  .app-footer {
+    flex-wrap: wrap;
+  }
+  .pwa-install-footer {
+    display: block;
+    width: 100%;
+  }
+}
+@media (max-width: 600px) {
+  .pwa-status {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    max-width: none;
+    padding: 16px;
+  }
+}
+
+.pwa-install-nav:empty,
+.pwa-install-footer:empty {
+  display: none;
+}
+.pwa-install-content {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.pwa-install-content .field-help {
+  font-size: 12px;
+}
+.pwa-instructions {
+  list-style: decimal;
+  font-size: 14px;
+}

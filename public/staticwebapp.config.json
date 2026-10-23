@@ -1,11 +1,44 @@
 {
-  "platform": { "apiRuntime": "node:22" },
+  "platform": {
+    "apiRuntime": "node:22"
+  },
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*", "/*.{svg,png,jpg,jpeg,woff2}", "/api/*"]
+    "exclude": [
+      "/assets/*",
+      "/*.{svg,png,jpg,jpeg,woff2}",
+      "/api/*",
+      "/sw.js",
+      "/manifest.webmanifest",
+      "/offline.html",
+      "/icons/*"
+    ]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin"
-  }
+  },
+  "routes": [
+    {
+      "route": "/sw.js",
+      "headers": {
+        "Cache-Control": "no-store",
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Service-Worker-Allowed": "/"
+      }
+    },
+    {
+      "route": "/manifest.webmanifest",
+      "headers": {
+        "Cache-Control": "no-cache",
+        "Content-Type": "application/manifest+json"
+      }
+    },
+    {
+      "route": "/offline.html",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    }
+  ]
 }

@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { startPwa } from '../pwa/client';
+import { InstallApp } from '../pwa/InstallApp';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -36,6 +38,9 @@ export function Layout() {
   const [confirmReset, setConfirmReset] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  useEffect(() => {
+    startPwa();
+  }, []);
   const user = state.players.find((p) => p.id === state.currentUserId)!;
   const unread = state.notifications.filter(
     (n) =>
@@ -87,6 +92,9 @@ export function Layout() {
           )}
         </nav>
         <div className="sidebar-bottom">
+          <div className="pwa-install-nav">
+            <InstallApp />
+          </div>
           <div className="league-note">
             <div className="small-ball">8</div>
             <p>
@@ -234,6 +242,9 @@ export function Layout() {
           <span>Virtuoso Pool League</span>
           <span>Fixtures, results and bookings.</span>
           <span>{liveMode ? 'Shared league workspace' : 'Demo workspace · Local data'}</span>
+          <div className="pwa-install-footer">
+            <InstallApp />
+          </div>
         </footer>
       </div>
       {!liveMode && confirmReset && (

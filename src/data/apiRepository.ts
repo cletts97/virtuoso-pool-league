@@ -3,6 +3,8 @@ import type { LeagueCommand, LeagueRepository } from './contracts';
 import type { DisplayRepository, DisplaySnapshot } from './display';
 import { authClient } from '../auth/client';
 export async function authenticatedRequest<T>(path: string, body?: unknown): Promise<T> {
+  if (!navigator.onLine)
+    throw new Error('You are offline. Reconnect to view current information or save changes.');
   const { data } = await authClient().auth.getSession();
   if (!data.session) throw new Error('Your session has expired. Sign in again.');
   const response = await fetch(`/api${path}`, {

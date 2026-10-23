@@ -21,7 +21,8 @@
     "test:e2e": "playwright test",
     "test:integration": "node scripts/test-local-backend.mjs",
     "test:live": "node scripts/test-live-ui.mjs",
-    "format": "prettier --write src tests *.ts *.json *.js README.md IMPLEMENTATION_STATUS.md"
+    "format": "prettier --write src tests *.ts *.json *.js README.md IMPLEMENTATION_STATUS.md",
+    "test:pwa": "node scripts/test-pwa.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
