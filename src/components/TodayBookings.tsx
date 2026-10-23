@@ -21,6 +21,7 @@ export function TodayBookings() {
   const next = nextAvailableSlot(state, now);
   return (
     <Section
+      className="today-bookings"
       title="Today at the table"
       subtitle="League and casual bookings · Europe/London"
       link={{ to: '/bookings', label: 'Booking calendar' }}

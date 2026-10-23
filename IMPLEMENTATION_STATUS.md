@@ -1,5 +1,10 @@
 # Implementation status — Virtuoso Pool League
 
+## Dashboard booking/rules card spacing
+
+- Added the missing 24px bottom spacing to the dashboard's Today at the table card, separating it from rules or the conditional score-review banner. Shared panels and TV layout are unchanged.
+- Browser checks passed at 360px, 390px, 430px and 1440px: 24px gap below the booking card and no horizontal page overflow. Reviewed mobile screenshot; targeted ESLint and whitespace checks passed. No full suite or production build for this styling fix.
+
 ## Mobile header install action
 
 - Moved Install app next to the theme button in the mobile header (up to 600px). Removed the desktop navigation/footer install actions; the button remains hidden inside the installed app. Desktop browser installation menus still work. Season selection can shrink to keep header actions within phone widths. Removed the duplicate Inbox navigation link; the header bell remains.

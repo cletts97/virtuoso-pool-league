@@ -194,6 +194,9 @@
   width: 15px;
   height: 15px;
 }
+.today-bookings {
+  margin-bottom: 24px;
+}
 .booking-dashboard {
   padding: 0 24px 24px;
   display: grid;
