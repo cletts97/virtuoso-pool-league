@@ -1,5 +1,10 @@
 # Implementation status — Virtuoso Pool League
 
+## Mobile navigation spacing
+
+- Mobile navigation buttons now retain their natural label width and at least 72px touch-target width, with consistent gaps. The bar scrolls horizontally rather than shrinking all pages into the viewport; browser and installed-app layouts share this CSS. Desktop and TV layouts are unchanged.
+- Focused Chrome checks passed at 360px, 390px and 430px: labels fit, adjacent buttons are separated, the page does not overflow horizontally, and scrolling to Administration and back to Overview works. Reviewed a phone-width screenshot; whitespace check passed. CSS-only change; no full suite or production build run.
+
 ## Installable phone/desktop PWA — 23 October 2026
 
 - Added Install app to the desktop navigation footer and mobile/tablet footer. Chromium uses its native installation prompt where available; iPhone/iPad receive Safari Share → Add to Home Screen instructions. Standalone launches hide install controls. Reused the existing eight-ball favicon for app icons; no company branding changes.

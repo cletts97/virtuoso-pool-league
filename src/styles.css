@@ -2819,17 +2819,18 @@ a.bracket-match:hover {
   }
   .sidebar nav {
     flex-direction: row;
-    gap: 1px;
-    justify-content: space-between;
+    gap: 4px;
+    justify-content: flex-start;
     padding: 5px 7px;
     width: 100%;
     overflow-x: auto;
   }
   .sidebar nav > a {
     flex-direction: column;
-    flex: 1;
-    min-width: 44px;
-    padding: 8px 4px 6px;
+    /* Keep labels inside each touch target; scroll rather than squeezing every page in. */
+    flex: 0 0 auto;
+    min-width: 72px;
+    padding: 8px 10px 6px;
     gap: 5px;
     border-radius: 5px;
   }
