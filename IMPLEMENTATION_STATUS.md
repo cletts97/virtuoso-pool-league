@@ -1,5 +1,12 @@
 # Implementation status — Virtuoso Pool League
 
+## Casual score review notifications — 23 October 2026
+
+- Fixed the missing creation path: casual submissions/resubmissions now create unread in-app review notifications for opposing players, including both opposing doubles players but excluding the submitter and teammate. Reuses existing notification persistence/read actions; email sending remains separate and unchanged.
+- Notifications and the header unread count include casual notices independently of selected season or season membership. Added direct review links to the focused casual result and removed stale demo-only/no-emails empty-state copy. Notifications remain recipient-private and are excluded from public snapshots.
+- Added 20261023000100_casual_notifications.sql: permits null season_id only for explicitly linked casual notifications, retains fixture/season constraints, adds a casual-result FK/index and backfills missing unread notices for active opponents of currently pending results. No emails are sent by the migration. Apply this migration manually to cloud before deploying frontend and API together; see docs/DATABASE_SETUP.md. No cloud changes performed.
+- Validation: 16 focused casual/authorization/public-privacy unit tests passed; focused browser regression covers the notification under a historical season, its direct review link and existing singles/doubles approval persistence. TypeScript, targeted ESLint and API production build passed. After Docker was started, applied the migration successfully to disposable local Supabase and passed one focused integration test (20 unrelated tests skipped). Validated recipient-only persistence, durable mark-as-read, recovery of missing doubles approval notices and duplicate-safe repeated backfill queries. Cloud migration remains a manual operator step. No full suite, cloud changes, real email, commit or deployment.
+
 ## Display-name synchronization with Supabase Auth — 22 October 2026
 
 - Self-service display-name saves and administrator user edits now synchronize the validated profile name to the linked Auth user_metadata.name through the server-only Supabase Admin API. Resolve the Auth UUID from the existing profile mapping; never trust client-supplied identity/metadata. Patch only name, preserving other metadata and authorization roles. Profile names remain authoritative; mock mode is unchanged.

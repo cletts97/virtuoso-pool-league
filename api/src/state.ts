@@ -39,7 +39,7 @@ export async function readState(client: PoolClient, actorId = ''): Promise<Leagu
     `SELECT id,profile_id AS "playerId",from_date::text AS "from",to_date::text AS "to",reason FROM public.availability ORDER BY id`,
   );
   const notifications = await rows<LeagueState['notifications'][number]>(
-    `SELECT id,user_id AS "userId",season_id AS "seasonId",kind,title,body,fixture_id AS "fixtureId",created_at AS "createdAt",read_at IS NOT NULL AS read FROM public.notifications ORDER BY created_at DESC,id`,
+    `SELECT id,user_id AS "userId",season_id AS "seasonId",kind,title,body,fixture_id AS "fixtureId",casual_result_id AS "casualResultId",created_at AS "createdAt",read_at IS NOT NULL AS read FROM public.notifications ORDER BY created_at DESC,id`,
   );
   const announcements = await rows<LeagueState['announcements'][number]>(
     `SELECT id,season_id AS "seasonId",title,body,created_at AS "createdAt" FROM public.announcements ORDER BY created_at DESC,id`,

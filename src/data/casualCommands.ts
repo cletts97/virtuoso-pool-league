@@ -89,6 +89,24 @@ export function executeCasualCommand(source: LeagueState, command: CasualCommand
       audit(result, 'submitted');
       results.unshift(result);
     }
+    const result = results.find((r) => r.id === input.id)!;
+    const opponents = result.homePlayerIds.includes(actor.id)
+      ? result.awayPlayerIds
+      : result.homePlayerIds;
+    const names = (ids: string[]) =>
+      ids.map((id) => state.players.find((p) => p.id === id)!.name).join(' & ');
+    for (const userId of opponents)
+      state.notifications.unshift({
+        id: crypto.randomUUID(),
+        userId,
+        seasonId: null,
+        casualResultId: result.id,
+        kind: 'approval',
+        title: 'Casual result needs your review',
+        body: `${names(result.homePlayerIds)} ${result.score.home}–${result.score.away} ${names(result.awayPlayerIds)}. Confirm or dispute this score.`,
+        createdAt: result.history.at(-1)!.at,
+        read: false,
+      });
   } else {
     const result = results.find((r) => r.id === command.id);
     invariant(result, 'Casual game not found.');

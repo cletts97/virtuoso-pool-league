@@ -86,7 +86,8 @@ export type NotificationKind =
 export interface LeagueNotification {
   id: ID;
   userId: ID;
-  seasonId: ID;
+  seasonId: ID | null;
+  casualResultId?: ID;
   kind: NotificationKind;
   title: string;
   body: string;

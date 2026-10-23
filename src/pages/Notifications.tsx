@@ -23,7 +23,9 @@ export function Notifications() {
       </Empty>
     );
   const all = state.notifications
-    .filter((n) => n.userId === state.currentUserId && n.seasonId === season.id)
+    .filter(
+      (n) => n.userId === state.currentUserId && (n.seasonId === season.id || n.casualResultId),
+    )
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const items = all.filter(
     (n) => filter === 'all' || (filter === 'unread' && !n.read) || filter === n.kind,
@@ -40,8 +42,8 @@ export function Notifications() {
     <>
       <PageHeading
         eyebrow="NOTIFICATIONS"
-        title="Your league inbox"
-        description="Fixture reminders, result confirmations and league notices."
+        title="Your notifications"
+        description="League updates, casual result reviews and fixture reminders."
         action={
           <button
             className="button secondary"
@@ -100,10 +102,14 @@ export function Notifications() {
                   })}
                 </small>
                 <div className="notification-actions">
-                  {item.fixtureId && (
+                  {(item.fixtureId || item.casualResultId) && (
                     <Link
                       className="text-link"
-                      to={`/fixtures/${item.fixtureId}`}
+                      to={
+                        item.casualResultId
+                          ? `/casual?result=${item.casualResultId}`
+                          : `/fixtures/${item.fixtureId}`
+                      }
                       onClick={() => {
                         if (!item.read)
                           void run(
@@ -112,7 +118,7 @@ export function Notifications() {
                           );
                       }}
                     >
-                      View match →
+                      {item.casualResultId ? 'Review casual result →' : 'View match →'}
                     </Link>
                   )}
                   {!item.read && (
@@ -136,8 +142,7 @@ export function Notifications() {
         })}
         {!items.length && (
           <Empty title="No new notifications">
-            New league updates will appear here. These are demo in-app notifications; no emails are
-            sent.
+            League updates and casual result review requests will appear here.
           </Empty>
         )}
       </div>

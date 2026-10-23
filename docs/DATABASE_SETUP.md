@@ -150,3 +150,7 @@ Before deploying the booking-activity update, apply `supabase/migrations/2026102
 
 This adds `table_bookings.sport`, defaulting all existing bookings to `pool`, with checks for supported activities and Pool-only league reservations. The existing overlap exclusion still protects the single table across both activities. No Storage, Auth, email or environment-variable changes are needed. The application API expects this migration to be applied before deployment.
 
+
+## Casual result review notifications
+
+Before deploying the casual in-app notification fix, apply `supabase/migrations/20261023000100_casual_notifications.sql` once in Supabase Cloud SQL Editor, after the existing casual-results migration. It allows season-independent notifications, adds a foreign key to the casual result and backfills unread review requests for active opponents of currently pending results (including doubles). It does not send email. Existing season notifications, grants and RLS remain unchanged. Deploy the frontend and API together after applying the migration. Do not rerun the initial schema or reset the database.

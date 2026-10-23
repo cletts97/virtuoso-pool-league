@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { beforeAll, afterAll, describe, it, expect } from 'vitest';
 import { createClient, type User } from '@supabase/supabase-js';
 import { createPool } from '../src/database';
@@ -492,6 +493,21 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       ).rejects.toThrow('opposing');
       expect((await service.publicState()).casualResults?.some((r) => r.id === id)).toBe(false);
       const loaded = await service.load(users[2]);
+      const notice = loaded.notifications.find((n) => n.casualResultId === id)!;
+      expect(notice).toMatchObject({
+        userId: profiles[2],
+        seasonId: null,
+        kind: 'approval',
+        read: false,
+      });
+      expect(
+        (await service.load(users[1])).notifications.some((n) => n.casualResultId === id),
+      ).toBe(false);
+      await command({ type: 'readNotifications', ids: [notice.id] }, users[2]);
+      expect(
+        (await service.load(users[2])).notifications.find((n) => n.id === notice.id)!.read,
+      ).toBe(true);
+      loaded.revision = (await service.load(users[2])).revision;
       const approvals = await Promise.allSettled(
         [1, 2].map(() =>
           service.execute(
@@ -529,6 +545,29 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         },
         users[1],
       );
+      // Exercise the migration's recovery query for a previously missed doubles request.
+      const migration = readFileSync(
+        new URL(
+          '../../supabase/migrations/20261023000100_casual_notifications.sql',
+          import.meta.url,
+        ),
+        'utf8',
+      );
+      const backfill = migration.slice(
+        migration.indexOf('INSERT INTO public.notifications'),
+        migration.lastIndexOf('COMMIT;'),
+      );
+      await pool.query('DELETE FROM public.notifications WHERE casual_result_id=$1', [doublesId]);
+      await pool.query(backfill);
+      await pool.query(backfill);
+      const recovered = await pool.query(
+        'SELECT user_id,season_id,read_at FROM public.notifications WHERE casual_result_id=$1 ORDER BY user_id',
+        [doublesId],
+      );
+      expect(recovered.rows.map((n) => n.user_id).sort()).toEqual(
+        [profiles[2], profiles[4]].sort(),
+      );
+      expect(recovered.rows.every((n) => n.season_id === null && n.read_at === null)).toBe(true);
       await expect(
         command({ type: 'reviewCasual', id: doublesId, approve: true, reason: '' }, users[3]),
       ).rejects.toThrow('opposing');

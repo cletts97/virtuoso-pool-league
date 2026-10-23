@@ -137,8 +137,16 @@ test('casual singles and doubles results persist and require opposing confirmati
   await expect(page.locator('.casual-game')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Confirm result', exact: true })).toHaveCount(0);
   await page.getByLabel('Playing as').selectOption('p02');
+  await page.getByLabel('Select season').selectOption('summer-2026');
+  await page.goto('/notifications');
+  await expect(
+    page.getByRole('heading', { name: 'Casual result needs your review', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Review casual result →', exact: true }).click();
+  await expect(page).toHaveURL(/casual\?result=/);
   await page.getByRole('button', { name: 'Confirm result', exact: true }).click();
   await expect(page.locator('.casual-totals')).toContainText('1 confirmed games');
+  await page.goto('/casual');
   await page.reload();
   await expect(page.locator('.casual-game')).toHaveCount(1);
   await page.getByRole('button', { name: 'Record a game', exact: true }).click();

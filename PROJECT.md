@@ -149,6 +149,7 @@ Display standings using the following columns:
 - Include disputed casual results in the administration dispute count and Fixtures & disputes queue across all dates, independent of the selected league season, with direct resolution.
 - Head-to-head compares exact singles players or doubles teams across all dates, independent of member/side order. Keep league records separate. Multiple real games on the same date are allowed.
 - Public casual history shows confirmed scores/players without audit identities, history or reasons. Pending/disputed/voided full game records remain restricted to participants/admins; the separate public recent-results feed may show their names, score and status only.
+- Casual submissions and resubmissions create unread, season-independent in-app approval notifications for each opposing player (never the submitter or their doubles teammate), linking directly to the result. Show these in Notifications and its unread bell count regardless of selected season; read state persists between sessions.
 - Show pending opposing approvals on the dashboard and casual page. When separately enabled, Resend sends opposing players a protected review link for new submissions/resubmissions through a durable server-only outbox.
 
 ## Email Notifications

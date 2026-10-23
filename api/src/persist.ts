@@ -223,7 +223,7 @@ export async function persistChanges(
     const old = before.notifications.find((o) => o.id === n.id);
     if (!old)
       await client.query(
-        `INSERT INTO public.notifications(id,user_id,season_id,kind,title,body,fixture_id,created_at,read_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING`,
+        `INSERT INTO public.notifications(id,user_id,season_id,kind,title,body,fixture_id,created_at,read_at,casual_result_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO NOTHING`,
         [
           n.id,
           n.userId,
@@ -234,6 +234,7 @@ export async function persistChanges(
           n.fixtureId ?? null,
           n.createdAt,
           n.read ? new Date().toISOString() : null,
+          n.casualResultId ?? null,
         ],
       );
     else if (n.read && !old.read)

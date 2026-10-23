@@ -27,6 +27,43 @@ function setup(doubles = false) {
 }
 const as = (state: LeagueState, id: string) => ({ ...state, currentUserId: id });
 describe('casual games', () => {
+  it.each([false, true])(
+    'notifies only opposing players on submission/resubmission (doubles=%s) without a season',
+    (doubles) => {
+      const { state, command } = setup(doubles);
+      state.seasons = [];
+      state.notifications = [];
+      const pending = executeCommand(state, command);
+      expect(pending.notifications.map((n) => n.userId).sort()).toEqual(
+        command.result.awayPlayerIds,
+      );
+      expect(
+        pending.notifications.every(
+          (n) =>
+            n.seasonId === null &&
+            n.casualResultId === command.result.id &&
+            n.kind === 'approval' &&
+            !n.read,
+        ),
+      ).toBe(true);
+      const recipient = command.result.awayPlayerIds[0];
+      const marked = executeCommand(as(pending, recipient), {
+        type: 'readNotifications',
+        ids: pending.notifications.map((n) => n.id),
+      });
+      expect(marked.notifications.find((n) => n.userId === recipient)!.read).toBe(true);
+      const disputed = executeCommand(as(marked, recipient), {
+        type: 'reviewCasual',
+        id: command.result.id,
+        approve: false,
+        reason: 'Incorrect score',
+      });
+      const resubmitted = executeCommand(as(disputed, 'p02'), command);
+      expect(
+        resubmitted.notifications.filter((n) => n.casualResultId === command.result.id),
+      ).toHaveLength(command.result.awayPlayerIds.length * 2);
+    },
+  );
   it('requires opposing approval, counts once, and never changes league standings', () => {
     const { state, command } = setup();
     const original = standings(state.seasons[0], state.fixtures);
