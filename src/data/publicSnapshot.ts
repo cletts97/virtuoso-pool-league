@@ -1,6 +1,7 @@
 import type { LeagueState, Player } from '../domain/types';
 import { addDays, playedDate } from '../domain/rules';
 import { londonDate } from '../domain/bookings';
+import { casualSubmittedAt } from '../domain/casual';
 import { recentResults } from '../domain/recentResults';
 
 export const PUBLIC_VISITOR_ID = 'public-visitor';
@@ -78,6 +79,7 @@ export function publicSnapshot(source: LeagueState, now = new Date()): LeagueSta
       homePlayerIds: [...r.homePlayerIds],
       awayPlayerIds: [...r.awayPlayerIds],
       playedOn: r.playedOn,
+      submittedAt: casualSubmittedAt(r),
       bestOf: r.bestOf,
       score: { ...r.score },
       status: r.status,

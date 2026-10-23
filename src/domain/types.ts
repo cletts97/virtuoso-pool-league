@@ -136,6 +136,8 @@ export interface LeagueState {
   theme: 'dark' | 'light';
 }
 export interface CasualResult {
+  /** Public submission timestamp; private audit history is excluded from anonymous responses. */
+  submittedAt?: string;
   id: ID;
   homePlayerIds: ID[];
   awayPlayerIds: ID[];

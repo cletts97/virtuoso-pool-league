@@ -35,3 +35,19 @@ export function canReviewCasual(result: CasualResult, actorId: string) {
     : result.homePlayerIds;
   return opposing.includes(actorId);
 }
+
+/** Reviews/corrections do not reorder games; a resubmission does. */
+export function casualSubmittedAt(result: CasualResult): string {
+  return (
+    result.history.filter((event) => event.action === 'submitted').at(-1)?.at ??
+    result.submittedAt ??
+    `${result.playedOn}T00:00:00Z`
+  );
+}
+export function compareCasualHistory(a: CasualResult, b: CasualResult): number {
+  return (
+    b.playedOn.localeCompare(a.playedOn) ||
+    Date.parse(casualSubmittedAt(b)) - Date.parse(casualSubmittedAt(a)) ||
+    b.id.localeCompare(a.id)
+  );
+}

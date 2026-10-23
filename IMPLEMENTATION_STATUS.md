@@ -1,5 +1,11 @@
 # Implementation status — Virtuoso Pool League
 
+## Casual history submission ordering — 23 October 2026
+
+- Casual history retains newest playing-day grouping, then sorts each day by the latest submitted-event timestamp instead of random UUID order. Review/correction timestamps do not move a game; resubmission does. Stable ID ordering remains only for equal/missing timestamps. Anonymous snapshots publish the submission timestamp without audit identities/history so public ordering matches signed-in ordering. No database migration.
+- Added focused regressions for UUID-independent order, day grouping, later reviews, resubmission and public snapshots. Validation passed: 13 focused tests, TypeScript, targeted ESLint and whitespace checks. No full suite, browser tests or production build run for this narrow ordering fix. Deploy frontend and API together; no commit or deployment.
+
+
 ## Direct upcoming enrollment and membership emails — 23 October 2026
 
 - Upcoming dashboard cards now show Join league: active accounts enroll themselves immediately in drafts or published seasons before their London Monday start week. Once a published season's start week begins, Request to join retains administrator approval. The API enforces the same boundary; old request actions for upcoming seasons complete direct joining. Direct joining also handles existing pending/declined requests without creating a duplicate record. Anonymous/closed/full/duplicate enrollment remains blocked.

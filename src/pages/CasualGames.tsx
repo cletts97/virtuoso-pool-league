@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
-import { canReviewCasual, casualHeadToHead } from '../domain/casual';
+import { canReviewCasual, casualHeadToHead, compareCasualHistory } from '../domain/casual';
 import type { CasualResult } from '../domain/types';
 import { Avatar, Badge, Empty, Modal, PageHeading, Section } from '../components/ui';
 import { CasualResultForm, TeamPicker } from '../components/CasualResultForm';
@@ -52,7 +52,7 @@ export function CasualGames() {
         (!linkedResultId || r.id === linkedResultId) &&
         (!playerFilter || [...r.homePlayerIds, ...r.awayPlayerIds].includes(playerFilter)),
     )
-    .sort((a, b) => b.playedOn.localeCompare(a.playedOn) || b.id.localeCompare(a.id));
+    .sort(compareCasualHistory);
   return (
     <>
       <PageHeading
