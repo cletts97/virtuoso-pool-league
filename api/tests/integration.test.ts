@@ -473,6 +473,120 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         command({ type: 'deleteSeason', seasonId: ended, confirmName: `${prefix} ended` }),
       ).rejects.toThrow('history');
     });
+    it('persists private join requests, alerts administrators and accepts draft/active enrollment atomically', async () => {
+      const sent: EmailMessage[] = [];
+      const queue = new ResultEmailQueue(
+        pool,
+        auth,
+        {
+          send: async (m) => {
+            sent.push(m);
+          },
+        },
+        true,
+        config.appUrl,
+        config.emailDomains,
+      );
+      const joining = new LeagueService(pool, auth, config.emailDomains, queue, config.appUrl);
+      let created = await command({
+        type: 'createSeason',
+        name: prefix + ' join draft',
+        startDate: addDays(londonDate(new Date()), 7),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const id = created.selectedSeasonId;
+      const submit = async (seasonId: string) => {
+        const before = await joining.load(users[4]);
+        const attempts = await Promise.allSettled(
+          [1, 2].map(() =>
+            joining.execute(users[4], { type: 'requestSeasonJoin', seasonId }, before.revision!),
+          ),
+        );
+        expect(attempts.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+        const mine = await joining.load(users[4]);
+        const request = mine.joinRequests!.find((r) => r.seasonId === seasonId)!;
+        expect(request).toMatchObject({ playerId: profiles[4], status: 'pending' });
+        expect((await joining.load(users[1])).joinRequests!.some((r) => r.id === request.id)).toBe(
+          false,
+        );
+        expect((await joining.publicState()).joinRequests).toBeUndefined();
+        const admin = await joining.load(users[0]);
+        expect(admin.notifications.some((n) => n.joinRequestId === request.id && !n.read)).toBe(
+          true,
+        );
+        expect(
+          sent.some(
+            (m) => m.subject === 'New league join request' && m.recipient === users[0].email,
+          ),
+        ).toBe(true);
+        await expect(
+          command(
+            {
+              type: 'reviewSeasonJoin',
+              id: request.id,
+              approve: true,
+              dueDate: addDays(londonDate(new Date()), 14),
+            },
+            users[4],
+          ),
+        ).rejects.toThrow('Administrator');
+        return request;
+      };
+      let request = await submit(id);
+      await command({
+        type: 'reviewSeasonJoin',
+        id: request.id,
+        approve: true,
+        dueDate: addDays(londonDate(new Date()), 14),
+      });
+      expect(
+        (await service.load(users[0])).seasons.find((s) => s.id === id)!.participantIds,
+      ).toHaveLength(5);
+      expect((await service.load(users[0])).fixtures.some((f) => f.seasonId === id)).toBe(false);
+      created = await command({
+        type: 'createSeason',
+        name: prefix + ' join active',
+        startDate: londonDate(new Date()),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const active = created.selectedSeasonId;
+      const published = await command({ type: 'generate', seasonId: active });
+      const original = published.fixtures.filter((f) => f.seasonId === active);
+      request = await submit(active);
+      const before = await service.load(users[0]);
+      const approvals = await Promise.allSettled(
+        [1, 2].map(() =>
+          service.execute(
+            users[0],
+            {
+              type: 'reviewSeasonJoin',
+              id: request.id,
+              approve: true,
+              dueDate: addDays(londonDate(new Date()), 14),
+            },
+            before.revision!,
+          ),
+        ),
+      );
+      expect(approvals.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      const saved = await service.load(users[0]);
+      const fixtures = saved.fixtures.filter((f) => f.seasonId === active);
+      expect(fixtures).toHaveLength(10);
+      expect(fixtures.filter((f) => original.some((old) => old.id === f.id))).toEqual(original);
+      expect(fixtures.filter((f) => f.status === 'postponed')).toHaveLength(4);
+      expect(
+        (await service.load(users[4])).notifications.some((n) => n.joinRequestId === request.id),
+      ).toBe(true);
+      expect(
+        (
+          await pool.query(
+            `SELECT has_table_privilege('anon','public.season_join_requests','SELECT') AS anon,has_table_privilege('authenticated','public.season_join_requests','INSERT') AS client`,
+          )
+        ).rows[0],
+      ).toEqual({ anon: false, client: false });
+    });
     it('persists casual singles and doubles, opposing approval, corrections and void history', async () => {
       const id = crypto.randomUUID();
       const before = await service.load(users[1]);

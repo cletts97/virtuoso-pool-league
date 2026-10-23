@@ -41,3 +41,7 @@ Every row labels league/casual, singles/doubles and confirmation status. Unconfi
 ## Checks performed
 
 Focused unit tests cover recipient selection, Resend request/idempotency behaviour and the public result feed. A disposable local Supabase test with a fake delivery provider verifies queue persistence, provider failure without result rollback, concurrent retries, deduplication, stale suppression and client grant denial. No external delivery is exercised by these tests.
+
+## League join requests
+
+The same `ALLOW_RESULT_EMAIL`, `RESEND_API_KEY`, `RESULT_EMAIL_FROM` and `APP_URL` settings also deliver new league join requests to active administrators. Apply `20261023000200_season_join_requests.sql` before deployment. Each request/administrator pair is queued once with purpose `join_request`, using existing leases, bounded retries, administrator email status/retry controls and configured hourly queue flushing. Delivery rechecks the administrator role, requester activity, pending request and open season. Accepted/declined requests are skipped if still queued. In-app alerts are independent of email enablement. Accept or decline from Administration; email links require normal sign-in and never enroll directly.

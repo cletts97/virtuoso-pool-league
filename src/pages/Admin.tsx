@@ -1,3 +1,4 @@
+import { AdminJoinRequests } from '../components/LeagueJoinRequests';
 import { useState } from 'react';
 import { liveMode } from '../auth/client';
 import { AccountManagement, ReminderAction } from '../components/AccountManagement';
@@ -87,6 +88,7 @@ export function Admin() {
           detail="Waiting to be rescheduled"
         />
       </div>
+      <AdminJoinRequests />
       <div className="tabs" role="tablist" aria-label="Administration sections">
         {[
           ['overview', 'Season & configuration'],

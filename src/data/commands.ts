@@ -147,6 +147,89 @@ export function executeCommand(
   const state = structuredClone(source);
   const actor = state.players.find((p) => p.id === state.currentUserId);
   invariant(actor?.active, 'An active account is required.');
+  if (command.type === 'requestSeasonJoin') {
+    invariant(!state.readOnly, 'Sign in to request a place.');
+    const season = state.seasons.find((s) => s.id === command.seasonId);
+    invariant(season && canAddSeasonPlayer(state, season), 'This season is not accepting players.');
+    invariant(season.participantIds.length < 40, 'This season is full.');
+    invariant(
+      !state.participants.some(
+        (p) => season.participantIds.includes(p.id) && p.playerIds.includes(actor.id),
+      ),
+      'You are already in this season.',
+    );
+    const requests = (state.joinRequests ??= []);
+    invariant(
+      !requests.some((r) => r.seasonId === season.id && r.playerId === actor.id),
+      'You have already requested to join this season.',
+    );
+    const request = {
+      id: id(),
+      seasonId: season.id,
+      playerId: actor.id,
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+    };
+    requests.push(request);
+    notifications.publish(
+      state,
+      state.players.filter((p) => p.active && p.role === 'admin').map((p) => p.id),
+      {
+        seasonId: season.id,
+        joinRequestId: request.id,
+        kind: 'notice',
+        title: 'New league join request',
+        body: `${actor.name} has requested to join ${season.name}. Review this request in Administration.`,
+      },
+    );
+    return state;
+  }
+  if (command.type === 'reviewSeasonJoin') {
+    invariant(!state.readOnly, 'An active account is required.');
+    requireAdmin(actor);
+    const request = state.joinRequests?.find((r) => r.id === command.id);
+    invariant(request?.status === 'pending', 'This request is no longer pending.');
+    let next = state;
+    if (command.approve) {
+      const season = state.seasons.find((s) => s.id === request.seasonId);
+      invariant(
+        season && canAddSeasonPlayer(state, season),
+        'This season is not accepting players.',
+      );
+      const already = state.participants.some(
+        (p) => season.participantIds.includes(p.id) && p.playerIds.includes(request.playerId),
+      );
+      if (!already)
+        next = executeCommand(
+          state,
+          {
+            type: 'addSeasonPlayer',
+            seasonId: request.seasonId,
+            playerId: request.playerId,
+            dueDate: command.dueDate,
+          },
+          notifications,
+        );
+      invariant(
+        next.players.some((p) => p.id === request.playerId && p.active),
+        'This account is no longer active.',
+      );
+    }
+    const reviewed = next.joinRequests!.find((r) => r.id === request.id)!;
+    reviewed.status = command.approve ? 'approved' : 'rejected';
+    reviewed.reviewedAt = new Date().toISOString();
+    reviewed.reviewedBy = actor.id;
+    notifications.publish(next, [request.playerId], {
+      seasonId: request.seasonId,
+      joinRequestId: request.id,
+      kind: 'notice',
+      title: command.approve ? 'League join request accepted' : 'League join request declined',
+      body: command.approve
+        ? 'You have been added to the season. View your fixtures in the app.'
+        : 'An administrator has declined your request to join this season.',
+    });
+    return next;
+  }
   if (command.type === 'updateProfile') {
     actor.name = text(command.name, 'Display name', 70);
     for (const participant of state.participants)

@@ -590,3 +590,64 @@ test('administrator deletes a user with Yes/No confirmation and no department fi
     0,
   );
 });
+
+test('dashboard advertises leagues and administrators approve join requests', async ({ page }) => {
+  await page.getByLabel('Playing as').selectOption('colleague-01');
+  await page.goto('/');
+  const card = page
+    .locator('.admin-season')
+    .filter({ has: page.getByRole('heading', { name: 'Autumn League 2026', exact: true }) });
+  await expect(card).toContainText('League in progress');
+  await card.getByRole('button', { name: 'Request to join', exact: true }).click();
+  await expect(card.getByRole('button', { name: 'Request pending', exact: true })).toBeDisabled();
+  await page.reload();
+  await expect(card.getByRole('button', { name: 'Request pending', exact: true })).toBeDisabled();
+  await page.getByLabel('Playing as').selectOption('p01');
+  await page.goto('/notifications');
+  await page.getByRole('link', { name: 'View join request →', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'League join requests', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Review request', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Accept request', exact: true })
+    .click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', { name: 'League join requests', exact: true }),
+  ).toHaveCount(0);
+  await page.getByLabel('Playing as').selectOption('colleague-01');
+  await page.goto('/notifications');
+  await expect(
+    page.getByRole('heading', { name: 'League join request accepted', exact: true }),
+  ).toBeVisible();
+  await page.goto('/');
+  await expect(card).toHaveCount(0);
+});
+
+test('dashboard advertises the start week for an upcoming league', async ({ page }) => {
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!);
+    state.seasons.push({
+      ...state.seasons[0],
+      id: 'upcoming-demo',
+      name: 'Winter sign-up',
+      status: 'draft',
+      startDate: '2027-01-04',
+      participantIds: state.seasons[0].participantIds.slice(0, 4),
+      qualifiers: [],
+    });
+    state.currentUserId = 'colleague-01';
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(state));
+  });
+  await page.goto('/');
+  const card = page
+    .locator('.admin-season')
+    .filter({ has: page.getByRole('heading', { name: 'Winter sign-up', exact: true }) });
+  await expect(card).toContainText('Upcoming league');
+  await expect(card).toContainText('Starts week commencing 4 Jan 2027');
+  await expect(card.getByRole('button', { name: 'Request to join', exact: true })).toBeEnabled();
+  await card.getByRole('button', { name: 'Request to join', exact: true }).click();
+  await expect(card.getByRole('button', { name: 'Request pending', exact: true })).toBeDisabled();
+});

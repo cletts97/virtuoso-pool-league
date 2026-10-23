@@ -153,6 +153,7 @@ export class LeagueService {
         'submitCasual',
         'reviewCasual',
         'updateProfile',
+        'requestSeasonJoin',
         'submit',
         'review',
         'postpone',
@@ -245,6 +246,7 @@ export class LeagueService {
         );
       }
       await this.resultEmails?.enqueue(client, before, next);
+      await this.resultEmails?.enqueueJoinRequests(client, before, next);
       const saved = await readState(client, actor.id);
       saved.selectedSeasonId = next.selectedSeasonId;
       return privateSnapshot(saved);

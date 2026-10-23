@@ -1,3 +1,4 @@
+import { JoinLeagueCards } from '../components/LeagueJoinRequests';
 import { recentResults, resultLabel, resultStatus } from '../domain/recentResults';
 import {
   ArrowRight,
@@ -59,6 +60,7 @@ export function Dashboard() {
           </Link>
         }
       />
+      <JoinLeagueCards />
       <div className="dashboard-hero">
         <div className="hero-copy">
           <div className="hero-eyebrow">

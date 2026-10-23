@@ -38,7 +38,10 @@ export function Layout() {
   const location = useLocation();
   const user = state.players.find((p) => p.id === state.currentUserId)!;
   const unread = state.notifications.filter(
-    (n) => n.userId === user.id && (n.seasonId === season.id || n.casualResultId) && !n.read,
+    (n) =>
+      n.userId === user.id &&
+      (n.seasonId === season.id || n.casualResultId || n.joinRequestId) &&
+      !n.read,
   ).length;
   return (
     <div className="app-shell">

@@ -24,7 +24,9 @@ export function Notifications() {
     );
   const all = state.notifications
     .filter(
-      (n) => n.userId === state.currentUserId && (n.seasonId === season.id || n.casualResultId),
+      (n) =>
+        n.userId === state.currentUserId &&
+        (n.seasonId === season.id || n.casualResultId || n.joinRequestId),
     )
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const items = all.filter(
@@ -102,13 +104,18 @@ export function Notifications() {
                   })}
                 </small>
                 <div className="notification-actions">
-                  {(item.fixtureId || item.casualResultId) && (
+                  {(item.fixtureId || item.casualResultId || item.joinRequestId) && (
                     <Link
                       className="text-link"
                       to={
-                        item.casualResultId
-                          ? `/casual?result=${item.casualResultId}`
-                          : `/fixtures/${item.fixtureId}`
+                        item.joinRequestId
+                          ? state.players.find((p) => p.id === state.currentUserId)?.role ===
+                            'admin'
+                            ? '/admin'
+                            : '/'
+                          : item.casualResultId
+                            ? `/casual?result=${item.casualResultId}`
+                            : `/fixtures/${item.fixtureId}`
                       }
                       onClick={() => {
                         if (!item.read)
@@ -118,7 +125,11 @@ export function Notifications() {
                           );
                       }}
                     >
-                      {item.casualResultId ? 'Review casual result →' : 'View match →'}
+                      {item.joinRequestId
+                        ? 'View join request →'
+                        : item.casualResultId
+                          ? 'Review casual result →'
+                          : 'View match →'}
                     </Link>
                   )}
                   {!item.read && (

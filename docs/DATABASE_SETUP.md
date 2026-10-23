@@ -154,3 +154,7 @@ This adds `table_bookings.sport`, defaulting all existing bookings to `pool`, wi
 ## Casual result review notifications
 
 Before deploying the casual in-app notification fix, apply `supabase/migrations/20261023000100_casual_notifications.sql` once in Supabase Cloud SQL Editor, after the existing casual-results migration. It allows season-independent notifications, adds a foreign key to the casual result and backfills unread review requests for active opponents of currently pending results (including doubles). It does not send email. Existing season notifications, grants and RLS remain unchanged. Deploy the frontend and API together after applying the migration. Do not rerun the initial schema or reset the database.
+
+## League join requests
+
+Apply `supabase/migrations/20261023000200_season_join_requests.sql` once after the casual-notifications and existing email/automation migrations, before deploying the frontend and API together. It creates a server-only request table with one request per account/season, links in-app notices and extends the existing email outbox purpose constraints. RLS blocks direct anonymous/authenticated access; API reads are limited to the requester and administrators. Applied and tested only against disposable local Supabase during development. No emails are sent by the migration. No new environment variables are required.

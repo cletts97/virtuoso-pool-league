@@ -13,7 +13,7 @@ export interface ResultEmailJob {
   event_id: string;
   recipient_id: string;
   match_kind: 'league' | 'casual' | null;
-  purpose?: 'review' | 'reminder' | 'newsletter';
+  purpose?: 'review' | 'reminder' | 'newsletter' | 'join_request';
   html?: string;
   source_event_id?: string | null;
   match_id: string | null;
@@ -140,6 +140,29 @@ export class ResultEmailQueue {
         ],
       );
   }
+  async enqueueJoinRequests(client: PoolClient, before: LeagueState, next: LeagueState) {
+    if (!this.enabled) return;
+    for (const r of next.joinRequests ?? []) {
+      if (r.status !== 'pending' || before.joinRequests?.some((old) => old.id === r.id)) continue;
+      const player = next.players.find((p) => p.id === r.playerId)!;
+      const season = next.seasons.find((s) => s.id === r.seasonId)!;
+      for (const admin of next.players.filter((p) => p.active && p.role === 'admin'))
+        await client.query(
+          `INSERT INTO public.result_email_outbox(event_id,recipient_id,purpose,subject,body,source_event_id) VALUES($1,$2,'join_request',$3,$4,$1) ON CONFLICT(event_id,recipient_id) DO NOTHING`,
+          [
+            r.id,
+            admin.id,
+            'New league join request',
+            `${player.name} has requested to join ${season.name}.
+
+Sign in to Administration to accept or decline the request:
+${new URL('/admin', this.appUrl).href}
+
+Accepting an active-season request adds catch-up fixtures without replacing existing results. This link does not bypass sign-in.`,
+          ],
+        );
+    }
+  }
   async enqueueScheduled(client: PoolClient, intents: ScheduledEmailIntent[]) {
     if (!this.enabled) return;
     for (const i of intents)
@@ -173,6 +196,14 @@ export class ResultEmailQueue {
   }
   private async stillReviewable(job: ResultEmailJob, role: string) {
     // Active profile and invited/confirmed Auth identity are checked by flush.
+    if (job.purpose === 'join_request') {
+      if (role !== 'admin') return false;
+      const { rows } = await this.pool.query(
+        `SELECT 1 FROM public.season_join_requests r JOIN public.profiles p ON p.id=r.player_id JOIN public.seasons s ON s.id=r.season_id WHERE r.id=$1 AND r.status='pending' AND p.active AND s.status IN ('draft','regular') AND s.finalized_reason IS NULL AND NOT EXISTS(SELECT 1 FROM public.fixtures f WHERE f.season_id=s.id AND f.stage<>'regular') AND NOT EXISTS(SELECT 1 FROM public.season_qualifiers q WHERE q.season_id=s.id)`,
+        [job.source_event_id ?? job.event_id],
+      );
+      return rows.length > 0;
+    }
     if (job.purpose === 'newsletter') {
       const { rows } = await this.pool.query(
         "SELECT 1 FROM public.fixtures f JOIN public.seasons s ON s.id=f.season_id WHERE s.status IN ('regular','playoffs') AND f.status IN ('scheduled','postponed') AND f.due_date>=date_trunc('week',now() AT TIME ZONE 'Europe/London')::date AND f.due_date<date_trunc('week',now() AT TIME ZONE 'Europe/London')::date+7 LIMIT 1",

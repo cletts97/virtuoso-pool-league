@@ -42,6 +42,23 @@ export async function persistChanges(
       values,
     );
   };
+  for (const r of next.joinRequests ?? []) {
+    if (
+      changed(
+        r,
+        before.joinRequests?.find((old) => old.id === r.id),
+      )
+    )
+      await upsert('season_join_requests', {
+        id: r.id,
+        season_id: r.seasonId,
+        player_id: r.playerId,
+        status: r.status,
+        created_at: r.createdAt,
+        reviewed_at: r.reviewedAt,
+        reviewed_by: r.reviewedBy,
+      });
+  }
   for (const r of next.casualResults ?? []) {
     if (
       !changed(
@@ -223,7 +240,7 @@ export async function persistChanges(
     const old = before.notifications.find((o) => o.id === n.id);
     if (!old)
       await client.query(
-        `INSERT INTO public.notifications(id,user_id,season_id,kind,title,body,fixture_id,created_at,read_at,casual_result_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO NOTHING`,
+        `INSERT INTO public.notifications(id,user_id,season_id,kind,title,body,fixture_id,created_at,read_at,casual_result_id,join_request_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(id) DO NOTHING`,
         [
           n.id,
           n.userId,
@@ -235,6 +252,7 @@ export async function persistChanges(
           n.createdAt,
           n.read ? new Date().toISOString() : null,
           n.casualResultId ?? null,
+          n.joinRequestId ?? null,
         ],
       );
     else if (n.read && !old.read)

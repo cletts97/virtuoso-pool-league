@@ -27,6 +27,7 @@ export function executeSeasonLifecycle(
     state.fixtures = state.fixtures.filter((f) => f.seasonId !== season.id);
     state.notifications = state.notifications.filter((n) => n.seasonId !== season.id);
     state.announcements = state.announcements.filter((a) => a.seasonId !== season.id);
+    state.joinRequests = state.joinRequests?.filter((r) => r.seasonId !== season.id);
     state.seasons = state.seasons.filter((s) => s.id !== season.id);
     if (state.selectedSeasonId === season.id) state.selectedSeasonId = state.seasons[0]?.id ?? '';
   } else {

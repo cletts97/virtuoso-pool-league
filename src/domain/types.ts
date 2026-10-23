@@ -88,6 +88,7 @@ export interface LeagueNotification {
   userId: ID;
   seasonId: ID | null;
   casualResultId?: ID;
+  joinRequestId?: ID;
   kind: NotificationKind;
   title: string;
   body: string;
@@ -102,7 +103,17 @@ export interface Announcement {
   body: string;
   createdAt: string;
 }
+export interface SeasonJoinRequest {
+  id: ID;
+  seasonId: ID;
+  playerId: ID;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedBy?: ID;
+}
 export interface LeagueState {
+  joinRequests?: SeasonJoinRequest[];
   recentResults?: import('./recentResults').RecentResult[];
   casualResults?: CasualResult[];
   /** False until the optional casual-results database migration is applied. */

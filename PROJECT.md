@@ -93,6 +93,14 @@ Display standings using the following columns:
 - Where players have played different numbers of matches, display their actual records without awarding artificial points or penalties.
 - Do not introduce a points column, points calculation, or points-based tiebreaker.
 
+### Requests to join a league
+
+- Signed-in active users who are not enrolled can request a place in an upcoming draft/published league or an active unfinalized singles season. Advertise eligible leagues on their dashboard with the start week for upcoming leagues and “League in progress” for ongoing leagues. Hide join cards for existing participants and closed/full leagues.
+- Keep one request per user per season, with pending/accepted/declined status shown on the dashboard. Declined requests are not automatically resubmittable; administrators can still add the user manually.
+- Notify every active administrator in-app and, when existing Resend result-email delivery is enabled, by email. Alerts link to the protected administration queue, and in-app join alerts remain visible across season selection. Keep requests private to their requester and administrators; never expose them in anonymous snapshots.
+- Administrators can accept or decline requests. Draft acceptance enrolls the account before fixture generation. Published-season acceptance reuses the existing late-entry catch-up workflow with an administrator-selected week (default two weeks ahead or the season start week, whichever is later). Preserve existing pairings/results and prevent duplicate requests/enrollment under concurrent saves. Notify the requester of the decision in-app.
+- Stop acceptance once the season closes, qualification locks or the requester becomes inactive. Recheck administrator access and pending/open-season status before email delivery; use the existing durable outbox, retries and delivery settings. No email links perform enrollment directly.
+
 ### Mid-season additions
 
 - Display Add player to season for administrators on every selected season, disabled with an explanation when closed. Existing seasons support the same controls regardless of creation date. Draft seasons allow enrollment without creating fixtures; regular seasons append catch-up matches.
