@@ -647,7 +647,11 @@ test('dashboard advertises the start week for an upcoming league', async ({ page
     .filter({ has: page.getByRole('heading', { name: 'Winter sign-up', exact: true }) });
   await expect(card).toContainText('Upcoming league');
   await expect(card).toContainText('Starts week commencing 4 Jan 2027');
-  await expect(card.getByRole('button', { name: 'Request to join', exact: true })).toBeEnabled();
-  await card.getByRole('button', { name: 'Request to join', exact: true }).click();
-  await expect(card.getByRole('button', { name: 'Request pending', exact: true })).toBeDisabled();
+  await expect(card.getByRole('button', { name: 'Join league', exact: true })).toBeEnabled();
+  await card.getByRole('button', { name: 'Join league', exact: true }).click();
+  await expect(card).toHaveCount(0);
+  await page.goto('/notifications');
+  await expect(
+    page.getByRole('heading', { name: 'League membership confirmed', exact: true }),
+  ).toBeVisible();
 });

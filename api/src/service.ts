@@ -154,6 +154,7 @@ export class LeagueService {
         'reviewCasual',
         'updateProfile',
         'requestSeasonJoin',
+        'joinSeason',
         'submit',
         'review',
         'postpone',

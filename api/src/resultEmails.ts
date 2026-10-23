@@ -13,7 +13,7 @@ export interface ResultEmailJob {
   event_id: string;
   recipient_id: string;
   match_kind: 'league' | 'casual' | null;
-  purpose?: 'review' | 'reminder' | 'newsletter' | 'join_request';
+  purpose?: 'review' | 'reminder' | 'newsletter' | 'join_request' | 'join_accepted';
   html?: string;
   source_event_id?: string | null;
   match_id: string | null;
@@ -143,6 +143,34 @@ export class ResultEmailQueue {
   async enqueueJoinRequests(client: PoolClient, before: LeagueState, next: LeagueState) {
     if (!this.enabled) return;
     for (const r of next.joinRequests ?? []) {
+      if (
+        r.status === 'approved' &&
+        before.joinRequests?.find((old) => old.id === r.id)?.status !== 'approved'
+      ) {
+        const notice = next.notifications.find(
+          (n) =>
+            n.joinRequestId === r.id &&
+            n.userId === r.playerId &&
+            !before.notifications.some((old) => old.id === n.id),
+        );
+        const season = next.seasons.find((s) => s.id === r.seasonId)!;
+        if (notice)
+          await client.query(
+            `INSERT INTO public.result_email_outbox(event_id,recipient_id,purpose,subject,body,source_event_id) VALUES($1,$2,'join_accepted',$3,$4,$5) ON CONFLICT(event_id,recipient_id) DO NOTHING`,
+            [
+              notice.id,
+              r.playerId,
+              'Your league place is confirmed',
+              `You are now in ${season.name}.
+
+Sign in to view the season and fixtures:
+${new URL('/fixtures', this.appUrl).href}
+
+For upcoming leagues, fixtures may not have been published yet. Arrange playing times with your opponents; table bookings are separate.`,
+              r.id,
+            ],
+          );
+      }
       if (r.status !== 'pending' || before.joinRequests?.some((old) => old.id === r.id)) continue;
       const player = next.players.find((p) => p.id === r.playerId)!;
       const season = next.seasons.find((s) => s.id === r.seasonId)!;
@@ -196,6 +224,13 @@ Accepting an active-season request adds catch-up fixtures without replacing exis
   }
   private async stillReviewable(job: ResultEmailJob, role: string) {
     // Active profile and invited/confirmed Auth identity are checked by flush.
+    if (job.purpose === 'join_accepted') {
+      const { rows } = await this.pool.query(
+        `SELECT 1 FROM public.season_join_requests r WHERE r.id=$1 AND r.status='approved' AND r.player_id=$2 AND EXISTS(SELECT 1 FROM public.season_participants sp JOIN public.participant_members pm ON pm.participant_id=sp.participant_id WHERE sp.season_id=r.season_id AND pm.profile_id=r.player_id)`,
+        [job.source_event_id, job.recipient_id],
+      );
+      return rows.length > 0;
+    }
     if (job.purpose === 'join_request') {
       if (role !== 'admin') return false;
       const { rows } = await this.pool.query(

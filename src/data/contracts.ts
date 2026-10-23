@@ -6,6 +6,7 @@ import type { SeasonLifecycleCommand } from './seasonCommands';
 export type LeagueCommand =
   | SeasonLifecycleCommand
   | CasualCommand
+  | { type: 'joinSeason'; seasonId: string }
   | { type: 'requestSeasonJoin'; seasonId: string }
   | { type: 'reviewSeasonJoin'; id: string; approve: boolean; dueDate: string }
   | { type: 'deleteUser'; id: string }

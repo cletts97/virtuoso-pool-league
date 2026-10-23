@@ -533,13 +533,21 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         ).rejects.toThrow('Administrator');
         return request;
       };
-      let request = await submit(id);
-      await command({
-        type: 'reviewSeasonJoin',
-        id: request.id,
-        approve: true,
-        dueDate: addDays(londonDate(new Date()), 14),
-      });
+      const draftBefore = await joining.load(users[4]);
+      const direct = await Promise.allSettled(
+        [1, 2].map(() =>
+          joining.execute(users[4], { type: 'joinSeason', seasonId: id }, draftBefore.revision!),
+        ),
+      );
+      expect(direct.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(
+        sent.filter(
+          (m) => m.subject === 'Your league place is confirmed' && m.recipient === users[4].email,
+        ),
+      ).toHaveLength(1);
+      expect(sent.some((m) => m.subject === 'New league join request')).toBe(false);
+      let request = (await joining.load(users[4])).joinRequests!.find((r) => r.seasonId === id)!;
+      expect(request.status).toBe('approved');
       expect(
         (await service.load(users[0])).seasons.find((s) => s.id === id)!.participantIds,
       ).toHaveLength(5);
@@ -555,10 +563,10 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       const published = await command({ type: 'generate', seasonId: active });
       const original = published.fixtures.filter((f) => f.seasonId === active);
       request = await submit(active);
-      const before = await service.load(users[0]);
+      const before = await joining.load(users[0]);
       const approvals = await Promise.allSettled(
         [1, 2].map(() =>
-          service.execute(
+          joining.execute(
             users[0],
             {
               type: 'reviewSeasonJoin',
@@ -571,6 +579,11 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         ),
       );
       expect(approvals.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(
+        sent.filter(
+          (m) => m.subject === 'Your league place is confirmed' && m.recipient === users[4].email,
+        ),
+      ).toHaveLength(2);
       const saved = await service.load(users[0]);
       const fixtures = saved.fixtures.filter((f) => f.seasonId === active);
       expect(fixtures).toHaveLength(10);

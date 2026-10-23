@@ -16,12 +16,12 @@ import {
   winner,
 } from '../domain/rules';
 import { generateRoundRobin } from '../domain/rules';
-import type { Fixture, LeagueState, ResultRevision, Season } from '../domain/types';
+import type { Fixture, LeagueState, Player, ResultRevision, Season } from '../domain/types';
 import type { LeagueCommand, NotificationService } from './contracts';
 import { executeBookingCommand } from './bookingCommands';
 import { executeCasualCommand } from './casualCommands';
 import { executeSeasonLifecycle } from './seasonCommands';
-import { canAddSeasonPlayer } from '../domain/seasonManagement';
+import { canAddSeasonPlayer, canJoinSeasonDirectly } from '../domain/seasonManagement';
 
 const id = () => crypto.randomUUID();
 const text = (value: string, label: string, max = 300) => {
@@ -122,6 +122,92 @@ export function progressPlayoffs(state: LeagueState, season: Season) {
   }
 }
 
+function enrollSeasonPlayer(
+  state: LeagueState,
+  command: Extract<LeagueCommand, { type: 'addSeasonPlayer' }>,
+  actor: Player,
+  notifications: NotificationService,
+) {
+  const season = state.seasons.find((s) => s.id === command.seasonId);
+  invariant(
+    season && canAddSeasonPlayer(state, season),
+    'Players can only be added to a draft or unfinalized singles regular season.',
+  );
+  invariant(season.participantIds.length < 40, 'A season supports up to 40 players.');
+  validateDate(command.dueDate);
+  invariant(
+    weekEnd(command.dueDate) >= dateOnly(),
+    'Choose the current week or a later catch-up week.',
+  );
+  const player = state.players.find((p) => p.id === command.playerId);
+  invariant(player?.active, 'Choose an active colleague.');
+  const opponents = season.participantIds.map((pid) =>
+    state.participants.find((p) => p.id === pid)!,
+  );
+  invariant(
+    opponents.every((p) => p?.kind === 'individual' && p.playerIds.length === 1),
+    'This action supports individual season participants only.',
+  );
+  invariant(
+    !opponents.some((p) => p.playerIds.includes(player.id)),
+    'This player is already in the season.',
+  );
+  let entrant = state.participants.find(
+    (p) => p.kind === 'individual' && p.playerIds.length === 1 && p.playerIds[0] === player.id,
+  );
+  if (!entrant) {
+    entrant = { id: id(), name: player.name, kind: 'individual', playerIds: [player.id] };
+    state.participants.push(entrant);
+  }
+  if (season.status === 'draft') {
+    season.participantIds.push(entrant.id);
+    if (player.role === 'colleague') player.role = 'player';
+    return;
+  }
+  const beforeStart = canJoinSeasonDirectly(season);
+  const firstRound =
+    Math.max(0, ...state.fixtures.filter((f) => f.seasonId === season.id).map((f) => f.round)) + 1;
+  for (const [index, opponent] of opponents.entries()) {
+    invariant(
+      !state.fixtures.some(
+        (f) =>
+          f.seasonId === season.id &&
+          [f.homeId, f.awayId].includes(entrant.id) &&
+          [f.homeId, f.awayId].includes(opponent.id),
+      ),
+      'This pairing already has a fixture.',
+    );
+    const dueDate = weekStart(command.dueDate);
+    const fixture: Fixture = {
+      id: id(),
+      seasonId: season.id,
+      stage: 'regular',
+      bestOf: 3,
+      round: firstRound + index,
+      homeId: index % 2 ? opponent.id : entrant.id,
+      awayId: index % 2 ? entrant.id : opponent.id,
+      dueDate,
+      status: beforeStart ? 'scheduled' : 'postponed',
+      history: [],
+      note: beforeStart
+        ? `Additional fixture: ${player.name} joined before the season started.`
+        : `Catch-up fixture: ${player.name} joined the season late.`,
+    };
+    audit(fixture, actor.id, beforeStart ? 'rescheduled' : 'postponed', fixture.note);
+    state.fixtures.push(fixture);
+    notifications.publish(state, [player.id, ...opponent.playerIds], {
+      seasonId: season.id,
+      fixtureId: fixture.id,
+      kind: beforeStart ? 'upcoming' : 'postponement',
+      title: beforeStart ? 'New league fixture' : 'New catch-up fixture',
+      body: `${player.name} v ${opponent.name} · ${weekLabel(dueDate)}. ${beforeStart ? 'A player joined before the season started.' : 'A player joined the season late.'}`,
+    });
+  }
+  season.participantIds.push(entrant.id);
+  if (player.role === 'colleague') player.role = 'player';
+  return;
+}
+
 /** Shared transitions run in both adapters. The API supplies the verified actor;
  * browser-only mock identity is not a security boundary. */
 export function executeCommand(
@@ -147,6 +233,52 @@ export function executeCommand(
   const state = structuredClone(source);
   const actor = state.players.find((p) => p.id === state.currentUserId);
   invariant(actor?.active, 'An active account is required.');
+  if (command.type === 'joinSeason') {
+    invariant(!state.readOnly, 'Sign in to join a league.');
+    const season = state.seasons.find((s) => s.id === command.seasonId);
+    invariant(
+      season && canAddSeasonPlayer(state, season) && canJoinSeasonDirectly(season),
+      'This league has started. Request to join instead.',
+    );
+    enrollSeasonPlayer(
+      state,
+      {
+        type: 'addSeasonPlayer',
+        seasonId: season.id,
+        playerId: actor.id,
+        dueDate:
+          weekStart(season.startDate) > weekStart(dateOnly())
+            ? weekStart(season.startDate)
+            : weekStart(dateOnly()),
+      },
+      actor,
+      notifications,
+    );
+    const requests = (state.joinRequests ??= []);
+    let request = requests.find((r) => r.seasonId === season.id && r.playerId === actor.id);
+    const now = new Date().toISOString();
+    if (!request) {
+      request = {
+        id: id(),
+        seasonId: season.id,
+        playerId: actor.id,
+        status: 'pending',
+        createdAt: now,
+      };
+      requests.push(request);
+    }
+    request.status = 'approved';
+    request.reviewedAt = now;
+    request.reviewedBy = actor.id;
+    notifications.publish(state, [actor.id], {
+      seasonId: season.id,
+      joinRequestId: request.id,
+      kind: 'notice',
+      title: 'League membership confirmed',
+      body: 'You have joined ' + season.name + '. View the season in the app.',
+    });
+    return state;
+  }
   if (command.type === 'requestSeasonJoin') {
     invariant(!state.readOnly, 'Sign in to request a place.');
     const season = state.seasons.find((s) => s.id === command.seasonId);
@@ -158,6 +290,8 @@ export function executeCommand(
       ),
       'You are already in this season.',
     );
+    if (canJoinSeasonDirectly(season))
+      return executeCommand(state, { type: 'joinSeason', seasonId: season.id }, notifications);
     const requests = (state.joinRequests ??= []);
     invariant(
       !requests.some((r) => r.seasonId === season.id && r.playerId === actor.id),
@@ -397,81 +531,7 @@ export function executeCommand(
   requireAdmin(actor);
   switch (command.type) {
     case 'addSeasonPlayer': {
-      const season = state.seasons.find((s) => s.id === command.seasonId);
-      invariant(
-        season && canAddSeasonPlayer(state, season),
-        'Players can only be added to a draft or unfinalized singles regular season.',
-      );
-      invariant(season.participantIds.length < 40, 'A season supports up to 40 players.');
-      validateDate(command.dueDate);
-      invariant(
-        weekEnd(command.dueDate) >= dateOnly(),
-        'Choose the current week or a later catch-up week.',
-      );
-      const player = state.players.find((p) => p.id === command.playerId);
-      invariant(player?.active, 'Choose an active colleague.');
-      const opponents = season.participantIds.map((pid) =>
-        state.participants.find((p) => p.id === pid)!,
-      );
-      invariant(
-        opponents.every((p) => p?.kind === 'individual' && p.playerIds.length === 1),
-        'This action supports individual season participants only.',
-      );
-      invariant(
-        !opponents.some((p) => p.playerIds.includes(player.id)),
-        'This player is already in the season.',
-      );
-      let entrant = state.participants.find(
-        (p) => p.kind === 'individual' && p.playerIds.length === 1 && p.playerIds[0] === player.id,
-      );
-      if (!entrant) {
-        entrant = { id: id(), name: player.name, kind: 'individual', playerIds: [player.id] };
-        state.participants.push(entrant);
-      }
-      if (season.status === 'draft') {
-        season.participantIds.push(entrant.id);
-        if (player.role === 'colleague') player.role = 'player';
-        break;
-      }
-      const firstRound =
-        Math.max(0, ...state.fixtures.filter((f) => f.seasonId === season.id).map((f) => f.round)) +
-        1;
-      for (const [index, opponent] of opponents.entries()) {
-        invariant(
-          !state.fixtures.some(
-            (f) =>
-              f.seasonId === season.id &&
-              [f.homeId, f.awayId].includes(entrant.id) &&
-              [f.homeId, f.awayId].includes(opponent.id),
-          ),
-          'This pairing already has a fixture.',
-        );
-        const dueDate = weekStart(command.dueDate);
-        const fixture: Fixture = {
-          id: id(),
-          seasonId: season.id,
-          stage: 'regular',
-          bestOf: 3,
-          round: firstRound + index,
-          homeId: index % 2 ? opponent.id : entrant.id,
-          awayId: index % 2 ? entrant.id : opponent.id,
-          dueDate,
-          status: 'postponed',
-          history: [],
-          note: `Catch-up fixture: ${player.name} joined the season late.`,
-        };
-        audit(fixture, actor.id, 'postponed', fixture.note);
-        state.fixtures.push(fixture);
-        notifications.publish(state, [player.id, ...opponent.playerIds], {
-          seasonId: season.id,
-          fixtureId: fixture.id,
-          kind: 'postponement',
-          title: 'New catch-up fixture',
-          body: `${player.name} v ${opponent.name} · ${weekLabel(dueDate)}. A player joined the season late.`,
-        });
-      }
-      season.participantIds.push(entrant.id);
-      if (player.role === 'colleague') player.role = 'player';
+      enrollSeasonPlayer(state, command, actor, notifications);
       break;
     }
     case 'enrolPlayer': {

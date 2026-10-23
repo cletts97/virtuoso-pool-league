@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLeague } from '../app/LeagueContext';
 import { addDays, dateOnly, weekStart, weekLabel } from '../domain/rules';
-import { canAddSeasonPlayer } from '../domain/seasonManagement';
+import { canAddSeasonPlayer, canJoinSeasonDirectly } from '../domain/seasonManagement';
 import type { SeasonJoinRequest } from '../domain/types';
 import { Modal, Section } from './ui';
 
@@ -22,14 +22,14 @@ export function JoinLeagueCards() {
     <Section
       className="mb-6"
       title="Join a league"
-      subtitle="Request a place. An administrator will review your request before you are added."
+      subtitle="Join upcoming leagues directly. Leagues already in progress require administrator approval."
     >
       <div className="match-grid">
         {seasons.map((s) => {
           const request = state.joinRequests?.find(
             (r) => r.seasonId === s.id && r.playerId === state.currentUserId,
           );
-          const upcoming = s.status === 'draft' || weekStart(s.startDate) > weekStart(today);
+          const upcoming = canJoinSeasonDirectly(s, today);
           return (
             <div className="admin-season" key={s.id}>
               <span className="eyebrow">{upcoming ? 'Upcoming league' : 'League in progress'}</span>
@@ -45,21 +45,25 @@ export function JoinLeagueCards() {
               )}
               <button
                 className="button primary"
-                disabled={busy || !!request}
+                disabled={busy || (!upcoming && !!request)}
                 onClick={() =>
                   void run(
-                    { type: 'requestSeasonJoin', seasonId: s.id },
-                    'Your request has been sent to the administrators.',
+                    { type: upcoming ? 'joinSeason' : 'requestSeasonJoin', seasonId: s.id },
+                    upcoming
+                      ? 'You have joined the league.'
+                      : 'Your request has been sent to the administrators.',
                   )
                 }
               >
-                {request
-                  ? request.status === 'pending'
-                    ? 'Request pending'
-                    : request.status === 'rejected'
-                      ? 'Request declined'
-                      : 'Request accepted'
-                  : 'Request to join'}
+                {upcoming
+                  ? 'Join league'
+                  : request
+                    ? request.status === 'pending'
+                      ? 'Request pending'
+                      : request.status === 'rejected'
+                        ? 'Request declined'
+                        : 'Request accepted'
+                    : 'Request to join'}
               </button>
             </div>
           );

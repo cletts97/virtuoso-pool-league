@@ -158,3 +158,7 @@ Before deploying the casual in-app notification fix, apply `supabase/migrations/
 ## League join requests
 
 Apply `supabase/migrations/20261023000200_season_join_requests.sql` once after the casual-notifications and existing email/automation migrations, before deploying the frontend and API together. It creates a server-only request table with one request per account/season, links in-app notices and extends the existing email outbox purpose constraints. RLS blocks direct anonymous/authenticated access; API reads are limited to the requester and administrators. Applied and tested only against disposable local Supabase during development. No emails are sent by the migration. No new environment variables are required.
+
+## Membership confirmation emails
+
+Apply `supabase/migrations/20261023000300_join_confirmation_emails.sql` once after `20261023000200_season_join_requests.sql`, before deploying the frontend and API together. It extends the existing outbox purpose constraints for membership confirmations without changing request/history tables or grants. Applied and validated against local Supabase only during development; no real emails are sent by this migration. Existing Resend settings are reused.

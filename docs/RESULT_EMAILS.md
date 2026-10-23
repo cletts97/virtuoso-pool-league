@@ -45,3 +45,9 @@ Focused unit tests cover recipient selection, Resend request/idempotency behavio
 ## League join requests
 
 The same `ALLOW_RESULT_EMAIL`, `RESEND_API_KEY`, `RESULT_EMAIL_FROM` and `APP_URL` settings also deliver new league join requests to active administrators. Apply `20261023000200_season_join_requests.sql` before deployment. Each request/administrator pair is queued once with purpose `join_request`, using existing leases, bounded retries, administrator email status/retry controls and configured hourly queue flushing. Delivery rechecks the administrator role, requester activity, pending request and open season. Accepted/declined requests are skipped if still queued. In-app alerts are independent of email enablement. Accept or decline from Administration; email links require normal sign-in and never enroll directly.
+
+### Membership confirmations and direct upcoming joins
+
+Apply `20261023000300_join_confirmation_emails.sql` after the join-request migration, before deploying frontend/API together. New direct joins and administrator-accepted requests queue a confirmation to the joining player with purpose `join_accepted`; existing accepted memberships are not bulk emailed. Delivery rechecks the active invited identity and approved membership, and uses existing deduplication/retries/settings. Declines do not send a confirmation email.
+
+The dashboard shows **Join league** for drafts and published future leagues. Direct joining ends at the London Monday starting a published league’s start week; from then on **Request to join** requires administrator acceptance. Existing older pending requests for an upcoming league can be completed by clicking Join league. No new environment variables are needed.

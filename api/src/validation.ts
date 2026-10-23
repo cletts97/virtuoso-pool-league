@@ -29,6 +29,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   }),
   z.strictObject({ type: z.literal('resolveCasual'), id, score, reason: text.max(300) }),
   z.strictObject({ type: z.literal('voidCasual'), id, reason: text.max(300) }),
+  z.strictObject({ type: z.literal('joinSeason'), seasonId: id }),
   z.strictObject({ type: z.literal('requestSeasonJoin'), seasonId: id }),
   z.strictObject({ type: z.literal('reviewSeasonJoin'), id, approve: z.boolean(), dueDate: date }),
   z.strictObject({ type: z.literal('deleteUser'), id }),

@@ -1,5 +1,13 @@
+import { dateOnly, weekStart } from './rules';
 import type { LeagueState, Season } from './types';
 
+/** Drafts are not running; published seasons begin on their London start-week Monday. */
+export function canJoinSeasonDirectly(season: Season, today = dateOnly()) {
+  return (
+    season.status === 'draft' ||
+    (season.status === 'regular' && today < weekStart(season.startDate))
+  );
+}
 export function canAddSeasonPlayer(state: LeagueState, season: Season) {
   return (
     ['draft', 'regular'].includes(season.status) &&
