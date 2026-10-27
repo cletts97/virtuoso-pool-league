@@ -3,6 +3,7 @@ import { useLeague } from '../app/LeagueContext';
 import { dateOnly, scoreOptions } from '../domain/rules';
 import type { CasualResult, Player } from '../domain/types';
 import { Modal } from './ui';
+import { ResultScorePicker } from './ResultScorePicker';
 
 export function TeamPicker({
   label,
@@ -111,6 +112,7 @@ export function CasualResultForm({
               const size = Number(e.target.value);
               setHome(size === 1 ? [home[0]] : [home[0], '']);
               setAway(size === 1 ? [away[0]] : [away[0], '']);
+              setChosen('');
             }}
           >
             <option value={1}>Singles</option>
@@ -122,14 +124,20 @@ export function CasualResultForm({
             label="Side A"
             ids={home}
             players={players}
-            onChange={setHome}
+            onChange={(ids) => {
+              setHome(ids);
+              setChosen('');
+            }}
             disabled={!!result}
           />
           <TeamPicker
             label="Side B"
             ids={away}
             players={players}
-            onChange={setAway}
+            onChange={(ids) => {
+              setAway(ids);
+              setChosen('');
+            }}
             disabled={!!result}
           />
         </div>
@@ -161,17 +169,29 @@ export function CasualResultForm({
             ))}
           </select>
         </label>
-        <label>
-          Score (Side A – Side B)
-          <select value={chosen} required onChange={(e) => setChosen(e.target.value)}>
-            <option value="">Choose completed score</option>
-            {scores.map((s) => (
-              <option key={`${s.home}:${s.away}`} value={`${s.home}:${s.away}`}>
-                {s.home} – {s.away}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ResultScorePicker
+          key={`${home.join(',')}/${away.join(',')}/${bestOf}`}
+          homeName={home
+            .map((id) => state.players.find((p) => p.id === id)?.name ?? 'Side A')
+            .join(' & ')}
+          awayName={away
+            .map((id) => state.players.find((p) => p.id === id)?.name ?? 'Side B')
+            .join(' & ')}
+          ownSide={
+            home.includes(state.currentUserId)
+              ? 'home'
+              : away.includes(state.currentUserId)
+                ? 'away'
+                : undefined
+          }
+          options={scores}
+          value={
+            chosen
+              ? { home: Number(chosen.split(':')[0]), away: Number(chosen.split(':')[1]) }
+              : undefined
+          }
+          onChange={(score) => setChosen(score ? `${score.home}:${score.away}` : '')}
+        />
         {resolve && (
           <label>
             Reason
@@ -191,7 +211,7 @@ export function CasualResultForm({
           <button type="button" className="button secondary" onClick={onClose}>
             Cancel
           </button>
-          <button disabled={busy} className="button primary">
+          <button disabled={busy || !chosen} className="button primary">
             {resolve ? 'Confirm correction' : 'Submit result'}
           </button>
         </div>

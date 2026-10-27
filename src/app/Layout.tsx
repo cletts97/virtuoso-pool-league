@@ -55,12 +55,7 @@ export function Layout() {
       </a>
       <aside className="sidebar">
         <Link to="/" className="brand" aria-label="Virtuoso Pool League home">
-          <img
-            src={
-              state.theme === 'dark' ? '/brand/virtuoso-white.png' : '/brand/virtuoso-gradient.png'
-            }
-            alt="Virtuoso"
-          />
+          <img src="/brand/virtuoso-gradient.png" alt="Virtuoso" />
           <span>
             POOL LEAGUE
             <span className="brand-dot" />

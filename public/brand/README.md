@@ -11,4 +11,6 @@ The [official theme stylesheet](https://virtuoso.tech/wp-content/themes/virtuoso
 
 The pool-ball illustration is original CSS decoration. The pool-ball favicon is an application icon, not a fabricated Virtuoso corporate mark. The application uses system fonts; it makes no claim to use a licensed corporate typeface.
 
+The application now uses the saved official orange gradient logo on both themes, authentication screens, rules, TV display and newsletter. The white asset is retained in the repository for reference but is no longer displayed.
+
 No branding asset is blocking the demo. For production polish, provide official SVG logo variants, the current brand guidelines (clear space/minimum size and colour specifications), and any approved webfont files/licence. Corporate logo ownership remains with Virtuoso.

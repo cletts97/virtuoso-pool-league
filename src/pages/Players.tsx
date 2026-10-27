@@ -4,21 +4,30 @@ import { ArrowLeft, ArrowUpRight, Search, Target, TrendingUp, Trophy } from 'luc
 import { useLeague } from '../app/LeagueContext';
 import { playedDate, winner } from '../domain/rules';
 import { Avatar, Empty, FormDots, PageHeading, Section, Stat } from '../components/ui';
-import { playerLeagueFixtures, playerLeagueStats } from '../domain/playerStats';
+import {
+  isLeagueDirectoryPlayer,
+  playerLeagueFixtures,
+  playerLeagueStats,
+} from '../domain/playerStats';
 import { MatchCard } from '../components/MatchCard';
 
 export function Players() {
   const { state } = useLeague();
   const [query, setQuery] = useState('');
   const entries = state.players
-    .filter((p) => p.active && p.name.toLowerCase().includes(query.toLowerCase()))
+    .filter(
+      (p) =>
+        p.active &&
+        isLeagueDirectoryPlayer(state, p.id) &&
+        p.name.toLowerCase().includes(query.toLowerCase()),
+    )
     .sort((a, b) => a.name.localeCompare(b.name));
   return (
     <>
       <PageHeading
         eyebrow="PLAYER DIRECTORY"
         title="Players"
-        description="All active users · Confirmed league and playoff records across all seasons."
+        description="Current league members and previous league players · Records across all seasons."
       />
       <div className="filter-bar">
         <Search size={18} />

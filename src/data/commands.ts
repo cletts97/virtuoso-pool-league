@@ -11,7 +11,7 @@ import {
   qualificationTie,
   regularComplete,
   requireAdmin,
-  validScore,
+  validFixtureScore,
   validateDate,
   winner,
 } from '../domain/rules';
@@ -398,7 +398,7 @@ export function executeCommand(
           'This match already has a result or is closed.',
         );
         invariant(
-          validScore(command.score, fixture.bestOf),
+          validFixtureScore(fixture, command.score),
           'Choose a valid completed match score.',
         );
         fixture.score = command.score;
@@ -450,7 +450,7 @@ export function executeCommand(
           'Only an existing result can be resolved or corrected.',
         );
         invariant(
-          validScore(command.score, fixture.bestOf),
+          validFixtureScore(fixture, command.score),
           'Choose a valid completed match score.',
         );
         const reason = text(command.reason, 'Correction reason');

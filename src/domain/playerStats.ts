@@ -1,5 +1,5 @@
 import type { LeagueState } from './types';
-import { playedDate, validScore } from './rules';
+import { playedDate, validFixtureScore } from './rules';
 
 /** Individual league records across published seasons, including playoffs; casual/team records stay separate. */
 export function playerLeagueFixtures(state: LeagueState, playerId: string) {
@@ -41,7 +41,7 @@ export function playerLeagueStats(state: LeagueState, playerId: string) {
     framesLost = 0;
   const form: boolean[] = [];
   const fixtures = playerLeagueFixtures(state, playerId)
-    .filter((f) => f.status === 'confirmed' && f.score && validScore(f.score, f.bestOf))
+    .filter((f) => f.status === 'confirmed' && f.score && validFixtureScore(f, f.score))
     .sort((a, b) => playedDate(a).localeCompare(playedDate(b)) || a.id.localeCompare(b.id));
   for (const f of fixtures) {
     const home = entries.has(f.homeId);
@@ -62,4 +62,16 @@ export function playerLeagueStats(state: LeagueState, playerId: string) {
     winPercentage: fixtures.length ? Math.round((won / fixtures.length) * 100) : 0,
     form,
   };
+}
+
+/** Published open-season members and players with a confirmed league/playoff history. */
+export function isLeagueDirectoryPlayer(state: LeagueState, playerId: string) {
+  const entries = state.participants.filter((p) => p.playerIds.includes(playerId));
+  return (
+    state.seasons.some(
+      (s) =>
+        ['regular', 'playoffs'].includes(s.status) &&
+        entries.some((p) => s.participantIds.includes(p.id)),
+    ) || playerLeagueStats(state, playerId).played > 0
+  );
 }

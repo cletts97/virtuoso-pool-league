@@ -1,5 +1,5 @@
 import type { LeagueState, ResultRevision } from '../domain/types';
-import { validScore } from '../domain/rules';
+import { validFixtureScore } from '../domain/rules';
 import { validCasualScore } from '../domain/casual';
 import { inAppNotifications, progressPlayoffs } from './commands';
 
@@ -29,7 +29,7 @@ export function automaticallyConfirmResults(source: LeagueState, now: Date): Lea
     if (
       pendingHours(f, now) < 48 ||
       !f.score ||
-      !validScore(f.score, f.bestOf) ||
+      !validFixtureScore(f, f.score) ||
       !season ||
       !['regular', 'playoffs'].includes(season.status) ||
       (season.status === 'playoffs' && f.stage === 'regular')

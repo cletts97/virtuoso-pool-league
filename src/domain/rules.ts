@@ -50,6 +50,26 @@ export function scoreOptions(bestOf: number): Score[] {
     { home: loser, away: target },
   ]).flat();
 }
+/** A completed single frame is an alternative only for regular-season league matches. */
+export function validFixtureScore(fixture: Pick<Fixture, 'stage' | 'bestOf'>, score: Score) {
+  return (
+    validScore(score, fixture.bestOf) ||
+    (fixture.stage === 'regular' &&
+      fixture.bestOf === 3 &&
+      ((score.home === 1 && score.away === 0) || (score.home === 0 && score.away === 1)))
+  );
+}
+export function fixtureScoreOptions(fixture: Pick<Fixture, 'stage' | 'bestOf'>): Score[] {
+  return [
+    ...(fixture.stage === 'regular' && fixture.bestOf === 3
+      ? [
+          { home: 1, away: 0 },
+          { home: 0, away: 1 },
+        ]
+      : []),
+    ...scoreOptions(fixture.bestOf),
+  ];
+}
 export function generateRoundRobin(season: Season): Fixture[] {
   validateDate(season.startDate);
   invariant(season.participantIds.length >= 2, 'Select at least two participants.');
@@ -141,7 +161,7 @@ export function standings(season: Season, fixtures: Fixture[]): Standing[] {
       !fixture.score ||
       !rows.has(fixture.homeId) ||
       !rows.has(fixture.awayId) ||
-      !validScore(fixture.score, fixture.bestOf) ||
+      !validFixtureScore(fixture, fixture.score) ||
       seen.has(fixture.id)
     )
       continue;

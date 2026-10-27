@@ -28,7 +28,7 @@ Keep operating costs as close to zero as reasonably possible.
 - Initially support approximately 10–14 players.
 - Support adding, editing, and deactivating players. User editing does not require or display a department.
 - Administrators may delete another user with explicit Yes/No confirmation. Remove the Supabase Auth account and private profile photo, prevent future access/reactivation, cancel their future owned reservations, and remove them from user management. Retain an inactive anonymized “Deleted user” profile and competition entries to preserve match records and immutable audit references. Do not permit self-deletion. This is account deletion, not erasure of competition history.
-- The Players directory lists every active user by default, including casual-only colleagues and users without season membership. Profiles accept both account and existing competition-entry links.
+- The Players directory lists active accounts who belong to a published, unfinished league (regular season or playoffs, including a future published league), or have a valid confirmed league/playoff result in any historical season. Exclude casual-only accounts, pending join requests and draft-only members. Directory eligibility and all-season stats do not depend on the selected season. Profiles still accept account and existing competition-entry links.
 - Player cards and profiles show confirmed individual league and playoff totals, form, history and head-to-head records across all published seasons, independent of the season selector. Combine separate competition entries belonging to the same account; exclude drafts, unconfirmed/invalid results and duplicate fixtures. Casual records remain separate. Users without league matches show zero statistics.
 - League standings remain specific to the selected season.
 - Allow active accounts to upload, replace and remove their own profile photo through the profile editor. Show photos wherever the shared player avatar appears, with initials as fallback.
@@ -49,8 +49,8 @@ Keep operating costs as close to zero as reasonably possible.
 - Administrators can generate and publish fixtures before the season starts, including future Monday starts. Selecting another start date normalizes it to that week's Monday.
 - Players arrange their matches themselves without assigned times. Table reservations remain separate and have exact dates/times.
 - Allow matches to be played ahead of schedule.
-- Regular-season matches use best-of-three frames.
-- A 2–0 win and a 2–1 win both count as one match won.
+- Regular-season matches preferably use best-of-three frames, but players may agree to a completed single-frame match when time is limited. Accept 1–0, 0–1, 2–0, 0–2, 2–1 and 1–2; reject draws and other incomplete scores. Keep the stored regular fixture format best-of-three with a stage-specific single-frame score exception. Semifinal/final targets are unchanged.
+- A 1–0, 2–0 or 2–1 win each counts as one match won. Frame statistics use the actual submitted frames.
 - A loss counts as one match lost.
 - There is no league points system.
 - Track matches played, wins, losses, frames won, frames lost, frame difference, and win percentage.
@@ -142,6 +142,7 @@ Display standings using the following columns:
 ## Score Submission and Approval
 
 - A participant submits the result of a completed match.
+- Score entry first asks whether the participant won or lost, then offers valid scores from their own perspective with their frames first. Show the named home/away result before saving, mapping it to the stored order. Administrators who did not play select the named winner. Use the same clear winner/score controls for casual submissions and corrections while retaining each casual match's selected format.
 - The opposing participant receives a notification.
 - The opponent can approve or dispute the submitted result.
 - Only an approved result updates the league standings.
@@ -288,7 +289,7 @@ The HUD should prominently display:
 
 7. **Rules reminders**
    - Keep four reminders on the main dashboard. The TV shows eight reminders in two rows: opponent-ball fouls, the cushion rule, foul-snooker nomination, baulk direction, two visits after a foul, potting the black, black on the break, and feet/moving balls. Include the owner-supplied rack-layout image alongside the TV reminders, with a link to view it full-size.
-   - Link to the full rules and keep all TV sections within the 1080p layout. Rotate bookings, results and upcoming fixtures in smaller pages on shorter screens rather than clipping text. Retain the existing white Virtuoso logo.
+   - Link to the full rules and keep all TV sections within the 1080p layout. Rotate bookings, results and upcoming fixtures in smaller pages on shorter screens rather than clipping text. Use the saved official orange gradient Virtuoso logo across the application and newsletter.
 
 ### Future HUD Enhancements
 

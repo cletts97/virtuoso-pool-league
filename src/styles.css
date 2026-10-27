@@ -1840,6 +1840,22 @@ legend {
   border-color: var(--accent);
   color: var(--accent);
 }
+.winner-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.winner-options label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: 18px;
+}
+.result-score-summary {
+  padding: 12px;
+  border-radius: 7px;
+  background: var(--raised);
+  font-size: 14px;
+  line-height: 1.5;
+}
 .participant-checklist {
   display: grid;
   grid-template-columns: 1fr 1fr;

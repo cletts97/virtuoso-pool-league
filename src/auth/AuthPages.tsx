@@ -53,7 +53,7 @@ export function SignIn() {
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <img src="/brand/virtuoso-white.png" alt="Virtuoso" />
+        <img src="/brand/virtuoso-gradient.png" alt="Virtuoso" />
         <div className="eyebrow">POOL LEAGUE</div>
         <h1>{reset ? 'Reset your password' : 'Sign in'}</h1>
         <p>
@@ -221,7 +221,7 @@ export function AuthCallback() {
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <img src="/brand/virtuoso-white.png" alt="Virtuoso" />
+        <img src="/brand/virtuoso-gradient.png" alt="Virtuoso" />
         <h1>Set your password.</h1>
         <p>Choose a password of at least 12 characters for your Virtuoso Pool League account.</p>
         {(linkError || message) && (

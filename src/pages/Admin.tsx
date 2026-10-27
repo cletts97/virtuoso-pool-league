@@ -235,7 +235,7 @@ export function Admin() {
                         </div>
                         <div>
                           <dt>Match formats</dt>
-                          <dd>League BO3 · Semifinal BO5 · Final BO7</dd>
+                          <dd>League BO3 or one frame · Semifinal BO5 · Final BO7</dd>
                         </div>
                         <div>
                           <dt>Playoff qualification</dt>

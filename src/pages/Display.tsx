@@ -91,7 +91,7 @@ export function Display() {
     <main className="tv-display" data-theme="dark">
       <header className="tv-header">
         <div className="tv-brand">
-          <img src="/brand/virtuoso-white.png" alt="Virtuoso" />
+          <img src="/brand/virtuoso-gradient.png" alt="Virtuoso" />
           <span>
             POOL LEAGUE <i /> THE TABLE LIVE
           </span>

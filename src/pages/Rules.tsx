@@ -13,7 +13,7 @@ export function Rules() {
       </a>
       <header className="rules-header">
         <Link to={fromDisplay ? '/display' : '/'} aria-label="Virtuoso Pool League home">
-          <img src="/brand/virtuoso-white.png" alt="Virtuoso" />
+          <img src="/brand/virtuoso-gradient.png" alt="Virtuoso" />
           <span>POOL LEAGUE</span>
         </Link>
         <Link className="button secondary" to={fromDisplay ? '/display' : '/'}>

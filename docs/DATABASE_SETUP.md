@@ -162,3 +162,9 @@ Apply `supabase/migrations/20261023000200_season_join_requests.sql` once after t
 ## Membership confirmation emails
 
 Apply `supabase/migrations/20261023000300_join_confirmation_emails.sql` once after `20261023000200_season_join_requests.sql`, before deploying the frontend and API together. It extends the existing outbox purpose constraints for membership confirmations without changing request/history tables or grants. Applied and validated against local Supabase only during development; no real emails are sent by this migration. Existing Resend settings are reused.
+
+## Single-frame regular-season scores
+
+Apply `supabase/migrations/20261027000100_single_frame_league_results.sql` once before deploying the corresponding frontend/API update. In the Supabase SQL editor, run only this new migration against the cloud database; do not reset or rerun the initial schema. It replaces `fixtures_valid_score` to allow completed 1–0/0–1 regular-season results alongside existing best-of-three results. Fixture `best_of=3`, semifinal/final rules, grants, audit history and views remain unchanged. Existing scores are preserved. No new environment settings are required.
+
+The migration and end-to-end API/database approval/correction plus playoff-constraint checks were tested locally. The disposable local schema already contained earlier manually applied changes despite an older CLI migration ledger, so the new SQL was applied directly to loopback PostgreSQL for testing. No older history was repaired and no cloud migration was applied.

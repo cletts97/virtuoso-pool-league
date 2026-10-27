@@ -108,7 +108,8 @@ test('administrator queue includes and resolves casual disputes independently of
   await expect(page.locator('.casual-game').first()).toContainText('The recorded score is wrong');
   await page.getByRole('button', { name: 'Resolve casual result' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Score (Side A – Side B)').selectOption('2:0');
+  await dialog.locator('.winner-options').getByRole('radio').first().check();
+  await dialog.getByRole('radio', { name: /2–0$/ }).check();
   await dialog.getByLabel('Reason', { exact: true }).fill('Confirmed with both players');
   await dialog.getByRole('button', { name: 'Confirm correction', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -132,7 +133,8 @@ test('casual singles and doubles results persist and require opposing confirmati
   await page.getByRole('button', { name: 'Record a game', exact: true }).click();
   let form = page.getByRole('dialog');
   await form.getByLabel('Side B player 1').selectOption('p02');
-  await form.getByLabel('Score (Side A – Side B)').selectOption('2:1');
+  await form.locator('.winner-options').getByRole('radio').first().check();
+  await form.getByRole('radio', { name: /2–1$/ }).check();
   await form.getByRole('button', { name: 'Submit result', exact: true }).click();
   await expect(page.locator('.casual-game')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Confirm result', exact: true })).toHaveCount(0);
@@ -155,7 +157,8 @@ test('casual singles and doubles results persist and require opposing confirmati
   await form.getByLabel('Side A player 2').selectOption('p03');
   await form.getByLabel('Side B player 1').selectOption('p04');
   await form.getByLabel('Side B player 2').selectOption('p05');
-  await form.getByLabel('Score (Side A – Side B)').selectOption('2:0');
+  await form.locator('.winner-options').getByRole('radio').first().check();
+  await form.getByRole('radio', { name: /2–0$/ }).check();
   await form.getByRole('button', { name: 'Submit result', exact: true }).click();
   await expect(page.locator('.casual-game')).toHaveCount(2);
   await page.getByLabel('Playing as').selectOption('p03');
@@ -309,7 +312,24 @@ test('submit, switch to opponent, approve, update standings and persist after re
 }) => {
   await page.goto('/fixtures/autumn-2026-r6-0');
   await page.getByRole('button', { name: 'Submit result', exact: true }).click();
-  await page.getByRole('dialog').getByRole('radio').first().check();
+  const homeIsMe = await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!);
+    const f = s.fixtures.find((f: { id: string }) => f.id === 'autumn-2026-r6-0');
+    return s.participants
+      .find((p: { id: string }) => p.id === f.homeId)
+      .playerIds.includes(s.currentUserId);
+  });
+  await page
+    .getByRole('dialog')
+    .getByRole('radio', { name: homeIsMe ? 'I won' : 'I lost', exact: true })
+    .check();
+  await page
+    .getByRole('dialog')
+    .locator('.score-options')
+    .last()
+    .getByRole('radio')
+    .first()
+    .check();
   await page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('main').getByText('Awaiting approval', { exact: true })).toBeVisible();
@@ -401,6 +421,13 @@ test('disputes, admin resolution and result correction retain audit history', as
   await page.getByLabel('Playing as').selectOption('p01');
   await page.getByRole('button', { name: 'Resolve dispute' }).click();
   await page.getByRole('dialog').getByRole('radio').first().check();
+  await page
+    .getByRole('dialog')
+    .locator('.score-options')
+    .last()
+    .getByRole('radio')
+    .first()
+    .check();
   await page.getByLabel('Reason', { exact: true }).fill('Agreed with both players.');
   await page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click();
   await expect(page.locator('main').getByText('Confirmed', { exact: true })).toBeVisible();
@@ -500,6 +527,13 @@ test('bracket finalizes and advances through the final to a champion', async ({ 
     await page.getByLabel('Playing as').selectOption(players[0]);
     await page.getByRole('button', { name: 'Submit result', exact: true }).click();
     await page.getByRole('dialog').getByRole('radio').first().check();
+    await page
+      .getByRole('dialog')
+      .locator('.score-options')
+      .last()
+      .getByRole('radio')
+      .first()
+      .check();
     await page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await page.getByLabel('Playing as').selectOption(players[1]);
@@ -536,16 +570,17 @@ test('small phones and tablets retain navigation and contain wide tables', async
   }
 });
 
-test('player directory includes casual-only users and all-season stats without requiring a season', async ({
+test('player directory includes league members and historical players with all-season stats', async ({
   page,
 }) => {
   await page.goto('/players');
-  await expect(page.locator('.player-card')).toHaveCount(13);
+  await expect(page.locator('.player-card')).toHaveCount(12);
   const alexCard = page.locator('a.player-card[href="/players/p01"]');
   const before = await alexCard.locator('.player-card-stats').textContent();
   await page.getByLabel('Select season').selectOption('summer-2026');
   await expect(alexCard.locator('.player-card-stats')).toHaveText(before!);
-  await page.locator('a.player-card[href="/players/colleague-01"]').click();
+  await expect(page.locator('a.player-card[href="/players/colleague-01"]')).toHaveCount(0);
+  await page.goto('/players/colleague-01');
   await expect(page.locator('.profile-hero h1')).toContainText('Riley');
   await expect(page.locator('.stats-grid')).toContainText('0%');
   await page.evaluate(() => {
@@ -557,10 +592,8 @@ test('player directory includes casual-only users and all-season stats without r
     localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(state));
   });
   await page.goto('/players');
-  await expect(page.locator('.player-card')).toHaveCount(13);
-  await page.locator('a.player-card[href="/players/p01"]').click();
-  await expect(page.locator('.profile-hero h1')).toHaveText('Alex Morgan');
-  await expect(page.locator('.stats-grid')).toContainText('0%');
+  await expect(page.locator('.player-card')).toHaveCount(0);
+  await expect(page.getByText('No players found', { exact: true })).toBeVisible();
 });
 
 test('administrator deletes a user with Yes/No confirmation and no department field', async ({

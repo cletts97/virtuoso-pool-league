@@ -144,7 +144,7 @@ export function newsletterEmailIntents(
     : '';
   const eventId = stableEventId('vpl-weekly/' + monday);
   const url = new URL('/fixtures', appUrl).href;
-  const logo = new URL('/brand/virtuoso-white.png', appUrl).href;
+  const logo = new URL('/brand/virtuoso-gradient.png', appUrl).href;
   return state.players
     .filter((p) => p.active)
     .map((player) => {

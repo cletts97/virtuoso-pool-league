@@ -67,6 +67,100 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       }
       await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[0]]);
     }, 60000);
+    it('persists single-frame league results, approves/corrects them and rejects draws and short playoffs', async () => {
+      let state = await command({
+        type: 'createSeason',
+        name: prefix + ' single frame',
+        startDate: londonDate(new Date()),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const id = state.selectedSeasonId;
+      state = await command({ type: 'generate', seasonId: id });
+      const fixture = state.fixtures.find((f) => f.seasonId === id)!;
+      const home = state.participants.find((p) => p.id === fixture.homeId)!.playerIds[0];
+      const away = state.participants.find((p) => p.id === fixture.awayId)!.playerIds[0];
+      await expect(
+        command(
+          { type: 'submit', fixtureId: fixture.id, score: { home: 1, away: 1 } },
+          users[profiles.indexOf(away)],
+        ),
+      ).rejects.toThrow();
+      await command(
+        { type: 'submit', fixtureId: fixture.id, score: { home: 0, away: 1 } },
+        users[profiles.indexOf(away)],
+      );
+      await expect(
+        command(
+          { type: 'review', fixtureId: fixture.id, approve: true, reason: '' },
+          users[profiles.indexOf(away)],
+        ),
+      ).rejects.toThrow();
+      state = await command(
+        { type: 'review', fixtureId: fixture.id, approve: true, reason: '' },
+        users[profiles.indexOf(home)],
+      );
+      expect(
+        standings(
+          state.seasons.find((s) => s.id === id)!,
+          state.fixtures,
+        ).find((r) => r.participantId === fixture.awayId),
+      ).toMatchObject({ won: 1, framesWon: 1, framesLost: 0 });
+      const db = (
+        await pool.query(
+          'SELECT won,frames_won,frames_lost FROM public.regular_season_totals WHERE season_id=$1 AND participant_id=$2',
+          [id, fixture.awayId],
+        )
+      ).rows[0];
+      expect(db).toMatchObject({ won: 1, frames_won: 1, frames_lost: 0 });
+      state = await command({
+        type: 'correct',
+        fixtureId: fixture.id,
+        score: { home: 1, away: 0 },
+        reason: 'Corrected winner',
+      });
+      expect(state.fixtures.find((f) => f.id === fixture.id)!.history).toHaveLength(3);
+      await expect(
+        pool.query('UPDATE public.fixtures SET home_score=1,away_score=1 WHERE id=$1', [
+          fixture.id,
+        ]),
+      ).rejects.toMatchObject({ constraint: 'fixtures_valid_score' });
+      // Complete the remaining regular fixtures using valid full scores to seed real playoffs.
+      for (const f of state.fixtures.filter((f) => f.seasonId === id && f.status === 'scheduled')) {
+        const h = state.participants.find((p) => p.id === f.homeId)!.playerIds[0];
+        const a = state.participants.find((p) => p.id === f.awayId)!.playerIds[0];
+        await command(
+          { type: 'submit', fixtureId: f.id, score: { home: 2, away: 0 } },
+          users[profiles.indexOf(h)],
+        );
+        state = await command(
+          { type: 'review', fixtureId: f.id, approve: true, reason: '' },
+          users[profiles.indexOf(a)],
+        );
+      }
+      for (const semi of state.fixtures.filter(
+        (f) => f.seasonId === id && f.stage === 'semifinal',
+      )) {
+        await expect(
+          pool.query('UPDATE public.fixtures SET home_score=1,away_score=0 WHERE id=$1', [semi.id]),
+        ).rejects.toMatchObject({ constraint: 'fixtures_valid_score' });
+        const h = state.participants.find((p) => p.id === semi.homeId)!.playerIds[0];
+        const a = state.participants.find((p) => p.id === semi.awayId)!.playerIds[0];
+        await command(
+          { type: 'submit', fixtureId: semi.id, score: { home: 3, away: 0 } },
+          users[profiles.indexOf(h)],
+        );
+        await command(
+          { type: 'review', fixtureId: semi.id, approve: true, reason: '' },
+          users[profiles.indexOf(a)],
+        );
+      }
+      state = await service.load(users[0]);
+      const final = state.fixtures.find((f) => f.seasonId === id && f.stage === 'final')!;
+      await expect(
+        pool.query('UPDATE public.fixtures SET home_score=1,away_score=0 WHERE id=$1', [final.id]),
+      ).rejects.toMatchObject({ constraint: 'fixtures_valid_score' });
+    });
     it('runs scheduled newsletters, reminders and automatic confirmations idempotently', async () => {
       const sent: EmailMessage[] = [];
       const queue = new ResultEmailQueue(

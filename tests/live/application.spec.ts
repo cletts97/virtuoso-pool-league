@@ -230,6 +230,13 @@ test('admin selects invited colleagues for a season, and two sessions submit and
   await page.goto(`/fixtures/${fixture.id}`);
   await page.getByRole('button', { name: 'Submit result', exact: true }).click();
   await page.getByRole('radio').first().check();
+  await page
+    .getByRole('dialog')
+    .locator('.score-options')
+    .last()
+    .getByRole('radio')
+    .first()
+    .check();
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   const opponentContext = await browser.newContext({ baseURL: 'http://127.0.0.1:5174' });

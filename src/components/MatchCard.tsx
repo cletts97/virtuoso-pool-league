@@ -47,7 +47,12 @@ export function MatchCard({ fixture, compact = false }: { fixture: Fixture; comp
                 month: 'short',
               })
             : weekLabel(fixture.dueDate)}{' '}
-          <span className="meta-divider">·</span> Best of {fixture.bestOf}
+          <span className="meta-divider">·</span>{' '}
+          {fixture.stage === 'regular' &&
+          fixture.score &&
+          Math.max(fixture.score.home, fixture.score.away) === 1
+            ? 'Single frame'
+            : `Best of ${fixture.bestOf}`}
         </span>
         <ArrowRight size={16} />
       </div>

@@ -11,13 +11,14 @@ import {
   isParticipant,
   matchStatus,
   participantName,
-  scoreOptions,
+  fixtureScoreOptions,
 } from '../domain/rules';
 import { Avatar, Badge, Empty, Modal, PageHeading, Section } from '../components/ui';
 import type { Score } from '../domain/types';
 import { bookingDayLabel, bookingEnd, londonDate, londonTime } from '../domain/bookings';
 import { useClock } from '../app/useClock';
 import { liveMode } from '../auth/client';
+import { ResultScorePicker } from '../components/ResultScorePicker';
 
 export function MatchDetails() {
   const { id } = useParams();
@@ -114,7 +115,7 @@ export function MatchDetails() {
               ? 'Final'
               : 'Semifinals'
         }
-        description={`Best of ${match.bestOf} frames · First to ${Math.ceil(match.bestOf / 2)} wins · ${weekLabel(match.dueDate)}`}
+        description={`${match.stage === 'regular' ? 'Best of 3 encouraged · Single-frame results also accepted' : `Best of ${match.bestOf} frames · First to ${Math.ceil(match.bestOf / 2)} wins`} · ${weekLabel(match.dueDate)}`}
         action={<Badge status={matchStatus(match)} />}
       />
       <section className="match-centre panel">
@@ -264,14 +265,20 @@ export function MatchDetails() {
               <span>1</span>
               <div>
                 <strong>Play your match</strong>
-                <p>First to {Math.ceil(match.bestOf / 2)} frames. Arrange a time together.</p>
+                <p>
+                  {match.stage === 'regular'
+                    ? 'Play best of three where possible, or agree to a single-frame match.'
+                    : `First to ${Math.ceil(match.bestOf / 2)} frames. Arrange a time together.`}
+                </p>
               </div>
             </li>
             <li>
               <span>2</span>
               <div>
                 <strong>One player submits</strong>
-                <p>Select the final score, in home–away order.</p>
+                <p>
+                  Choose who won, then the final score. Check the named result before submitting.
+                </p>
               </div>
             </li>
             <li>
@@ -288,34 +295,22 @@ export function MatchDetails() {
         <Modal title={titles[action]} onClose={() => setAction(undefined)}>
           <form onSubmit={submit} className="form-stack">
             {(action === 'submit' || action === 'correct') && (
-              <fieldset>
-                <legend>
-                  Final score · {participantName(state, match.homeId)} vs{' '}
-                  {participantName(state, match.awayId)}
-                </legend>
-                <div className="score-options">
-                  {scoreOptions(match.bestOf).map((option) => (
-                    <label
-                      key={`${option.home}-${option.away}`}
-                      className={
-                        score?.home === option.home && score.away === option.away ? 'selected' : ''
-                      }
-                    >
-                      <input
-                        type="radio"
-                        name="score"
-                        required
-                        checked={score?.home === option.home && score.away === option.away}
-                        onChange={() => setScore(option)}
-                      />
-                      {option.home} <span>:</span> {option.away}
-                    </label>
-                  ))}
-                </div>
-                <p className="field-help">
-                  Choose the completed score. Home player is on the left.
-                </p>
-              </fieldset>
+              <ResultScorePicker
+                homeName={participantName(state, match.homeId)}
+                awayName={participantName(state, match.awayId)}
+                ownSide={
+                  participant
+                    ? state.participants
+                        .find((p) => p.id === match.homeId)!
+                        .playerIds.includes(user.id)
+                      ? 'home'
+                      : 'away'
+                    : undefined
+                }
+                options={fixtureScoreOptions(match)}
+                value={score}
+                onChange={setScore}
+              />
             )}
             {action === 'approve' && (
               <p className="muted">
