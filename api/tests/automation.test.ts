@@ -162,6 +162,17 @@ describe('scheduled league operations', () => {
       ).status,
     ).toBe(200);
     expect(runAutomation).toHaveBeenCalledWith('results');
+    expect(
+      (
+        await handle(
+          new Request('https://pool.example/api/automation/emails', {
+            method: 'POST',
+            headers: { 'X-VPL-Automation-Key': config.automationSecret },
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(runAutomation).toHaveBeenCalledWith('emails');
     expect(identity).not.toHaveBeenCalled();
     const disabled = createHandler(
       {} as LeagueService,

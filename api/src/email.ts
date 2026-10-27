@@ -16,12 +16,19 @@ export class DisabledEmailDelivery implements EmailDelivery {
 }
 export class ResendEmailDelivery implements EmailDelivery {
   private lastRequestAt = 0;
+  private sendTail: Promise<void> = Promise.resolve();
   constructor(
     private key: string,
     private from: string,
     private request: typeof fetch = fetch,
   ) {}
-  async send(message: EmailMessage): Promise<void> {
+  send(message: EmailMessage): Promise<void> {
+    // Admin and Cron workers can overlap; serialize provider calls in this process too.
+    const task = this.sendTail.then(() => this.sendNext(message));
+    this.sendTail = task.catch(() => {});
+    return task;
+  }
+  private async sendNext(message: EmailMessage): Promise<void> {
     // Pace scheduled batches conservatively, below two requests per second.
     const wait = Math.max(0, this.lastRequestAt + 550 - Date.now());
     if (wait) await new Promise((resolve) => setTimeout(resolve, wait));

@@ -45,7 +45,7 @@ describe('season joining', () => {
       added.every(
         (f) =>
           f.status === 'scheduled' &&
-          f.dueDate === state.seasons[0].startDate &&
+          f.dueDate >= state.seasons[0].startDate &&
           f.history[0].actorId === 'colleague-01',
       ),
     ).toBe(true);
@@ -82,7 +82,7 @@ describe('season joining', () => {
     });
     expect(joined.fixtures.slice(0, published.fixtures.length)).toEqual(published.fixtures);
     expect(
-      joined.fixtures.slice(published.fixtures.length).every((f) => f.status === 'postponed'),
+      joined.fixtures.slice(published.fixtures.length).every((f) => f.status === 'scheduled'),
     ).toBe(true);
     expect(joined.joinRequests![0].status).toBe('approved');
     expect(() =>

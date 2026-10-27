@@ -22,6 +22,7 @@ import { executeBookingCommand } from './bookingCommands';
 import { executeCasualCommand } from './casualCommands';
 import { executeSeasonLifecycle } from './seasonCommands';
 import { canAddSeasonPlayer, canJoinSeasonDirectly } from '../domain/seasonManagement';
+import { planAdditionalFixtures } from '../domain/lateEntry';
 
 const id = () => crypto.randomUUID();
 const text = (value: string, label: string, max = 300) => {
@@ -137,7 +138,7 @@ function enrollSeasonPlayer(
   validateDate(command.dueDate);
   invariant(
     weekEnd(command.dueDate) >= dateOnly(),
-    'Choose the current week or a later catch-up week.',
+    'Choose the current week or a later first fixture week.',
   );
   const player = state.players.find((p) => p.id === command.playerId);
   invariant(player?.active, 'Choose an active colleague.');
@@ -167,7 +168,9 @@ function enrollSeasonPlayer(
   const beforeStart = canJoinSeasonDirectly(season);
   const firstRound =
     Math.max(0, ...state.fixtures.filter((f) => f.seasonId === season.id).map((f) => f.round)) + 1;
-  for (const [index, opponent] of opponents.entries()) {
+  const plan = planAdditionalFixtures(season, state.fixtures, command.dueDate);
+  for (const [index, slot] of plan.entries()) {
+    const opponent = opponents.find((p) => p.id === slot.opponentId)!;
     invariant(
       !state.fixtures.some(
         (f) =>
@@ -177,7 +180,7 @@ function enrollSeasonPlayer(
       ),
       'This pairing already has a fixture.',
     );
-    const dueDate = weekStart(command.dueDate);
+    const dueDate = slot.dueDate;
     const fixture: Fixture = {
       id: id(),
       seasonId: season.id,
@@ -187,19 +190,19 @@ function enrollSeasonPlayer(
       homeId: index % 2 ? opponent.id : entrant.id,
       awayId: index % 2 ? entrant.id : opponent.id,
       dueDate,
-      status: beforeStart ? 'scheduled' : 'postponed',
+      status: 'scheduled',
       history: [],
       note: beforeStart
         ? `Additional fixture: ${player.name} joined before the season started.`
-        : `Catch-up fixture: ${player.name} joined the season late.`,
+        : `Additional fixture: ${player.name} joined the season late. Scheduled in a spare weekly place.`,
     };
-    audit(fixture, actor.id, beforeStart ? 'rescheduled' : 'postponed', fixture.note);
+    audit(fixture, actor.id, 'rescheduled', fixture.note);
     state.fixtures.push(fixture);
     notifications.publish(state, [player.id, ...opponent.playerIds], {
       seasonId: season.id,
       fixtureId: fixture.id,
-      kind: beforeStart ? 'upcoming' : 'postponement',
-      title: beforeStart ? 'New league fixture' : 'New catch-up fixture',
+      kind: 'upcoming',
+      title: 'New league fixture',
       body: `${player.name} v ${opponent.name} · ${weekLabel(dueDate)}. ${beforeStart ? 'A player joined before the season started.' : 'A player joined the season late.'}`,
     });
   }

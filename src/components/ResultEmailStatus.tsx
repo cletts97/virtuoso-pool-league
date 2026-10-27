@@ -1,24 +1,17 @@
 import { useState } from 'react';
 import { authenticatedRequest } from '../data/apiRepository';
+import { emailQueueSummary, sendPendingEmails, type EmailQueueStatus } from '../data/emailQueue';
 
-interface QueueStatus {
-  enabled: boolean;
-  ready: boolean;
-  pending: number;
-  failed: number;
-  sent: number;
-}
 export function ResultEmailStatus() {
-  const [status, setStatus] = useState<QueueStatus>();
+  const [status, setStatus] = useState<EmailQueueStatus>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function refresh(send = false) {
     setBusy(true);
     setError('');
     try {
-      setStatus(
-        await authenticatedRequest<QueueStatus>('/admin/result-emails', send ? {} : undefined),
-      );
+      if (send) await sendPendingEmails(setStatus);
+      else setStatus(await authenticatedRequest<EmailQueueStatus>('/admin/result-emails'));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Email status unavailable.');
     } finally {
@@ -27,8 +20,8 @@ export function ResultEmailStatus() {
   }
   return (
     <div className="admin-season">
-      <h3>Score-review emails</h3>
-      <p>Resend delivery for result reviews and administrator dispute alerts.</p>
+      <h3>Email delivery</h3>
+      <p>Newsletters, result reviews, join confirmations and administrator alerts.</p>
       <div className="admin-actions">
         <button className="button secondary small" disabled={busy} onClick={() => void refresh()}>
           Check email queue
@@ -36,10 +29,10 @@ export function ResultEmailStatus() {
         {status?.enabled && status.ready && (
           <button
             className="button secondary small"
-            disabled={busy || !status.pending}
+            disabled={busy || !status.due}
             onClick={() => void refresh(true)}
           >
-            Retry due emails
+            {busy ? 'Sending…' : 'Send pending emails'}
           </button>
         )}
       </div>
@@ -49,7 +42,7 @@ export function ResultEmailStatus() {
             ? 'Result emails are disabled.'
             : !status.ready
               ? 'Apply the result-email database migration before enabling delivery.'
-              : `${status.pending} queued · ${status.sent} accepted by Resend · ${status.failed} failed or expired. Retries wait for their backoff time.`}
+              : emailQueueSummary(status)}
         </p>
       )}
       {error && (

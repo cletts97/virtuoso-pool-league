@@ -369,6 +369,8 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         (await service.load(users[1])).casualResults!.find((r) => r.id === resultId)!.status,
       ).toBe('pending');
       expect((await queue.status()).pending).toBe(2);
+      expect(await queue.status()).toMatchObject({ due: 0, retrying: 2, sending: 0 });
+      expect((await queue.status()).nextAttemptAt).not.toBeNull();
       fail = false;
       await pool.query(
         'UPDATE public.result_email_outbox SET next_attempt_at=now() WHERE match_id=$1',
@@ -377,6 +379,7 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       const retried = await Promise.all([queue.flush(), queue.flush()]);
       expect(retried.reduce((n, r) => n + r.sent, 0)).toBe(2);
       expect(accepted).toHaveLength(2);
+      expect(await queue.status()).toMatchObject({ due: 0, retrying: 0, pending: 0 });
       expect(new Set(accepted.map((m) => m.idempotencyKey)).size).toBe(2);
       await queue.flush();
       expect(accepted).toHaveLength(2);
@@ -553,6 +556,74 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         'already been queued',
       );
     });
+    it('continues a newsletter queue beyond one HTTP batch without duplicates', async () => {
+      const messages: EmailMessage[] = [];
+      const queue = new ResultEmailQueue(
+        pool,
+        auth,
+        {
+          send: async (message) => {
+            messages.push(message);
+          },
+        },
+        true,
+        config.appUrl,
+        config.emailDomains,
+      );
+      // Clear any eligible old local-test jobs through the real worker (no real provider).
+      while ((await queue.status()).due > 0) await queue.flush(20);
+      messages.length = 0;
+      const state = await command({
+        type: 'createSeason',
+        name: prefix + ' multi-batch',
+        startDate: londonDate(new Date()),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      await command({ type: 'generate', seasonId: state.selectedSeasonId });
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await queue.enqueueScheduled(
+          client,
+          Array.from({ length: 25 }, () => ({
+            eventId: crypto.randomUUID(),
+            recipientId: profiles[1],
+            purpose: 'newsletter' as const,
+            kind: null,
+            matchId: null,
+            subject: 'Local fake newsletter',
+            body: 'Local test only',
+          })),
+        );
+        await client.query('COMMIT');
+      } finally {
+        client.release();
+      }
+      const sender = new LeagueService(pool, auth, config.emailDomains, queue);
+      const first = await sender.resultEmailStatus(users[0], true);
+      expect(messages).toHaveLength(20);
+      expect(first).toMatchObject({ due: 5 });
+      await sender.runAutomation('emails');
+      expect(messages).toHaveLength(25);
+      expect(new Set(messages.map((m) => m.idempotencyKey)).size).toBe(25);
+      expect(await queue.status()).toMatchObject({ due: 0 });
+      await sender.runAutomation('emails');
+      expect(messages).toHaveLength(25);
+      // Check Cron setup inside a rolled-back local transaction: never activate jobs.
+      const cron = await pool.connect();
+      try {
+        await cron.query('BEGIN');
+        await cron.query(readFileSync('supabase/cron/setup.sql', 'utf8'));
+        const job = (
+          await cron.query("SELECT schedule FROM cron.job WHERE jobname='vpl-email-delivery'")
+        ).rows[0];
+        expect(job.schedule).toBe('* * * * *');
+      } finally {
+        await cron.query('ROLLBACK');
+        cron.release();
+      }
+    });
     it('persists private join requests, alerts administrators and accepts draft/active enrollment atomically', async () => {
       const sent: EmailMessage[] = [];
       const queue = new ResultEmailQueue(
@@ -668,7 +739,11 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       const fixtures = saved.fixtures.filter((f) => f.seasonId === active);
       expect(fixtures).toHaveLength(10);
       expect(fixtures.filter((f) => original.some((old) => old.id === f.id))).toEqual(original);
-      expect(fixtures.filter((f) => f.status === 'postponed')).toHaveLength(4);
+      expect(
+        fixtures.filter(
+          (f) => !original.some((old) => old.id === f.id) && f.status === 'scheduled',
+        ),
+      ).toHaveLength(4);
       expect(
         (await service.load(users[4])).notifications.some((n) => n.joinRequestId === request.id),
       ).toBe(true);
@@ -819,7 +894,11 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       const matches = saved.fixtures.filter((f) => f.seasonId === lateSeason.id);
       expect(matches).toHaveLength(10);
       expect(matches.filter((f) => oldMatches.some((old) => old.id === f.id))).toEqual(oldMatches);
-      expect(matches.filter((f) => f.status === 'postponed')).toHaveLength(4);
+      expect(
+        matches.filter(
+          (f) => !oldMatches.some((old) => old.id === f.id) && f.status === 'scheduled',
+        ),
+      ).toHaveLength(4);
       expect(saved.seasons.find((s) => s.id === lateSeason.id)!.participantIds).toHaveLength(5);
       expect(
         (

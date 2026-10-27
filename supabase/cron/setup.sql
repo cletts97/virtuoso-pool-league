@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION vpl_private.invoke_automation(task text) RETURNS bigi
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE base_url text; secret text; request_id bigint;
 BEGIN
-  IF task IS NULL OR task NOT IN ('results','weekly') THEN
+  IF task IS NULL OR task NOT IN ('results','weekly','emails') THEN
     RAISE EXCEPTION 'Unknown automation task';
   END IF;
   SELECT rtrim(decrypted_secret,'/') INTO base_url FROM vault.decrypted_secrets WHERE name='vpl_app_url';
@@ -33,3 +33,8 @@ SELECT cron.schedule('vpl-weekly-newsletter', '0 6,7 * * 1',
   $job$SELECT vpl_private.invoke_automation('weekly');$job$);
 SELECT cron.schedule('vpl-hourly-results', '0 * * * *',
   $job$SELECT vpl_private.invoke_automation('results');$job$);
+
+-- Continue delivery promptly even after the sender closes the site. Does not create
+-- newsletters/reminders or change results; only delivers already queued, due emails.
+SELECT cron.schedule('vpl-email-delivery', '* * * * *',
+  $job$SELECT vpl_private.invoke_automation('emails');$job$);

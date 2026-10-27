@@ -1,5 +1,24 @@
 # Implementation status — Virtuoso Pool League
 
+## Weekly late-entry scheduling and prompt email delivery — 27 October 2026
+
+- Published-season additions now preserve every existing fixture/result and distribute the new player's pairings into earliest spare weekly places, with no more than two assigned league fixtures per player per week. Count all non-cancelled existing fixtures in their assigned week, including confirmed results; prefer opponents who already have one match that week. Add weeks where required; projected playoffs already derive from the final league week. Existing over-capacity/late-entry fixtures are not rewritten. Draft joining remains unchanged, and additions still close before finalized playoffs.
+- Join-request and administrator-add dialogs now use First fixture week (default current week or season start, whichever is later), with a weekly opponents/ projected playoff preview. New fixtures are scheduled rather than marked postponed immediately. Shared planner runs in mock/API command handling under the existing API transaction/revision lock; no database migration.
+- Renamed Retry due emails to Send pending emails. Manual newsletter sends and the queue action automatically continue short delivery batches until no eligible messages remain. Added ready/sending/waiting-retry queue details and safe provider-status logging; backoff, leases, eligibility checks and idempotency remain. Serialized same-process provider calls so overlapping workers share the pacing guard.
+- Added secret-protected /api/automation/emails and a one-minute vpl-email-delivery job to supabase/cron/setup.sql. This only drains existing emails; weekly newsletters/hourly reminders and confirmations retain their schedules. After deploying frontend/API, rerun that operator SQL using existing Vault/settings. No cloud SQL, live emails, new secrets or infrastructure were applied/provisioned here. Without the SQL step, manual continuation works while the page is open, with the previous hourly background fallback.
+- Validation: 36 focused unit/domain/authorization/queue tests passed; five distinct disposable local Supabase integration tests passed (six executions across two runs), including a 25-message queue spanning requests with no duplicates, retry eligibility/status, concurrent enrollment, newsletter deduplication and fixture preservation. Cron setup SQL validated in a rolled-back local transaction without activating jobs. Two desktop join workflow checks passed; a separate mobile/desktop 15-opponent preview/approval check verified current-week defaults, 120 total fixtures, preservation of all originals and max two per player/week. Screenshots inspected. TypeScript, targeted ESLint and frontend modern/legacy plus API builds passed; existing bundle-size warnings remain. No full suite, real email, cloud migration/deployment or commit. Browser-runner cleanup stalled after its two passing tests and was stopped; the separate direct-browser checks completed normally.
+
+## Fixtures grouped by playing week — 27 October 2026
+
+- Fixtures/results now group by normalized Monday week commencing rather than round, with a week selector replacing the round selector. Same-week rounds and playoff stages share one section; cards retain round/stage and individual best-of format. Round-specific bye notes remain. Existing dates, schedules and results are unchanged.
+- Focused browser checks passed at 390px and 1440px for shared-week rounds, historical non-Monday dates, mixed semifinal/final formats, week filtering/clearing and no page overflow; reviewed mobile screenshot. TypeScript, targeted ESLint and whitespace checks passed. No full suite/build or backend changes.
+- Investigated newsletter delivery: manual sending flushes up to 20 items within an 18-second processing budget, sequential recipient/auth checks and provider calls, paced at least 550ms apart. Unattempted items return to pending; later commands/admin retry/hourly automation continue delivery. Failed sends back off. No delivery changes made in this task.
+
+## TV standings capacity — 27 October 2026
+
+- Increased normal-height TV standings pages from 14 to 18 players. Tables with more than 14 entries use slightly smaller text and vertical cell padding to retain all rows and the qualification legend within the tile. Shorter displays and unusually long names retain their conservative pagination limits; larger leagues still rotate pages.
+- Browser layout checks with 18 realistic names passed at 1920×1080 and 1920×980, with no standings overflow; reviewed the 1080p screenshot. TypeScript, targeted ESLint and whitespace checks passed. No backend or data changes; no full suite or production build.
+
 ## Dashboard booking/rules card spacing
 
 - Added the missing 24px bottom spacing to the dashboard's Today at the table card, separating it from rules or the conditional score-review banner. Shared panels and TV layout are unchanged.

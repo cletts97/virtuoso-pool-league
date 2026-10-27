@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { useLeague } from '../app/LeagueContext';
-import { addDays, dateOnly, weekStart } from '../domain/rules';
+import { dateOnly, weekStart } from '../domain/rules';
 import { Modal } from './ui';
+import { SeasonAdditionPreview } from './SeasonAdditionPreview';
 
 export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
   const { state, season, run, busy } = useLeague();
@@ -12,7 +13,9 @@ export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
   );
   const available = state.players.filter((p) => p.active && !memberIds.has(p.id));
   const [playerId, setPlayerId] = useState(available[0]?.id ?? '');
-  const [dueDate, setDueDate] = useState(weekStart(addDays(dateOnly(), 14)));
+  const [dueDate, setDueDate] = useState(
+    [weekStart(dateOnly()), weekStart(season.startDate)].sort().at(-1)!,
+  );
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (
@@ -20,7 +23,7 @@ export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
         { type: 'addSeasonPlayer', seasonId: season.id, playerId, dueDate },
         season.status === 'draft'
           ? 'Player added to the draft season.'
-          : 'Player added. Catch-up fixtures have been created.',
+          : 'Player added. Fixtures have been scheduled in available weekly places.',
       )
     )
       onClose();
@@ -47,28 +50,22 @@ export function AddSeasonPlayerForm({ onClose }: { onClose(): void }) {
         {!available.length && <p>Invite an active colleague who is not already in this season.</p>}
         {season.status !== 'draft' && (
           <label>
-            Catch-up week (Monday)
+            First fixture week (Monday)
             <input
               type="date"
               required
-              min={weekStart(dateOnly())}
+              min={[weekStart(dateOnly()), weekStart(season.startDate)].sort().at(-1)}
               value={dueDate}
               onChange={(event) => event.target.value && setDueDate(weekStart(event.target.value))}
             />
           </label>
         )}
         <p className="field-help">
-          {season.status === 'draft' ? (
-            'Adds this player to the draft. Fixtures will include them when you generate the schedule.'
-          ) : (
-            <>
-              Adds {season.participantIds.length} best-of-three fixtures in new catch-up rounds, one
-              against each existing player. Existing matches and results stay unchanged. Matches are
-              marked postponed, then overdue after that week ends. You can adjust individual weeks
-              later. No automatic losses are awarded.
-            </>
-          )}
+          {season.status === 'draft'
+            ? 'Adds this player to the draft. Fixtures will include them when you generate the schedule.'
+            : 'Adds one best-of-three match against each existing player.'}
         </p>
+        <SeasonAdditionPreview season={season} firstWeek={dueDate} />
         <div className="form-actions">
           <button type="button" className="button secondary" onClick={onClose}>
             Cancel

@@ -29,8 +29,9 @@ export class LeagueService {
     private resultEmails?: ResultEmailQueue,
     private automationAppUrl?: string,
   ) {}
-  async runAutomation(task: 'results' | 'weekly', now = new Date()) {
+  async runAutomation(task: 'results' | 'weekly' | 'emails', now = new Date()) {
     requireCondition(this.resultEmails?.enabled, 503, 'Scheduled email delivery is disabled.');
+    if (task === 'emails') return { delivery: await this.resultEmails.flush(20) };
     const appUrl = this.automationAppUrl;
     requireCondition(appUrl, 503, 'The automation app URL is not configured.');
     if (task === 'weekly' && !mondayNewsletterWindow(now))
@@ -328,7 +329,18 @@ export class LeagueService {
   async resultEmailStatus(user: User, send = false) {
     const actor = await this.me(user);
     requireCondition(actor.role === 'admin', 403, 'Administrator access required.');
-    if (!this.resultEmails) return { enabled: false, ready: false, pending: 0, failed: 0, sent: 0 };
+    if (!this.resultEmails)
+      return {
+        enabled: false,
+        ready: false,
+        pending: 0,
+        failed: 0,
+        sent: 0,
+        due: 0,
+        sending: 0,
+        retrying: 0,
+        nextAttemptAt: null,
+      };
     const status = await this.resultEmails.status();
     if (send) {
       requireCondition(
@@ -336,7 +348,7 @@ export class LeagueService {
         400,
         'Configure result email delivery and apply its migration first.',
       );
-      await this.resultEmails.flush();
+      await this.resultEmails.flush(20);
       return this.resultEmails.status();
     }
     return status;

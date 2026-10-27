@@ -459,6 +459,15 @@
   font-size: 0.8em;
   line-height: 1.1;
 }
+@media (min-width: 1000px) {
+  .tv-standings-dense table {
+    font-size: 0.8em;
+  }
+  .tv-standings-dense td {
+    padding-top: 0.2vh;
+    padding-bottom: 0.2vh;
+  }
+}
 .tv-standings .tv-qualified td:first-child {
   color: var(--accent);
   border-left: 2px solid var(--accent);

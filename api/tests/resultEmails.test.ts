@@ -6,6 +6,34 @@ import { createSeed } from '../../src/data/seed';
 import { executeCommand } from '../../src/data/commands';
 import { canApprove } from '../../src/domain/rules';
 describe('review email delivery', () => {
+  it('paces concurrent queue workers and continues after a failed send', async () => {
+    vi.useFakeTimers();
+    try {
+      const times: number[] = [];
+      const request = vi.fn<typeof fetch>().mockImplementation(async () => {
+        times.push(Date.now());
+        return new Response('{}', { status: times.length === 1 ? 429 : 200 });
+      });
+      const delivery = new ResendEmailDelivery('test-secret', 'pool@example.com', request);
+      const message = {
+        recipient: 'a@example.com',
+        subject: 'Test',
+        text: 'Test',
+        idempotencyKey: 'test',
+      };
+      const results = Promise.allSettled([
+        delivery.send(message),
+        delivery.send({ ...message, idempotencyKey: 'test2' }),
+        delivery.send({ ...message, idempotencyKey: 'test3' }),
+      ]);
+      await vi.runAllTimersAsync();
+      expect((await results).map((r) => r.status)).toEqual(['rejected', 'fulfilled', 'fulfilled']);
+      expect(times[1] - times[0]).toBeGreaterThanOrEqual(550);
+      expect(times[2] - times[1]).toBeGreaterThanOrEqual(550);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it.each([false, true])(
     'emails active administrators once for a new dispute (casual=%s)',
     (casual) => {

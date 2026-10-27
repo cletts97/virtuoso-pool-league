@@ -25,7 +25,7 @@ test('administrator can enroll in an older draft, delete an unused season and en
   await page.reload();
   await page.getByRole('button', { name: 'Add player to season', exact: true }).click();
   let dialog = page.getByRole('dialog');
-  await expect(dialog.getByLabel('Catch-up week (Monday)')).toHaveCount(0);
+  await expect(dialog.getByLabel('First fixture week (Monday)')).toHaveCount(0);
   await dialog.getByRole('combobox', { name: 'Player', exact: true }).selectOption('colleague-01');
   await dialog.getByRole('button', { name: 'Add player', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -182,7 +182,7 @@ test('administrator adds a late player without changing existing matches', async
   await page.getByRole('button', { name: 'Add player to season', exact: true }).click();
   await expect(page.getByRole('combobox', { name: 'Player', exact: true })).toBeEnabled();
   await page
-    .getByLabel('Catch-up week (Monday)')
+    .getByLabel('First fixture week (Monday)')
     .fill(new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10));
   await page
     .getByRole('button', {
@@ -196,7 +196,7 @@ test('administrator adds a late player without changing existing matches', async
   );
   expect(after.fixtures.slice(0, before.fixtures.length)).toEqual(before.fixtures);
   expect(after.fixtures.slice(before.fixtures.length)).toHaveLength(season.participantIds.length);
-  expect(after.fixtures.slice(before.fixtures.length).every((f) => f.status === 'postponed')).toBe(
+  expect(after.fixtures.slice(before.fixtures.length).every((f) => f.status === 'scheduled')).toBe(
     true,
   );
   expect(after.seasons.find((s) => s.id === season.id)!.participantIds).toHaveLength(

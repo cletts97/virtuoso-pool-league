@@ -51,7 +51,7 @@ describe('mid-season player addition', () => {
       expect(
         added.every(
           (f) =>
-            f.bestOf === 3 && f.status === 'postponed' && f.dueDate === weekStart(command.dueDate),
+            f.bestOf === 3 && f.status === 'scheduled' && f.dueDate >= weekStart(command.dueDate),
         ),
       ).toBe(true);
       expect(added.every((f) => matchStatus(f, addDays(weekEnd(f.dueDate), 1)) === 'overdue')).toBe(
@@ -116,7 +116,7 @@ describe('mid-season player addition', () => {
     expect(
       next.fixtures
         .slice(state.fixtures.length)
-        .every((f) => f.dueDate === weekStart(command.dueDate)),
+        .every((f) => f.dueDate >= weekStart(command.dueDate)),
     ).toBe(true);
   });
 });

@@ -77,7 +77,7 @@ export function Display() {
       : 12
     : compact
       ? 10
-      : 14;
+      : 18;
   const standingPages = Math.max(1, Math.ceil((data?.standings.length ?? 0) / standingSize));
   const standingPage = Math.floor(now.getTime() / 15000) % standingPages;
   const config = data?.config;
@@ -201,7 +201,9 @@ export function Display() {
             )}
           </section>
         </section>
-        <section className="tv-panel tv-standings">
+        <section
+          className={`tv-panel tv-standings${standingSize === 18 && (data?.standings.length ?? 0) > 14 ? ' tv-standings-dense' : ''}`}
+        >
           <div className="tv-section-title">
             <h2>
               <Trophy size={22} />

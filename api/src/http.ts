@@ -46,11 +46,16 @@ export function createHandler(service: LeagueService, auth: SupabaseClient, conf
           'Invalid automation key.',
         );
         requireCondition(
-          request.method === 'POST' && ['/automation/results', '/automation/weekly'].includes(path),
+          request.method === 'POST' &&
+            ['/automation/results', '/automation/weekly', '/automation/emails'].includes(path),
           404,
           'Automation route not found.',
         );
-        return json(await service.runAutomation(path.endsWith('/weekly') ? 'weekly' : 'results'));
+        return json(
+          await service.runAutomation(
+            path.endsWith('/weekly') ? 'weekly' : path.endsWith('/emails') ? 'emails' : 'results',
+          ),
+        );
       }
       if (request.method === 'GET' && path === '/display') {
         requireCondition(config.publicDisplay, 404, 'Public display is disabled.');

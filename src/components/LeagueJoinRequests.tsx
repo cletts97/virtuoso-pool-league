@@ -1,7 +1,8 @@
 import { ArrowRight, CalendarDays, CheckCheck, Clock3, Trophy, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useLeague } from '../app/LeagueContext';
-import { addDays, dateOnly, weekStart, weekLabel } from '../domain/rules';
+import { dateOnly, weekStart, weekLabel } from '../domain/rules';
+import { SeasonAdditionPreview } from './SeasonAdditionPreview';
 import { canAddSeasonPlayer, canJoinSeasonDirectly } from '../domain/seasonManagement';
 import type { SeasonJoinRequest } from '../domain/types';
 import { Modal, Section } from './ui';
@@ -101,7 +102,7 @@ export function JoinLeagueCards() {
 export function AdminJoinRequests() {
   const { state, run, busy } = useLeague();
   const [selected, setSelected] = useState<SeasonJoinRequest>();
-  const [dueDate, setDueDate] = useState(weekStart(addDays(dateOnly(), 14)));
+  const [dueDate, setDueDate] = useState(weekStart(dateOnly()));
   const requests = (state.joinRequests ?? []).filter((r) => r.status === 'pending');
   const season = state.seasons.find((s) => s.id === selected?.seasonId);
   const player = state.players.find((p) => p.id === selected?.playerId);
@@ -140,9 +141,7 @@ export function AdminJoinRequests() {
                   className="button secondary small"
                   onClick={() => {
                     setSelected(r);
-                    setDueDate(
-                      [weekStart(addDays(dateOnly(), 14)), weekStart(s!.startDate)].sort().at(-1)!,
-                    );
+                    setDueDate([weekStart(dateOnly()), weekStart(s!.startDate)].sort().at(-1)!);
                   }}
                 >
                   Review request
@@ -160,7 +159,7 @@ export function AdminJoinRequests() {
             </p>
             {season.status !== 'draft' && (
               <label>
-                Catch-up week (Monday)
+                First fixture week (Monday)
                 <input
                   type="date"
                   required
@@ -173,8 +172,9 @@ export function AdminJoinRequests() {
             <p className="field-help">
               {season.status === 'draft'
                 ? 'They will be included when fixtures are generated.'
-                : `Adds one postponed best-of-three catch-up fixture against each of the ${season.participantIds.length} existing players.`}
+                : `Adds one best-of-three fixture against each of the ${season.participantIds.length} existing players.`}
             </p>
+            <SeasonAdditionPreview season={season} firstWeek={dueDate} />
             {(!canAddSeasonPlayer(state, season) || !player?.active) && (
               <p>This season is closed or the account is inactive. You can decline this request.</p>
             )}

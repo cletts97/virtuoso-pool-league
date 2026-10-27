@@ -53,7 +53,7 @@ The reset icon beside the demo switcher restores all sample data after confirmat
 
 ## Season administration
 
-In **Administration → Season & configuration**, **Add player to season** works for existing drafts and regular seasons regardless of creation date. Draft additions are included when fixtures are generated; regular-season additions create catch-up matches. Closed seasons show the disabled action with an explanation.
+In **Administration → Season & configuration**, **Add player to season** works for existing drafts and regular seasons regardless of creation date. Draft additions are included when fixtures are generated. Published-season additions fill spare weekly places from the selected first week, with at most two assigned matches per player per week. Preview the added weeks/opponents before accepting; existing fixtures/results stay unchanged and the projected playoff week follows any extension. Closed seasons show the disabled action with an explanation.
 
 **End season** closes outstanding games without starting playoffs, keeps confirmed results/history, and cancels future bookings for those outstanding games. **Delete season** is only available for unused seasons without history, seeds or linked bookings and requires typing the exact name. Both are administrator-only; no database migration is required. Recorded seasons must be ended to preserve their audit history.
 

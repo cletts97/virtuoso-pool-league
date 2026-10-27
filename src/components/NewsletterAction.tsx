@@ -3,6 +3,7 @@ import { liveMode } from '../auth/client';
 import { authenticatedRequest } from '../data/apiRepository';
 import { Modal } from './ui';
 import type { NewsletterPreview } from '../data/newsletter';
+import { emailQueueSummary, sendPendingEmails } from '../data/emailQueue';
 
 export function NewsletterAction() {
   const [preview, setPreview] = useState<NewsletterPreview>();
@@ -29,10 +30,19 @@ export function NewsletterAction() {
       const result = await authenticatedRequest<{ queued: number }>('/admin/newsletter', {
         previewKey: preview.previewKey,
       });
-      setMessage(
-        `Newsletter queued for ${result.queued} recipients. Check the email queue for delivery progress or retries.`,
-      );
+      setMessage(`Newsletter saved for ${result.queued} recipients. Sending emails…`);
       setPreview({ ...preview, alreadyQueued: true });
+      try {
+        await sendPendingEmails((status) =>
+          setMessage(
+            `Newsletter saved for ${result.queued} recipients. ${emailQueueSummary(status)}`,
+          ),
+        );
+      } catch {
+        setError(
+          'The newsletter is saved, but delivery could not finish. Use Send pending emails to continue; do not send the newsletter again.',
+        );
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {

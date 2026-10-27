@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
-import { matchStatus, participantName, weekLabel } from '../domain/rules';
+import { matchStatus, participantName, weekLabel, weekStart } from '../domain/rules';
 import { Badge, Empty, PageHeading } from '../components/ui';
 import { MatchCard } from '../components/MatchCard';
 
@@ -10,7 +10,7 @@ export function Fixtures() {
   const [params, setParams] = useSearchParams();
   const status = params.get('status') ?? 'all',
     player = params.get('player') ?? 'all',
-    round = params.get('round') ?? 'all';
+    week = params.get('week') ?? 'all';
   const update = (key: string, value: string) =>
     setParams((previous) => {
       const next = new URLSearchParams(previous);
@@ -23,9 +23,9 @@ export function Fixtures() {
     (f) =>
       (status === 'all' || matchStatus(f) === status) &&
       (player === 'all' || [f.homeId, f.awayId].includes(player)) &&
-      (round === 'all' || String(f.round) === round),
+      (week === 'all' || weekStart(f.dueDate) === week),
   );
-  const rounds = [...new Set(all.map((f) => f.round))].sort((a, b) => a - b);
+  const weeks = [...new Set(all.map((f) => weekStart(f.dueDate)))].sort();
   return (
     <>
       <PageHeading
@@ -54,20 +54,16 @@ export function Fixtures() {
           </select>
         </label>
         <label>
-          <span className="sr-only">Round filter</span>
+          <span className="sr-only">Week filter</span>
           <select
-            aria-label="Round filter"
-            value={round}
-            onChange={(e) => update('round', e.target.value)}
+            aria-label="Week filter"
+            value={week}
+            onChange={(e) => update('week', e.target.value)}
           >
-            <option value="all">All rounds</option>
-            {rounds.map((r) => (
-              <option key={r} value={r}>
-                {all.find((f) => f.round === r)?.stage === 'regular'
-                  ? `Round ${r}`
-                  : all.find((f) => f.round === r)?.stage === 'final'
-                    ? 'Final'
-                    : 'Semifinals'}
+            <option value="all">All weeks</option>
+            {weeks.map((w) => (
+              <option key={w} value={w}>
+                {weekLabel(w)}
               </option>
             ))}
           </select>
@@ -111,45 +107,41 @@ export function Fixtures() {
           </Empty>
         </div>
       )}
-      {rounds
-        .filter((r) => matches.some((f) => f.round === r))
-        .map((r) => {
-          const roundMatches = matches.filter((f) => f.round === r);
-          const stage = roundMatches[0].stage;
-          const playing = all.filter((f) => f.round === r).flatMap((f) => [f.homeId, f.awayId]);
-          const byes = season.participantIds.filter((id) => !playing.includes(id));
+      {weeks
+        .filter((w) => matches.some((f) => weekStart(f.dueDate) === w))
+        .map((w) => {
+          const weekMatches = matches
+            .filter((f) => weekStart(f.dueDate) === w)
+            .sort((a, b) => a.round - b.round || a.id.localeCompare(b.id));
+          const rounds = [
+            ...new Set(weekMatches.filter((f) => f.stage === 'regular').map((f) => f.round)),
+          ];
           return (
-            <section className="fixture-round" key={r}>
+            <section className="fixture-round" key={w}>
               <div className="round-heading">
-                <h2>
-                  {stage === 'regular' ? (
-                    <>
-                      <span>{String(r).padStart(2, '0')}</span>Round {r}
-                    </>
-                  ) : stage === 'final' ? (
-                    'Final'
-                  ) : (
-                    'Semifinals'
-                  )}
-                </h2>
+                <h2>{weekLabel(w)}</h2>
                 <span>
-                  {weekLabel(roundMatches[0].dueDate)} · {roundMatches.length}{' '}
-                  {roundMatches.length === 1 ? 'match' : 'matches'}{' '}
-                  <span className="meta-divider">·</span> Best of {roundMatches[0].bestOf}
+                  {weekMatches.length} {weekMatches.length === 1 ? 'match' : 'matches'}
                 </span>
               </div>
               <div className="match-grid">
-                {roundMatches.map((f) => (
+                {weekMatches.map((f) => (
                   <MatchCard key={f.id} fixture={f} />
                 ))}
               </div>
-              {stage === 'regular' && byes.length > 0 && (
-                <p className="bye-note">
-                  <Search size={14} />
-                  Bye this round: {byes.map((id) => participantName(state, id)).join(', ')}. No win
-                  or loss awarded.
-                </p>
-              )}
+              {rounds.map((r) => {
+                const playing = all
+                  .filter((f) => f.stage === 'regular' && f.round === r)
+                  .flatMap((f) => [f.homeId, f.awayId]);
+                const byes = season.participantIds.filter((id) => !playing.includes(id));
+                return byes.length > 0 ? (
+                  <p className="bye-note" key={r}>
+                    <Search size={14} />
+                    Round {r} bye: {byes.map((id) => participantName(state, id)).join(', ')}. No win
+                    or loss awarded.
+                  </p>
+                ) : null;
+              })}
             </section>
           );
         })}

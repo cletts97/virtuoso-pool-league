@@ -216,10 +216,18 @@ Accepting an active-season request adds catch-up fixtures without replacing exis
     const counts = ready
       ? (
           await this.pool.query(
-            `SELECT count(*) FILTER(WHERE status IN ('pending','sending'))::int AS pending,count(*) FILTER(WHERE status='failed')::int AS failed,count(*) FILTER(WHERE status='sent')::int AS sent FROM public.result_email_outbox`,
+            `SELECT count(*) FILTER(WHERE status IN ('pending','sending'))::int AS pending,
+              count(*) FILTER(WHERE status='failed')::int AS failed,
+              count(*) FILTER(WHERE status='sent')::int AS sent,
+              count(*) FILTER(WHERE attempts<5 AND created_at>=now()-interval '23 hours' AND
+                ((status='pending' AND next_attempt_at<=now()) OR (status='sending' AND lease_until<now())))::int AS due,
+              count(*) FILTER(WHERE status='sending' AND lease_until>=now())::int AS sending,
+              count(*) FILTER(WHERE status='pending' AND next_attempt_at>now())::int AS retrying,
+              min(next_attempt_at) FILTER(WHERE status='pending' AND next_attempt_at>now()) AS "nextAttemptAt"
+             FROM public.result_email_outbox`,
           )
         ).rows[0]
-      : { pending: 0, failed: 0, sent: 0 };
+      : { pending: 0, failed: 0, sent: 0, due: 0, sending: 0, retrying: 0, nextAttemptAt: null };
     return { enabled: this.enabled, ready, ...counts };
   }
   private async stillReviewable(job: ResultEmailJob, role: string) {
@@ -325,7 +333,14 @@ Accepting an active-season request adds catch-up fixtures without replacing exis
             outcome = 'sent';
           }
         }
-      } catch {
+      } catch (error) {
+        // Log only a safe classification, never addresses, credentials or provider response bodies.
+        const message = error instanceof Error ? error.message : '';
+        const code = message.match(/^Email provider returned HTTP (\d{3})\.$/)?.[1];
+        console.warn(
+          'Email delivery deferred',
+          code ? `provider_http_${code}` : 'recipient_or_network_error',
+        );
         outcome = job.attempts >= 5 ? 'failed' : 'pending';
       }
       await this.pool.query(
