@@ -24,6 +24,7 @@
   --accent-solid: #ff5c00;
   --orange-wash: #ff6b0010;
   --green: #62d7ac;
+  --red: #ff8585;
   --shadow: 0 12px 36px #00000017;
 }
 :root[data-theme='light'] {
@@ -40,6 +41,7 @@
   --accent-solid: #f45b0b;
   --orange-wash: #ff6b000b;
   --green: #147552;
+  --red: #b42332;
   --shadow: 0 8px 30px #1b304009;
   color: var(--text);
   background: var(--bg);
@@ -1069,8 +1071,13 @@ select option {
   font-weight: 700;
   color: var(--text);
 }
-.standings-table .positive {
+.standings-table .positive,
+.tv-standings .positive {
   color: var(--green);
+}
+.standings-table .negative,
+.tv-standings .negative {
+  color: var(--red);
 }
 .position {
   font-size: 11px;
@@ -1214,6 +1221,9 @@ select option {
   color: var(--subtle);
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+.match-meta > .badge {
+  margin-left: auto;
 }
 .match-contest {
   display: flex;

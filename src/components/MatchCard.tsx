@@ -14,13 +14,9 @@ export function MatchCard({ fixture, compact = false }: { fixture: Fixture; comp
       aria-label={`${participantName(state, fixture.homeId)} versus ${participantName(state, fixture.awayId)}, ${matchStatus(fixture)}`}
     >
       <div className="match-meta">
-        <span>
-          {fixture.stage === 'regular'
-            ? `Round ${String(fixture.round).padStart(2, '0')}`
-            : fixture.stage === 'final'
-              ? 'Final'
-              : 'Semifinal'}
-        </span>
+        {fixture.stage !== 'regular' && (
+          <span>{fixture.stage === 'final' ? 'Final' : 'Semifinal'}</span>
+        )}
         <Badge status={matchStatus(fixture)} />
       </div>
       <div className="match-contest">

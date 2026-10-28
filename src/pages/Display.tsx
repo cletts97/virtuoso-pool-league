@@ -236,7 +236,11 @@ export function Display() {
                     <td>{r.played}</td>
                     <td>{r.won}</td>
                     <td>{r.lost}</td>
-                    <td>
+                    <td
+                      className={
+                        r.difference > 0 ? 'positive' : r.difference < 0 ? 'negative' : undefined
+                      }
+                    >
                       {r.difference > 0 ? '+' : ''}
                       {r.difference}
                     </td>

@@ -108,7 +108,7 @@ export function StandingsTable({ preview = false }: { preview?: boolean }) {
                 .map((c) => (
                   <td
                     key={c.key}
-                    className={`${c.className ?? ''} ${c.key === 'won' ? 'wins' : ''} ${c.key === 'difference' && row.difference > 0 ? 'positive' : ''}`}
+                    className={`${c.className ?? ''} ${c.key === 'won' ? 'wins' : ''} ${c.key === 'difference' ? (row.difference > 0 ? 'positive' : row.difference < 0 ? 'negative' : '') : ''}`}
                   >
                     {c.key === 'difference' && row.difference > 0 ? '+' : ''}
                     {String(row[c.key])}

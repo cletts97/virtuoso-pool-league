@@ -46,6 +46,7 @@ Keep operating costs as close to zero as reasonably possible.
 - Publish fixtures in advance.
 - Target approximately two rounds per week.
 - Fixtures are assigned to Monday–Sunday playing weeks, displayed as **Week commencing [Monday]**, with no assigned playing date or time. Default two rounds per week; rounds in the same week share its Monday anchor.
+- Fixture tiles omit round numbers and the fixtures page omits round-based bye notices. Playing weeks are the public schedule; retain internal round values without displaying them on tiles. Playoff tiles still identify semifinals/finals.
 - Administrators can generate and publish fixtures before the season starts, including future Monday starts. Selecting another start date normalizes it to that week's Monday.
 - Players arrange their matches themselves without assigned times. Table reservations remain separate and have exact dates/times.
 - Allow matches to be played ahead of schedule.

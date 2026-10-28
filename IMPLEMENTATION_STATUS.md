@@ -1,5 +1,15 @@
 # Implementation status — Virtuoso Pool League
 
+## Fixture week presentation — 28 October 2026
+
+- Removed internal round labels from shared regular-season fixture tiles and removed round-based bye notices from weekly fixture groups. Week headings, match counts, status, format and playoff stage labels remain. Stored rounds, pairings, assigned weeks and results are unchanged.
+- Strict TypeScript, targeted ESLint and whitespace checks passed. Two focused desktop/mobile browser checks passed for fixture generation, weekly tiles without round/bye text and postponement persistence. No production build, migration, commit or deployment.
+
+## Standings frame-difference colours — 28 October 2026
+
+- Regular/preview standings and the TV standings now show positive frame differences in green, negative values in red and zero in the existing neutral colour. Red has separate dark/light theme values; scoring and sorting are unchanged.
+- Strict TypeScript, targeted ESLint and whitespace checks passed. No full suite/build, backend change, commit or deployment.
+
 ## Batch late enrollment and future-week rebalancing — 28 October 2026
 
 - Added **Administration → League join requests → Preview joiners & future weeks · [season]** for published, unfinalized singles seasons. Select pending requests together, inspect joining/all-player weekly totals, new/moved fixture counts, individual week changes and projected league/playoff end. Explicit review confirmation is required before applying. Individual request review and preserve-all-weeks additions remain available.

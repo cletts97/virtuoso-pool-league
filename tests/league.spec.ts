@@ -493,7 +493,8 @@ test('administrator creates an odd-player season, publishes fixtures and postpon
   await page.goto('/fixtures');
   await expect(page.locator('.match-card')).toHaveCount(55);
   await expect(page.locator('.match-card').first()).toContainText('Week commencing 4 Jan 2027');
-  await expect(page.getByText(/Bye this round:/)).toHaveCount(11);
+  await expect(page.locator('.bye-note')).toHaveCount(0);
+  await expect(page.locator('.match-meta').filter({ hasText: /Round/i })).toHaveCount(0);
   await page.locator('.match-card').first().click();
   await page.getByRole('button', { name: 'Postpone match' }).click();
   await page.getByLabel('New fixture week (Monday)').fill('2027-02-15');

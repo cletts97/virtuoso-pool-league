@@ -68,7 +68,7 @@ The new **Casual games** page supports singles/doubles submissions, opposing con
 ## Application features
 
 - Personal dashboard, live calculated standings, top-four indicators, sortable table, and recent form.
-- Full round-robin schedule, round/player/status filters, byes, match details, score submission, opponent approval, disputes, postponements, and an audit timeline.
+- Full round-robin schedule grouped by playing week, week/player/status filters, match details, score submission, opponent approval, disputes, postponements, and an audit timeline. Fixture tiles omit internal round numbers and round-based bye notices.
 - Player directory, season profiles, regular-season statistics, round-by-round performance, match history, upcoming fixtures, and head-to-head records across seasons.
 - Projected and finalized playoff brackets, best-of-five semifinals, best-of-seven finals, automatic advancement, and champion presentation.
 - Admin player creation/editing/deactivation, season creation/settings, fixture generation and adjustments, overdue/postponed queues, dispute resolution, score corrections, and announcements.

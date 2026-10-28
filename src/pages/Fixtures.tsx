@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
 import { matchStatus, participantName, weekLabel, weekStart } from '../domain/rules';
 import { Badge, Empty, PageHeading } from '../components/ui';
@@ -113,9 +113,6 @@ export function Fixtures() {
           const weekMatches = matches
             .filter((f) => weekStart(f.dueDate) === w)
             .sort((a, b) => a.round - b.round || a.id.localeCompare(b.id));
-          const rounds = [
-            ...new Set(weekMatches.filter((f) => f.stage === 'regular').map((f) => f.round)),
-          ];
           return (
             <section className="fixture-round" key={w}>
               <div className="round-heading">
@@ -129,19 +126,6 @@ export function Fixtures() {
                   <MatchCard key={f.id} fixture={f} />
                 ))}
               </div>
-              {rounds.map((r) => {
-                const playing = all
-                  .filter((f) => f.stage === 'regular' && f.round === r)
-                  .flatMap((f) => [f.homeId, f.awayId]);
-                const byes = season.participantIds.filter((id) => !playing.includes(id));
-                return byes.length > 0 ? (
-                  <p className="bye-note" key={r}>
-                    <Search size={14} />
-                    Round {r} bye: {byes.map((id) => participantName(state, id)).join(', ')}. No win
-                    or loss awarded.
-                  </p>
-                ) : null;
-              })}
             </section>
           );
         })}
