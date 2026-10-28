@@ -1,6 +1,107 @@
 import { test, expect } from '@playwright/test';
 import type { LeagueState } from '../src/domain/types';
 
+test('administrator previews and accepts two joiners with revised future weeks', async ({
+  page,
+}, testInfo) => {
+  await page.clock.install({ time: new Date('2026-10-28T10:00:00Z') });
+  await page.goto('/admin');
+  await page.locator('.topbar').waitFor();
+  await page.evaluate(async () => {
+    const path = '/src/domain/rules.ts';
+    const { generateRoundRobin } = await import(path);
+    const key = 'virtuoso-pool-league.v1';
+    const s = JSON.parse(localStorage.getItem(key)!) as LeagueState;
+    const template = s.players[0];
+    s.players = Array.from({ length: 18 }, (_, i) => ({
+      ...template,
+      id: `user${i}`,
+      name: i === 16 ? 'Natia' : i === 17 ? 'Ryan' : `Player ${i}`,
+      role: i === 0 ? 'admin' : 'player',
+    }));
+    s.currentUserId = 'user0';
+    s.participants = Array.from({ length: 16 }, (_, i) => ({
+      id: `entry${i}`,
+      name: `Player ${i}`,
+      kind: 'individual',
+      playerIds: [`user${i}`],
+    }));
+    const season = {
+      ...s.seasons[0],
+      id: 'season',
+      name: 'Season 1',
+      startDate: '2026-10-26',
+      status: 'regular' as const,
+      participantIds: s.participants.map((p) => p.id),
+      qualifiers: [],
+      config: { roundsPerWeek: 2 },
+    };
+    s.seasons = [season];
+    s.selectedSeasonId = 'season';
+    s.fixtures = generateRoundRobin(season);
+    s.bookings = [];
+    s.notifications = [];
+    s.announcements = [];
+    s.joinRequests = [16, 17].map((i) => ({
+      id: `request${i}`,
+      seasonId: 'season',
+      playerId: `user${i}`,
+      status: 'pending',
+      createdAt: '2026-10-28T08:00:00Z',
+    }));
+    localStorage.setItem(key, JSON.stringify(s));
+  });
+  await page.reload();
+  const original = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState,
+  );
+  await page.getByRole('button', { name: /Preview joiners & future weeks/ }).click();
+  const dialog = page.getByRole('dialog');
+  const apply = dialog.getByRole('button', {
+    name: 'Accept 2 players and update schedule',
+    exact: true,
+  });
+  await expect(apply).toBeDisabled();
+  await expect(dialog).toContainText('33 new fixtures');
+  const table = dialog.getByRole('table', {
+    name: 'Assigned fixtures per week for joining players',
+    exact: true,
+  });
+  for (const row of await table.locator('tbody tr').all())
+    expect(await row.locator('td').allTextContents()).toEqual([
+      '1',
+      '2',
+      '2',
+      '2',
+      '2',
+      '2',
+      '2',
+      '2',
+      '2',
+      '17',
+    ]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await dialog.screenshot({
+    path: `.tools/screenshots/rebalanced-enrollment-${testInfo.project.name}.png`,
+  });
+  await dialog
+    .getByLabel('I have reviewed the schedule. Update future weeks and notify affected players.', {
+      exact: true,
+    })
+    .check();
+  await apply.click();
+  await expect(dialog).toHaveCount(0);
+  const next = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState,
+  );
+  expect(next.fixtures).toHaveLength(153);
+  expect(next.joinRequests!.every((r) => r.status === 'approved')).toBe(true);
+  for (const f of original.fixtures.filter((f) => f.dueDate === '2026-10-26'))
+    expect(next.fixtures.find((n) => n.id === f.id)).toEqual(f);
+  await page.reload();
+  await expect(page.getByRole('button', { name: /Preview joiners & future weeks/ })).toHaveCount(0);
+});
+
 test('administrator can enroll in an older draft, delete an unused season and end a test season', async ({
   page,
 }) => {

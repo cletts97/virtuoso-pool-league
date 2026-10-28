@@ -6,6 +6,7 @@ import { SeasonAdditionPreview } from './SeasonAdditionPreview';
 import { canAddSeasonPlayer, canJoinSeasonDirectly } from '../domain/seasonManagement';
 import type { SeasonJoinRequest } from '../domain/types';
 import { Modal, Section } from './ui';
+import { RebalancedEnrollmentModal } from './RebalancedEnrollmentModal';
 
 export function JoinLeagueCards() {
   const { state, run, busy } = useLeague();
@@ -103,6 +104,7 @@ export function AdminJoinRequests() {
   const { state, run, busy } = useLeague();
   const [selected, setSelected] = useState<SeasonJoinRequest>();
   const [dueDate, setDueDate] = useState(weekStart(dateOnly()));
+  const [rebalanceSeason, setRebalanceSeason] = useState<string>();
   const requests = (state.joinRequests ?? []).filter((r) => r.status === 'pending');
   const season = state.seasons.find((s) => s.id === selected?.seasonId);
   const player = state.players.find((p) => p.id === selected?.playerId);
@@ -123,8 +125,22 @@ export function AdminJoinRequests() {
       <Section
         className="mb-6"
         title="League join requests"
-        subtitle="Requests from all seasons. Accepting an active-season request preserves existing fixtures and results."
+        subtitle="Review requests individually, or accept joiners together and preview revised future weeks."
       >
+        <div className="admin-actions rebalance-actions">
+          {[...new Set(requests.map((r) => r.seasonId))].map((id) => {
+            const season = state.seasons.find((s) => s.id === id);
+            return season?.status === 'regular' && canAddSeasonPlayer(state, season) ? (
+              <button
+                key={id}
+                className="button primary small"
+                onClick={() => setRebalanceSeason(id)}
+              >
+                Preview joiners & future weeks · {season.name}
+              </button>
+            ) : null;
+          })}
+        </div>
         <div className="admin-list">
           {requests.map((r) => {
             const s = state.seasons.find((s) => s.id === r.seasonId);
@@ -151,6 +167,12 @@ export function AdminJoinRequests() {
           })}
         </div>
       </Section>
+      {rebalanceSeason && (
+        <RebalancedEnrollmentModal
+          seasonId={rebalanceSeason}
+          onClose={() => setRebalanceSeason(undefined)}
+        />
+      )}
       {selected && season && (
         <Modal title="Review league join request" onClose={close}>
           <div className="form-stack">

@@ -40,6 +40,10 @@ All `VITE_` values become public JavaScript. The build rejects recognizable priv
 
 Remote database connections require verified TLS. Connection-string TLS overrides are removed so they cannot silently disable verification. The pool has four connections per API process. Transactions execute as `service_role`; the connection login must be able to assume that role. This preserves the deployed append-only table grants, although the connection credential itself remains privileged and must be protected. Use the project's documented PostgreSQL/pooler credentials and supplied CA certificate if required; do not disable certificate verification to work around setup errors.
 
+## Late-joiner schedule revision rollout
+
+Deploy the frontend and API together to enable **Administration → League join requests → Preview joiners & future weeks**. This optional batch action uses the existing schema, request approvals, result audit events, notification delivery and API transaction/revision lock. No additional migration, secret, setting or Cron update is required. Previewing does not change data or queue emails. Applying approves the selected requests, adds their pairings, and moves only eligible future fixture weeks atomically. Current/past fixtures, submitted results and reserved fixture bookings stay fixed. Changed fixtures generate in-app notices; accepted players use the existing membership-confirmation email pipeline. A stale snapshot or changed preview is rejected rather than silently overwriting concurrent work.
+
 ## Local development
 
 Use Node **22.12+** with npm, Docker Desktop, and installed Google Chrome for browser tests.

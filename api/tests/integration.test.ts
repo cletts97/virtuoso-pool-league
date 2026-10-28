@@ -11,6 +11,8 @@ import { mondayOfWeek } from '../src/scheduledEmails';
 import { addDays, standings } from '../../src/domain/rules';
 import { ResultEmailQueue } from '../src/resultEmails';
 import type { EmailMessage } from '../src/email';
+import { planRebalancedEnrollment } from '../../src/domain/rebalancedEnrollment';
+import { weekStart } from '../../src/domain/rules';
 
 describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
   'disposable LOCAL Supabase integration',
@@ -67,6 +69,80 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       }
       await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[0]]);
     }, 60000);
+    it('atomically approves late enrollment and reschedules only unprotected future fixtures', async () => {
+      let state = await command({
+        type: 'createSeason',
+        name: prefix + ' rebalance',
+        startDate: londonDate(new Date()),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const seasonId = state.selectedSeasonId;
+      state = await command({ type: 'generate', seasonId });
+      const monday = weekStart(londonDate(new Date()));
+      const future = state.fixtures.filter(
+        (f) => f.seasonId === seasonId && weekStart(f.dueDate) > monday,
+      );
+      const played = future[0];
+      const home = state.participants.find((p) => p.id === played.homeId)!.playerIds[0];
+      await command(
+        { type: 'submit', fixtureId: played.id, score: { home: 2, away: 0 } },
+        users[profiles.indexOf(home)],
+      );
+      await command({
+        type: 'reschedule',
+        fixtureId: future[1].id,
+        dueDate: addDays(monday, 56),
+        reason: 'Local future week adjustment',
+      });
+      await command({ type: 'requestSeasonJoin', seasonId }, users[4]);
+      const before = await service.load(users[0]);
+      const request = before.joinRequests!.find(
+        (r) => r.seasonId === seasonId && r.playerId === profiles[4],
+      )!;
+      // Browser previews see JSON, while command execution reads database objects.
+      const plan = planRebalancedEnrollment(JSON.parse(JSON.stringify(before)), seasonId, [
+        request.id,
+      ]);
+      const accept = {
+        type: 'acceptJoinRequestsAndRebalance' as const,
+        seasonId,
+        requestIds: [request.id],
+        previewKey: plan.previewKey,
+      };
+      await expect(service.execute(users[1], accept, before.revision!)).rejects.toThrow(
+        'Administrator',
+      );
+      const results = await Promise.allSettled([
+        service.execute(users[0], accept, before.revision!),
+        service.execute(users[0], accept, before.revision!),
+      ]);
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      const saved = await service.load(users[0]);
+      const fixtures = saved.fixtures.filter((f) => f.seasonId === seasonId);
+      expect(fixtures).toHaveLength(10);
+      expect(saved.joinRequests!.find((r) => r.id === request.id)!.status).toBe('approved');
+      for (const f of before.fixtures.filter(
+        (f) => f.seasonId === seasonId && (weekStart(f.dueDate) <= monday || f.id === played.id),
+      ))
+        expect(fixtures.find((n) => n.id === f.id)).toEqual(f);
+      expect(fixtures.find((f) => f.id === future[1].id)!.dueDate).not.toBe(addDays(monday, 56));
+      expect(fixtures.find((f) => f.id === future[1].id)!.history.at(-1)).toMatchObject({
+        action: 'rescheduled',
+        actorId: profiles[0],
+      });
+      expect(fixtures.find((f) => f.id === future[1].id)!.history.at(-1)!.reason).toContain(
+        'Late-entry schedule revision',
+      );
+      expect(saved.notifications.some((n) => n.title === 'League fixture week updated')).toBe(true);
+      expect(
+        (await service.load(users[4])).notifications.some(
+          (n) => n.joinRequestId === request.id && n.title === 'League join request accepted',
+        ),
+      ).toBe(true);
+      const pairs = new Set(fixtures.map((f) => [f.homeId, f.awayId].sort().join('/')));
+      expect(pairs.size).toBe(10);
+    }, 30000);
     it('persists single-frame league results, approves/corrects them and rejects draws and short playoffs', async () => {
       let state = await command({
         type: 'createSeason',

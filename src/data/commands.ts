@@ -23,6 +23,7 @@ import { executeCasualCommand } from './casualCommands';
 import { executeSeasonLifecycle } from './seasonCommands';
 import { canAddSeasonPlayer, canJoinSeasonDirectly } from '../domain/seasonManagement';
 import { planAdditionalFixtures } from '../domain/lateEntry';
+import { executeRebalancedEnrollment } from './rebalancedEnrollmentCommand';
 
 const id = () => crypto.randomUUID();
 const text = (value: string, label: string, max = 300) => {
@@ -218,6 +219,8 @@ export function executeCommand(
   command: LeagueCommand,
   notifications: NotificationService = inAppNotifications,
 ): LeagueState {
+  if (command.type === 'acceptJoinRequestsAndRebalance')
+    return executeRebalancedEnrollment(source, command, notifications);
   if (command.type === 'endSeason' || command.type === 'deleteSeason')
     return executeSeasonLifecycle(source, command);
   if (

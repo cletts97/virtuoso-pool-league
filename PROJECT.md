@@ -112,6 +112,15 @@ Display standings using the following columns:
 - Mark additional fixtures scheduled, add weeks after the existing schedule when needed, and derive the projected playoff week from the new last league week. Do not regenerate published fixtures or rewrite previously created catch-up fixtures. Scheduled and postponed fixtures display as overdue on the Monday after their playing week ends; no loss is awarded automatically.
 - The new participant starts with zero played/wins/losses. Only approved results affect standings; all new regular-season fixtures must be resolved before normal automatic playoff qualification.
 
+#### Optional batch acceptance and future-week revision
+
+- Administrators can select pending requests for one published singles season and preview accepting the players together while rebalancing future weeks. Individual acceptance and manual additions retain the existing preserve-all-weeks behavior above.
+- Preserve every existing fixture in the current or an earlier week, any fixture with a submitted result or result history (including future pending, disputed and confirmed results), and fixtures with reserved bookings. Cancelled fixtures remain unchanged. Move only future scheduled/postponed fixtures without results or reserved bookings; preserve their IDs, pairings, round numbers, status and prior history.
+- Create each missing new-versus-existing and new-versus-new pairing once. New pairings can fill spare places this week, prioritizing a game between joiners. Never assign additional games to a player with two existing games in that week.
+- Rebalance future weeks to aim for two assigned regular-season fixtures per player per week, with a maximum of two. Ordinary byes and protected fixtures can prevent a full two-game week. Preserve any pre-existing protected over-capacity week without adding further fixtures to those players. No dedicated catch-up week is introduced; extend the league when necessary and project all playoffs into the week after the last league week.
+- Preview new/moved fixture counts, joining players' weekly workloads, all players' weekly totals, individual changed weeks and the projected end/playoff weeks. Require explicit confirmation. Recompute and validate the plan server-side and apply enrollment, request approval, new fixtures and changed weeks in one revision-checked transaction; reject stale previews or concurrent duplicate approvals.
+- Record every changed week in the fixture audit trail and notify affected participants in-app. Accepted players receive the existing membership notification/confirmation email. No results or bookings are rewritten and no real email is sent by previewing.
+
 ### Postponements
 
 - Do not provide separate unavailability/annual-leave recording. Retain historical records without using them to adjust new fixture dates.

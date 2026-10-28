@@ -2,9 +2,11 @@ import type { LeagueState, Score } from '../domain/types';
 import type { BookingCommand } from './bookingCommands';
 import type { CasualCommand } from './casualCommands';
 import type { SeasonLifecycleCommand } from './seasonCommands';
+import type { RebalancedEnrollmentCommand } from './rebalancedEnrollmentCommand';
 
 export type LeagueCommand =
   | SeasonLifecycleCommand
+  | RebalancedEnrollmentCommand
   | CasualCommand
   | { type: 'joinSeason'; seasonId: string }
   | { type: 'requestSeasonJoin'; seasonId: string }

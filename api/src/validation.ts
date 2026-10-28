@@ -32,6 +32,12 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('joinSeason'), seasonId: id }),
   z.strictObject({ type: z.literal('requestSeasonJoin'), seasonId: id }),
   z.strictObject({ type: z.literal('reviewSeasonJoin'), id, approve: z.boolean(), dueDate: date }),
+  z.strictObject({
+    type: z.literal('acceptJoinRequestsAndRebalance'),
+    seasonId: id,
+    requestIds: z.array(id).min(1).max(39),
+    previewKey: z.string().regex(/^[0-9a-f]{8}$/),
+  }),
   z.strictObject({ type: z.literal('deleteUser'), id }),
   z.strictObject({ type: z.literal('updateProfile'), name: text.max(70) }),
   z.strictObject({ type: z.literal('submit'), fixtureId: id, score }),
