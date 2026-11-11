@@ -28,7 +28,10 @@ export function Display() {
   const now = useClock();
   useEffect(() => {
     let alive = true;
+    let refreshing = false;
     const refresh = async () => {
+      if (refreshing || document.hidden) return;
+      refreshing = true;
       try {
         const next = await browserRepository.loadDisplay();
         if (alive) {
@@ -37,6 +40,8 @@ export function Display() {
         }
       } catch {
         if (alive) setError('Live data unavailable · Automatically retrying');
+      } finally {
+        refreshing = false;
       }
     };
     void refresh();
@@ -44,11 +49,13 @@ export function Display() {
     const refreshEvent = () => void refresh();
     window.addEventListener('storage', refreshEvent);
     window.addEventListener('focus', refreshEvent);
+    document.addEventListener('visibilitychange', refreshEvent);
     return () => {
       alive = false;
       window.clearInterval(timer);
       window.removeEventListener('storage', refreshEvent);
       window.removeEventListener('focus', refreshEvent);
+      document.removeEventListener('visibilitychange', refreshEvent);
     };
   }, []);
   const bookings =

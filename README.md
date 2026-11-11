@@ -1,5 +1,7 @@
 # Virtuoso Pool League
 
+Database bandwidth: see [traffic reduction and rollout](docs/EGRESS_REDUCTION.md). TV/public reads now use a minimal projection plus server-side change detection; authenticated reads share cached data while preserving per-request access checks. No migration or new settings are required. Hidden tabs pause polling; visible TV refreshes remain every 30 seconds.
+
 Scheduled newsletter, 24-hour reminders and 48-hour automatic confirmation: see [Supabase Cron setup](docs/SCHEDULED_AUTOMATION.md). Requires its additive migration and explicit operator activation; uses the existing Resend sender and Azure HTTP API.
 
 A Virtuoso-branded office singles league, table booking calendar and TV dashboard. React, strict TypeScript, Vite and Tailwind power the frontend; the API uses Azure Functions, Supabase Auth and PostgreSQL. Both isolated mock mode and shared API mode are available. The existing cloud schema is unchanged. Cloud deployment and real email delivery have not been performed.

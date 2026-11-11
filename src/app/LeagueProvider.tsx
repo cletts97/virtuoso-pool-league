@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { CheckCircle2, X, AlertCircle } from 'lucide-react';
 import { browserRepository as repository } from '../data/browserRepository';
 import { LeagueContext } from './LeagueContext';
@@ -13,23 +13,32 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{ text: string; error: boolean }>();
   const clearFeedback = useCallback(() => setToast(undefined), []);
+  const loading = useRef(false);
   const load = useCallback(() => {
-    if (document.querySelector('dialog[open]')) return;
+    if (loading.current || document.hidden || document.querySelector('dialog[open]')) return;
+    loading.current = true;
     repository
       .load()
       .then((next) => {
         setState(next);
         setError('');
       })
-      .catch((e: Error) => setError(e.message));
+      .catch((e: Error) => setError(e.message))
+      .finally(() => {
+        loading.current = false;
+      });
   }, []);
   useEffect(() => {
     load();
     const timer = window.setInterval(load, 30_000);
     window.addEventListener('storage', load);
+    window.addEventListener('focus', load);
+    document.addEventListener('visibilitychange', load);
     return () => {
       window.clearInterval(timer);
       window.removeEventListener('storage', load);
+      window.removeEventListener('focus', load);
+      document.removeEventListener('visibilitychange', load);
     };
   }, [load]);
   useEffect(() => {

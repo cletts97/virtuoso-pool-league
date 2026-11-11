@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { beforeAll, afterAll, describe, it, expect } from 'vitest';
+import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest';
 import { createClient, type User } from '@supabase/supabase-js';
 import { createPool } from '../src/database';
 import { readConfig } from '../src/config';
@@ -13,6 +13,11 @@ import { ResultEmailQueue } from '../src/resultEmails';
 import type { EmailMessage } from '../src/email';
 import { planRebalancedEnrollment } from '../../src/domain/rebalancedEnrollment';
 import { weekStart } from '../../src/domain/rules';
+import { StateCache, stateFingerprint } from '../src/stateCache';
+import { readState } from '../src/state';
+import { displaySnapshot } from '../../src/data/display';
+import { publicSnapshot } from '../../src/data/publicSnapshot';
+import type { PoolClient } from 'pg';
 
 describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
   'disposable LOCAL Supabase integration',
@@ -69,6 +74,142 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       }
       await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[0]]);
     }, 60000);
+    it('caches unchanged reads, preserves public parity and invalidates across database writes', async () => {
+      const cache = new StateCache();
+      async function read<T>(fn: (client: PoolClient) => Promise<T>) {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ');
+          await client.query('SET LOCAL ROLE service_role');
+          const result = await fn(client);
+          await client.query('ROLLBACK');
+          return result;
+        } finally {
+          client.release();
+        }
+      }
+      const now = new Date();
+      const state = await command({
+        type: 'createSeason',
+        name: prefix + ' cached',
+        startDate: londonDate(now),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const id = state.selectedSeasonId;
+      await command({ type: 'generate', seasonId: id });
+      const baseline = await read((client) => readState(client));
+      const first = await read((client) => cache.read(client, true, now));
+      expect(displaySnapshot(first, now)).toEqual(displaySnapshot(baseline, now));
+      expect(publicSnapshot(first, now)).toEqual(publicSnapshot(baseline, now));
+      expect(first.notifications).toEqual([]);
+      expect(first.availability).toEqual([]);
+      expect(first.joinRequests).toEqual([]);
+      expect(first.fixtures.every((f) => !f.note && !f.submittedBy && f.history.length <= 2)).toBe(
+        true,
+      );
+      expect(
+        (first.casualResults ?? []).every((r) =>
+          r.history.every((h) => h.actorId === null && !h.reason),
+        ),
+      ).toBe(true);
+      await read(async (client) => {
+        const query = vi.spyOn(client, 'query');
+        try {
+          expect(await cache.read(client, true, now)).toBe(first);
+          expect(query).toHaveBeenCalledTimes(2);
+        } finally {
+          query.mockRestore();
+        }
+      });
+      // A different service instance/SQL maintenance must invalidate this process.
+      const f = baseline.fixtures.find((f) => f.seasonId === id)!;
+      const homeId = baseline.participants.find((p) => p.id === f.homeId)!.playerIds[0];
+      await command(
+        { type: 'submit', fixtureId: f.id, score: { home: 1, away: 0 } },
+        users[profiles.indexOf(homeId)],
+      );
+      let changed = await read((client) => cache.read(client, true, now));
+      expect(changed).not.toBe(first);
+      expect(changed.fixtures.find((row) => row.id === f.id)!.status).toBe('pending');
+      const full = await read((client) => readState(client));
+      expect(displaySnapshot(changed, now)).toEqual(displaySnapshot(full, now));
+      expect(publicSnapshot(changed, now)).toEqual(publicSnapshot(full, now));
+      const beforeNames = await read((client) => stateFingerprint(client, true));
+      await pool.query('UPDATE public.participants SET name=name||$2 WHERE id=$1', [
+        f.homeId,
+        ' updated',
+      ]);
+      expect(await read((client) => stateFingerprint(client, true))).not.toBe(beforeNames);
+      changed = await read((client) => cache.read(client, true, now));
+      expect(changed.participants.find((p) => p.id === f.homeId)!.name).toContain(' updated');
+      const privateBefore = await read((client) => cache.read(client));
+      const notice = (
+        await pool.query(
+          `INSERT INTO public.notifications(user_id,season_id,kind,title,body) VALUES($1,$2,'notice','PRIVATE CACHE CHECK','Private body') RETURNING id`,
+          [profiles[0], id],
+        )
+      ).rows[0].id;
+      const privateAfter = await read((client) => cache.read(client));
+      expect(privateAfter).not.toBe(privateBefore);
+      expect(privateAfter.notifications.some((n) => n.id === notice)).toBe(true);
+      // Recipient-specific filtering still happens afresh, never in the shared cache.
+      const admin = await service.load(users[0]),
+        other = await service.load(users[1]);
+      expect(admin.notifications.some((n) => n.id === notice)).toBe(true);
+      expect(other.notifications.some((n) => n.id === notice)).toBe(false);
+      expect(await read((client) => cache.read(client, true, now))).toBe(changed);
+      await pool.query('DELETE FROM public.notifications WHERE id=$1', [notice]);
+      expect(
+        (await read((client) => cache.read(client))).notifications.some((n) => n.id === notice),
+      ).toBe(false);
+      await pool.query('UPDATE public.profiles SET active=false WHERE id=$1', [profiles[1]]);
+      try {
+        await expect(service.load(users[1])).rejects.toThrow('inactive');
+      } finally {
+        await pool.query('UPDATE public.profiles SET active=true WHERE id=$1', [profiles[1]]);
+      }
+      const bookingState = await service.load(users[0]);
+      const slot = Array.from({ length: 7 }, (_, offset) =>
+        addDays(londonDate(now), offset + 1),
+      ).flatMap((date) => availableSlots(bookingState, date, 15, now))[0];
+      expect(slot).toBeDefined();
+      const booked = await command({
+        type: 'saveBooking',
+        booking: {
+          kind: 'casual',
+          sport: 'table_tennis',
+          startAt: slot,
+          duration: 15,
+          guestIds: [],
+        },
+      });
+      const reservation = booked.bookings.find(
+        (b) => b.startAt === slot && b.ownerId === profiles[0],
+      )!;
+      const atTable = new Date(Date.parse(slot) + 60_000);
+      const withBooking = await read((client) => cache.read(client, true, atTable));
+      expect(
+        displaySnapshot(withBooking, atTable).bookings.find((b) => b.id === reservation.id)!.sport,
+      ).toBe('table_tennis');
+      // Child-row changes are detected even without a booking revision update.
+      await pool.query(
+        'INSERT INTO public.booking_guests(booking_id,profile_id,guest_order) VALUES($1,$2,0)',
+        [reservation.id, profiles[4]],
+      );
+      const withGuest = await read((client) => cache.read(client, true, atTable));
+      expect(withGuest).not.toBe(withBooking);
+      expect(withGuest.bookings.find((b) => b.id === reservation.id)!.guestIds).toContain(
+        profiles[4],
+      );
+      await command({ type: 'cancelBooking', id: reservation.id });
+      expect(
+        displaySnapshot(
+          await read((client) => cache.read(client, true, atTable)),
+          atTable,
+        ).bookings.some((b) => b.id === reservation.id),
+      ).toBe(false);
+    }, 30000);
     it('atomically approves late enrollment and reschedules only unprotected future fixtures', async () => {
       let state = await command({
         type: 'createSeason',
@@ -134,7 +275,13 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       expect(fixtures.find((f) => f.id === future[1].id)!.history.at(-1)!.reason).toContain(
         'Late-entry schedule revision',
       );
-      expect(saved.notifications.some((n) => n.title === 'League fixture week updated')).toBe(true);
+      const movedRecipient = saved.participants.find((p) => p.id === future[1].homeId)!
+        .playerIds[0];
+      expect(
+        (await service.load(users[profiles.indexOf(movedRecipient)])).notifications.some(
+          (n) => n.fixtureId === future[1].id && n.title === 'League fixture week updated',
+        ),
+      ).toBe(true);
       expect(
         (await service.load(users[4])).notifications.some(
           (n) => n.joinRequestId === request.id && n.title === 'League join request accepted',
@@ -695,7 +842,7 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       const preview = await newsletters.adminNewsletter(users[0]);
       if (!('previewKey' in preview)) throw new Error('Expected preview');
       expect(preview.recipientCount).toBeGreaterThanOrEqual(5);
-      expect(preview.html).toContain('/brand/virtuoso-white.png');
+      expect(preview.html).toContain('/brand/virtuoso-gradient.png');
       expect(preview.alreadyQueued).toBe(false);
       expect(messages).toHaveLength(0);
       const fixture = created.fixtures.find((f) => f.seasonId === newsletterSeasonId)!;
@@ -1092,7 +1239,9 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
     }, 30000);
     it('validates real Auth tokens, ignores metadata roles, and rejects missing/forged tokens', async () => {
       expect((await service.identity(tokens[1])).id).toBe(users[1].id);
-      expect((await service.me(users[1])).role).toBe('colleague');
+      // Earlier season tests may have enrolled this account; Auth metadata must
+      // still never promote it to administrator.
+      expect((await service.me(users[1])).role).not.toBe('admin');
       expect((await handler(new Request('http://localhost/api/state'))).status).toBe(401);
       expect(
         (
@@ -1207,8 +1356,7 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       ).toBe(403);
       await pool.query('UPDATE public.profiles SET active=true WHERE id=$1', [profiles[4]]);
     });
-    it('enrols existing identities, creates a season and publishes a unique schedule transactionally', async () => {
-      for (let i = 0; i < 4; i++) await command({ type: 'enrolPlayer', id: profiles[i] });
+    it('reuses existing identities, creates a season and publishes a unique schedule transactionally', async () => {
       const state = await service.load(users[0]);
       const entries = state.participants.filter((p) =>
         p.playerIds.some((id) => profiles.slice(0, 4).includes(id)),
@@ -1217,10 +1365,13 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
         type: 'createSeason',
         name: prefix,
         startDate: londonDate(),
-        participantIds: entries.map((p) => p.id),
+        participantIds: profiles.slice(0, 4),
         roundsPerWeek: 2,
       });
       seasonId = next.selectedSeasonId;
+      expect(next.seasons.find((s) => s.id === seasonId)!.participantIds.sort()).toEqual(
+        entries.map((p) => p.id).sort(),
+      );
       next = await command({ type: 'generate', seasonId });
       expect(next.fixtures.filter((f) => f.seasonId === seasonId)).toHaveLength(6);
       await expect(command({ type: 'generate', seasonId })).rejects.toThrow();

@@ -9,7 +9,9 @@ export function createPool(config: ApiConfig): Pool {
     connectionString: url.toString(),
     max: 4,
     connectionTimeoutMillis: 8000,
-    idleTimeoutMillis: 20000,
+    // The TV polls every 30s. Keep its connection warm instead of repeating the
+    // TLS/database handshake on every otherwise tiny change check.
+    idleTimeoutMillis: 90000,
     ssl: local
       ? false
       : {

@@ -66,6 +66,38 @@ describe('private profile photos', () => {
     expect(remove).toHaveBeenCalledWith(['verified-profile/avatar.jpg']);
   });
 
+  it('reuses signed URLs between refreshes, renews before expiry and invalidates after photo removal', async () => {
+    vi.useFakeTimers();
+    try {
+      const state = createSeed();
+      const signed = vi.fn(async () => ({
+        error: null,
+        data: [
+          {
+            path: `${state.players[0].id}/avatar.jpg`,
+            signedUrl: 'https://storage.example/photo',
+            error: null,
+          },
+        ],
+      }));
+      const remove = vi.fn(async () => ({ error: null }));
+      const storage = new AvatarStorage({
+        storage: { from: () => ({ createSignedUrls: signed, remove }) },
+      } as unknown as SupabaseClient);
+      await storage.decorate(structuredClone(state));
+      vi.advanceTimersByTime(30_000);
+      await storage.decorate(structuredClone(state));
+      expect(signed).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(211_000);
+      await storage.decorate(structuredClone(state));
+      expect(signed).toHaveBeenCalledTimes(2);
+      await storage.save(state.players[0].id, null);
+      await storage.decorate(structuredClone(state));
+      expect(signed).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it('issues short-lived URLs without altering the league revision and tolerates missing Storage', async () => {
     const state = createSeed();
     state.revision = 'unchanged';

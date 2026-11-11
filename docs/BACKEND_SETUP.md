@@ -1,5 +1,7 @@
 # Backend setup and deployment
 
+Database traffic optimization and its deployment/monitoring checklist are documented in [EGRESS_REDUCTION.md](EGRESS_REDUCTION.md). Deploy the API and frontend together; no migration, new secret or infrastructure is needed. Authenticated APIs still verify the user and active profile on every protected request. Private responses remain `no-store`.
+
 The application has two explicit modes: browser-local **mock** mode and **api** mode using Supabase Auth plus an Azure Functions HTTP API backed by PostgreSQL. The deployed initial migration remains unchanged. No cloud deployment, cloud migration, real invitation or real email has been performed by this implementation.
 
 ## Environment variables

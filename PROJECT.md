@@ -21,6 +21,8 @@ The application should be visually polished, intuitive, mobile-friendly, and enj
 
 Keep operating costs as close to zero as reasonably possible.
 
+Target the Supabase Free 5 GB/month egress allowance through small public/TV database reads and server-side snapshot reuse gated by a database-side change fingerprint. Exclude private notifications and full audit histories from public read queries. Detect inserts, updates, deletions and child-table changes across API processes without a schema migration. Keep command validation and authorization fresh and transactional; never use cached roles or browser/CDN caching to grant access. Pause hidden-tab polling and resume on visibility/focus; retain the TV's visible 30-second refresh and time-driven booking transitions. Monitor actual usage after deployment rather than guaranteeing a project-wide quota from an idle-read benchmark. See docs/EGRESS_REDUCTION.md for measurements and limits.
+
 ## League Structure
 
 ### Players

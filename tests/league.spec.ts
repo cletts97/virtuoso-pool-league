@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import type { LeagueState } from '../src/domain/types';
+type PollProbeWindow = Window & { pollProbe: { count: number; hidden: boolean } };
 
 test('administrator previews and accepts two joiners with revised future weeks', async ({
   page,
@@ -1031,4 +1032,45 @@ test('personal booking links open the right day and preselect the league fixture
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.goto('/bookings?date=not-a-date');
   await expect(page.getByRole('heading', { name: 'Table bookings', exact: true })).toBeVisible();
+});
+
+test('normal app and TV pause hidden polling and refresh once when visible again', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-11-11T10:00:00Z') });
+  for (const route of ['/', '/display']) {
+    await page.goto(route);
+    await expect(page.locator(route === '/' ? '.dashboard-hero' : '.tv-grid')).toBeVisible();
+    await page.evaluate(
+      async (method) => {
+        const path = '/src/data/browserRepository.ts';
+        const { browserRepository } = await import(path);
+        const original = browserRepository[method].bind(browserRepository);
+        const probe = { count: 0, hidden: true };
+        (window as unknown as PollProbeWindow).pollProbe = probe;
+        Object.defineProperty(document, 'hidden', { configurable: true, get: () => probe.hidden });
+        browserRepository[method] = async () => {
+          probe.count++;
+          return original();
+        };
+      },
+      route === '/' ? 'load' : 'loadDisplay',
+    );
+    await page.clock.runFor(90_000);
+    expect(await page.evaluate(() => (window as unknown as PollProbeWindow).pollProbe.count)).toBe(
+      0,
+    );
+    await page.evaluate(() => {
+      (window as unknown as PollProbeWindow).pollProbe.hidden = false;
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as PollProbeWindow).pollProbe.count))
+      .toBe(1);
+    await page.clock.runFor(30_000);
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as PollProbeWindow).pollProbe.count))
+      .toBe(2);
+  }
 });

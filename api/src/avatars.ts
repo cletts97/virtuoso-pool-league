@@ -47,6 +47,7 @@ export function decodeAvatar(encoded: string): Buffer {
 }
 
 export class AvatarStorage {
+  private signed?: { key: string; expiresAt: number; urls: Map<string, string> };
   constructor(private auth: SupabaseClient) {}
 
   async save(profileId: string, image: string | null): Promise<void> {
@@ -64,19 +65,31 @@ export class AvatarStorage {
       503,
       'Profile photo could not be saved. Check that the private profile-photos storage bucket is configured.',
     );
+    this.signed = undefined;
   }
 
   async decorate(state: LeagueState): Promise<LeagueState> {
     // Photos must not affect snapshot revisions or make the league unavailable.
     try {
-      const { data, error } = await this.auth.storage.from(AVATAR_BUCKET).createSignedUrls(
-        state.players.map((p) => avatarPath(p.id)),
-        300,
-      );
-      if (error || !data) return state;
+      const paths = state.players.map((p) => avatarPath(p.id));
+      const key = [...paths].sort().join('|');
+      if (this.signed?.key !== key || this.signed.expiresAt <= Date.now()) {
+        const { data, error } = await this.auth.storage
+          .from(AVATAR_BUCKET)
+          .createSignedUrls(paths, 300);
+        if (error || !data) return state;
+        this.signed = {
+          key,
+          expiresAt: Date.now() + 240_000,
+          urls: new Map(
+            data
+              .filter((photo) => !photo.error && photo.signedUrl)
+              .map((photo) => [photo.path!, photo.signedUrl!]),
+          ),
+        };
+      }
       for (const player of state.players) {
-        const photo = data.find((item) => item.path === avatarPath(player.id) && !item.error);
-        if (photo?.signedUrl) player.avatarUrl = photo.signedUrl;
+        player.avatarUrl = this.signed?.urls.get(avatarPath(player.id));
       }
     } catch {
       // Missing/unavailable optional Storage leaves initials intact.

@@ -20,15 +20,20 @@ import {
   reminderEmailIntents,
 } from './scheduledEmails';
 import type { ResultEmailQueue } from './resultEmails';
+import { StateCache } from './stateCache';
 
 export class LeagueService {
+  private readonly snapshots = new StateCache();
+  private readonly avatars: AvatarStorage;
   constructor(
     private pool: Pool,
     private auth: SupabaseClient,
     private emailDomains: string[],
     private resultEmails?: ResultEmailQueue,
     private automationAppUrl?: string,
-  ) {}
+  ) {
+    this.avatars = new AvatarStorage(auth);
+  }
   async runAutomation(task: 'results' | 'weekly' | 'emails', now = new Date()) {
     requireCondition(this.resultEmails?.enabled, 503, 'Scheduled email delivery is disabled.');
     if (task === 'emails') return { delivery: await this.resultEmails.flush(20) };
@@ -117,20 +122,28 @@ export class LeagueService {
   async load(user: User) {
     const state = await this.transaction(async (client) => {
       const actor = await this.actor(client, user);
-      return privateSnapshot(await readState(client, actor.id));
+      // Never decorate or return cached objects directly: private projections and
+      // signed photo URLs must remain isolated between authenticated recipients.
+      const snapshot = structuredClone(await this.snapshots.read(client));
+      snapshot.currentUserId = actor.id;
+      return privateSnapshot(snapshot);
     });
-    return new AvatarStorage(this.auth).decorate(state);
+    return this.avatars.decorate(state);
   }
   async saveAvatar(user: User, image: string | null) {
     const actor = await this.me(user);
-    await new AvatarStorage(this.auth).save(actor.id, image);
+    await this.avatars.save(actor.id, image);
     return this.load(user);
   }
   async display() {
-    return this.transaction(async (client) => displaySnapshot(await readState(client)));
+    return this.transaction(async (client) =>
+      displaySnapshot(await this.snapshots.read(client, true)),
+    );
   }
   async publicState() {
-    return this.transaction(async (client) => publicSnapshot(await readState(client)));
+    return this.transaction(async (client) =>
+      publicSnapshot(await this.snapshots.read(client, true)),
+    );
   }
   async execute(user: User, command: ApiCommand, expectedRevision: string) {
     const state = await this.transaction(async (client) => {
@@ -214,7 +227,7 @@ export class LeagueService {
         );
         requireCondition(target.rows[0], 404, 'User not found.');
         // Storage-owned objects must be removed before deleting the Auth identity.
-        await new AvatarStorage(this.auth).save(command.id, null);
+        await this.avatars.save(command.id, null);
         if (target.rows[0].auth_user_id) {
           const { error } = await this.auth.auth.admin.deleteUser(target.rows[0].auth_user_id);
           requireCondition(
@@ -261,7 +274,7 @@ export class LeagueService {
       } catch {
         console.warn('Result email delivery deferred; check the administrator email queue.');
       }
-    return new AvatarStorage(this.auth).decorate(state);
+    return this.avatars.decorate(state);
   }
   async adminNewsletter(
     user: User,
