@@ -76,7 +76,7 @@ The new **Casual games** page supports singles/doubles submissions, opposing con
 - Multiple seasons, historical standings and results, persistent theme preference, responsive navigation, keyboard-accessible forms and native modal dialogs.
 - Shared league/casual reservations, collision protection, owner/admin management, London-time opening hours, and casual colleagues without league membership.
 - Read-only `/display` TV dashboard, automatic refresh, current/next reservations, standings, results, fixtures and a locally generated booking QR code. Public access is explicitly enabled by the operator.
-- Public `/rules` playing-rules reference with all eight owner-supplied sections, a contents menu and the official WEPF/EPA PDF. Open it from the main navigation or the TV's Rules button; TV access uses larger reading text and links back to the display.
+- Public `/rules` playing-rules reference checked against the official WEPF/EPA poster, with a dedicated colour-selection explanation and example, a contents menu and the source PDF. Open it from the main navigation or the TV's Rules button; TV access uses larger reading text and links back to the display. TV reminders include choosing colours in place of black on the break, which remains on the full rules page.
 - Invitation-only authentication, password setup/recovery, login/logout/session handling, server-resolved active roles, transactional writes and append-only result history in API mode. Mock mode retains its labelled identity switcher and reset.
 
 ## Project structure

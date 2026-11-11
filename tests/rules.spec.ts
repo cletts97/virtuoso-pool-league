@@ -190,22 +190,20 @@ test('short desktop viewports contain the TV QR tile and administrator sidebar f
       `QR image and copy fit with padding at ${width}x${height}`,
     ).toBe(true);
     expect(
-      await page
-        .locator('.tv-grid > *')
-        .evaluateAll((cards) =>
-          cards
-            .filter((card) => card.scrollHeight > card.clientHeight + 1)
-            .map((card) => ({
-              name: card.className,
-              height: card.clientHeight,
-              content: card.scrollHeight,
-              children: Array.from(card.children).map((c) => ({
-                name: c.className,
-                height: c.clientHeight,
-                content: c.scrollHeight,
-              })),
+      await page.locator('.tv-grid > *').evaluateAll((cards) =>
+        cards
+          .filter((card) => card.scrollHeight > card.clientHeight + 1)
+          .map((card) => ({
+            name: card.className,
+            height: card.clientHeight,
+            content: card.scrollHeight,
+            children: Array.from(card.children).map((c) => ({
+              name: c.className,
+              height: c.clientHeight,
+              content: c.scrollHeight,
             })),
-        ),
+          })),
+      ),
       `TV cards do not overflow at ${width}x${height}`,
     ).toEqual([]);
     expect(
@@ -225,12 +223,20 @@ test('rules are public, complete, responsive and navigable from the app and TV',
 }, info) => {
   await page.goto('/rules');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Virtuoso Pool League — Rules');
-  await expect(page.locator('.rules-section')).toHaveCount(8);
-  await expect(page.locator('.rules-section li')).toHaveCount(47);
+  await expect(page.locator('.rules-section')).toHaveCount(9);
+  await expect(page.locator('#choosing-colours')).toContainText('even if only one colour went in');
+  await expect(page.locator('#choosing-colours')).toContainText('even if you miss your next shot');
+  await expect(page.locator('#choosing-colours')).toContainText('A miss leaves the table open');
+  await expect(page.locator('#choosing-colours')).toContainText('only a red goes in');
+  await expect(page.locator('#choosing-colours')).toContainText(
+    'Colours cannot be decided by a foul',
+  );
+  await expect(page.locator('#normal-play')).toContainText('your visit ends');
+  await expect(page.locator('#baulk')).toContainText('its edge may cross it');
   await expect(page.locator('#general')).toContainText('Only one foot needs to touch the floor');
   await expect(page.locator('#normal-play')).toContainText('properly nominated foul-snooker');
   await expect(page.locator('#normal-play')).toContainText('pot a ball on');
-  await expect(page.locator('#snookers')).toContainText('first shot only');
+  await expect(page.locator('#snookers')).toContainText('first shot of the first visit only');
   await expect(page.locator('#snookers')).toContainText('group is already cleared');
   await expect(page.locator('#starting')).toContainText('opponent breaks with two visits');
   expect(await page.evaluate(() => localStorage.getItem('virtuoso-pool-league.v1'))).toBeNull();
@@ -259,6 +265,10 @@ test('rules are public, complete, responsive and navigable from the app and TV',
   }
   await page.goto('/display');
   await expect(page.locator('.rule-reminders')).toContainText('normally a foul');
+  await expect(page.locator('.rule-reminders h3')).toHaveCount(8);
+  await expect(page.locator('.rule-reminders')).toContainText('Choosing colours');
+  await expect(page.locator('.rule-reminders')).toContainText('Potted colour: yours now');
+  await expect(page.locator('.rule-reminders')).not.toContainText('Black on the break');
   await expect(page.locator('.rule-reminders')).toContainText('first shot only');
   await expect(page.locator('.rule-reminders')).toContainText(
     'Confirmed total snookers are exempt',

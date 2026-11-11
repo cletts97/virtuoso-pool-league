@@ -10,7 +10,22 @@ export const ruleSections = [
       'A fair break needs a colour potted or at least four object balls reaching a cushion. Otherwise, re-rack: the opponent breaks with two visits.',
       'If the black is potted on the break, re-rack and the same player breaks again.',
       'If the white falls on an otherwise fair break, the opponent takes one visit from baulk.',
-      'If a colour falls on a fair break without a foul, announce your group. A group potted on the break is yours immediately; otherwise, pot your nominated group on the next shot to claim it. On an open table after the break, a legal colour pot decides your group; nominate if both colours fall.',
+      'Colours are not automatically assigned by the break. See Choosing colours below before taking your next shot.',
+    ],
+  },
+  {
+    id: 'choosing-colours',
+    title: 'Choosing colours after the break',
+    introduction: 'An open table means neither player has been assigned reds or yellows yet.',
+    items: [
+      'No colour potted on the break: the table stays open. Either colour may be played.',
+      'Colour potted on a fair break without a foul: say “reds” or “yellows” before your next shot, even if only one colour went in.',
+      'Choose a colour you potted on the break: it is yours immediately, even if you miss your next shot. If both colours went in, either choice is yours immediately.',
+      'Choose a colour you did not pot on the break: you must legally pot that colour on your next shot to claim it. A miss leaves the table open.',
+      'Example: only a red goes in on the break. Say “reds” to take reds straight away, or say “yellows” and pot a yellow on the next shot to claim yellows.',
+      'While the table is still open after the break, a legal pot of just one colour assigns it. If both colours are legally potted, announce your choice before continuing.',
+      'Colours cannot be decided by a foul. Failing to announce a choice when required is itself a standard foul; pots on that shot do not assign colours.',
+      'Once assigned, your colour stays yours for the rest of the frame; your opponent has the other colour.',
     ],
   },
   {
@@ -20,7 +35,7 @@ export const ruleSections = [
       'On an open table, either colour may be played. Once groups are decided, first contact must be with a ball on: your colour, the black when your group is cleared, or a valid foul-snooker nomination. Playing away from a touching ball on is an exception.',
       'After legal first contact, pot a ball on or make any ball, including the white, reach a cushion. The break and a confirmed total snooker have separate requirements.',
       'Legal pots of a ball on continue your visit; this includes a valid foul-snooker nomination.',
-      "If you don't pot a ball but make a legal shot, your turn ends.",
+      "If you don't pot a ball but make a legal shot, your visit ends. If you have two visits, you then start your second visit.",
       "Potting an opponent's ball is normally a foul, even after hitting your colour first. A properly nominated foul-snooker or foul-jaw-snooker ball is an exception.",
       'Your colour group must be cleared before you try to pot the black.',
     ],
@@ -48,7 +63,7 @@ export const ruleSections = [
     items: [
       'Your opponent receives two visits for a standard foul.',
       'If the white was potted, your opponent plays from behind the baulk line.',
-      'Otherwise, play from where the white rests, unless a foul-snooker ruling permits baulk.',
+      'If the white leaves the table, play from baulk too. Otherwise, play from where it rests, unless a foul-snooker ruling permits baulk.',
       'The first visit ends when you fail to legally pot a ball.',
       'You then begin your second visit.',
       'A foul during either visit ends your turn and gives your opponent the appropriate foul penalty.',
@@ -61,7 +76,7 @@ export const ruleSections = [
       'The centre of the white must be behind the baulk line.',
       'The white can be positioned anywhere within baulk.',
       'Under official World Rules, you can shoot in any direction.',
-      'You cannot place the white beyond the baulk line.',
+      'Position the white by hand or with the cue shaft, never the tip. Its centre must stay behind the line; its edge may cross it.',
     ],
   },
   {
@@ -71,7 +86,7 @@ export const ruleSections = [
       'Deliberate snookers are allowed. A total snooker means no part of any ball on can be hit directly.',
       "A normal snooker does not allow you to hit an opponent's ball first.",
       'If a foul leaves you snookered, ask for a ruling before using foul-snooker options. Moving to baulk requires the snooker to be checked again.',
-      'A valid nomination makes an opponent’s ball or the black a ball on for the first shot only. Pot the nominated black only when your group is already cleared.',
+      'A valid nomination makes one opponent’s ball or the black a ball on for the first shot of the first visit only. You may hit your own colour or that ball first, and pot either to continue. Pot the nominated black only when your group is already cleared.',
       'After a confirmed total snooker, first contact must still be with a ball on; no pot or cushion is required.',
     ],
   },
@@ -113,7 +128,7 @@ export const ruleReminders = [
   },
   {
     title: 'Foul snooker',
-    text: 'For a confirmed foul snooker, nominate an opponent’s ball or the black for the first shot only. Pot the black only if your colours are cleared.',
+    text: 'After a foul-snooker ruling, nominate one opponent’s ball or the black for the first shot only. Only pot the black if your colours are cleared.',
   },
   {
     title: 'Playing from baulk',
@@ -128,8 +143,8 @@ export const ruleReminders = [
     text: 'Clear your colours, then pot the black on a separate legal shot. Potting it early or fouling while potting it loses the frame, except on the break.',
   },
   {
-    title: 'Black on the break',
-    text: 'If the black goes in on the break, re-rack. The same player breaks again.',
+    title: 'Choosing colours',
+    text: 'Colour potted on a fair, foul-free break? Say reds or yellows. Potted colour: yours now. Other colour: pot it next shot. No colour potted: table open.',
   },
   {
     title: 'Feet and moving balls',

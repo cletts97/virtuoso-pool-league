@@ -1,5 +1,11 @@
 # Implementation status — Virtuoso Pool League
 
+## Colour nomination and playing-rule clarity — 11 November 2026
+
+- Rechecked every published summary/reminder against the linked EPA-hosted WEPF World Rules poster (abridged January 2020), especially H (deciding colours), E (baulk), F/G (break/legal shots), K (fouls) and P (foul snookers). Added a dedicated choosing-colours section: mandatory announcement after a fair, foul-free colour-potting break, immediate assignment when choosing a potted group, next-shot pot required for an unpotted group, both/no-colour cases, open-table play, foul/nomination failures and a red-only example. Clarified that assigned groups remain fixed.
+- TV still has eight reminders and the rack image; Choosing colours replaces Black on the break there. The full rules page retains black-on-break re-racking. Tightened visit versus turn wording, cue-ball-off-table baulk placement, positioning by shaft/hand rather than tip, centre-versus-edge baulk distinction and the nominated ball's first-shot scope. Shared dashboard reminders receive relevant wording corrections too. No competition scoring, approval or backend changes.
+- Validation: strict TypeScript, targeted ESLint and whitespace checks passed. Four focused desktop/mobile browser checks passed for public rules/navigation, responsive content and TV layout at 1920×1080, 1920×900, 1536×700 and 1280×720. Inspected final TV screenshot. The first longer reminder squeezed the booking tile; shortened it and reran the checks successfully without changing layout/styling. No full suite/production build, commit, push or deployment.
+
 ## Fixture week presentation — 28 October 2026
 
 - Removed internal round labels from shared regular-season fixture tiles and removed round-based bye notices from weekly fixture groups. Week headings, match counts, status, format and playoff stage labels remain. Stored rounds, pairings, assigned weeks and results are unchanged.

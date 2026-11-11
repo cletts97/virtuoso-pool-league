@@ -208,7 +208,7 @@ Visitors may browse the dashboard, published seasons, standings, player profiles
 8. Table Bookings — calendar, availability, booking creation and management.
 9. Office HUD — dedicated full-screen TV dashboard.
 10. Rules — public playing-rules reference, with the owner-supplied WEPF-based summary and official EPA PDF source, accessible from the app and TV dashboard.
-    Keep the concise rules page and shared dashboard/TV reminders aligned with the linked EPA-hosted WEPF World Rules poster (abridged January 2020), including nomination/snooker/break exceptions. Only one foot must touch the floor; do not imply both feet are required. This playing-rule reference does not alter competition scoring or result-approval logic.
+    Keep the concise rules page and shared dashboard/TV reminders aligned with the linked EPA-hosted WEPF World Rules poster (abridged January 2020), including nomination/snooker/break exceptions. Explain colour selection after the break in its own section with an example: announce a choice after potting a colour on a fair, foul-free break; a potted group is assigned immediately, while choosing an unpotted group requires potting it next shot. Include this reminder on TV in place of “Black on the break”; keep the black-on-break rule on the full rules page. Only one foot must touch the floor; do not imply both feet are required. This playing-rule reference does not alter competition scoring or result-approval logic.
 
 ## Pool Table Booking System
 
