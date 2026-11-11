@@ -12,13 +12,14 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLeague } from '../app/LeagueContext';
-import { canApprove, isParticipant, participantName, standings } from '../domain/rules';
+import { participantName, standings } from '../domain/rules';
 import { Avatar, Badge, Empty, PageHeading, Section, Stat } from '../components/ui';
 import { MatchCard } from '../components/MatchCard';
 import { StandingsTable } from '../components/StandingsTable';
 import { TodayBookings } from '../components/TodayBookings';
 import { RuleReminders } from '../components/RuleReminders';
 import { canReviewCasual } from '../domain/casual';
+import { PersonalFixtures } from '../components/PersonalFixtures';
 
 export function Dashboard() {
   const { state, season } = useLeague();
@@ -32,10 +33,6 @@ export function Dashboard() {
   const upcoming = seasonFixtures
     .filter((f) => ['scheduled', 'postponed'].includes(f.status))
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-  const next = upcoming.find((f) => isParticipant(f, user.id, state.participants));
-  const approvals = state.fixtures.filter(
-    (f) => f.seasonId === season.id && canApprove(f, user.id, state.participants),
-  );
   const ownEntry = state.participants.find((p) => p.playerIds.includes(user.id));
   const own = table.find((r) => r.participantId === ownEntry?.id);
   const hasSeason = !!season.id;
@@ -64,7 +61,8 @@ export function Dashboard() {
         }
       />
       <JoinLeagueCards />
-      <div className="dashboard-hero">
+      <PersonalFixtures />
+      <div className="dashboard-hero dashboard-hero-compact">
         <div className="hero-copy">
           <div className="hero-eyebrow">
             <span className="live-dot" />
@@ -182,19 +180,6 @@ export function Dashboard() {
           />
         </div>
       )}
-      {approvals.length > 0 && (
-        <Link className="action-banner" to={`/fixtures/${approvals[0].id}`}>
-          <CheckCheck size={22} />
-          <div>
-            <strong>
-              {approvals.length} {approvals.length === 1 ? 'result needs' : 'results need'} your
-              confirmation
-            </strong>
-            <span>Review your opponent’s score to confirm the result.</span>
-          </div>
-          <ArrowRight size={20} />
-        </Link>
-      )}
       <div className={hasSeason ? 'dashboard-columns' : 'stack'}>
         <div className="stack">
           {hasSeason && (
@@ -250,15 +235,6 @@ export function Dashboard() {
         <div className="stack">
           {hasSeason && (
             <>
-              <Section title="Your next match" subtitle="Your next scheduled fixture.">
-                {next ? (
-                  <MatchCard fixture={next} />
-                ) : (
-                  <Empty title="No upcoming matches">
-                    Check the full schedule for your season.
-                  </Empty>
-                )}
-              </Section>
               <div className="notice-card">
                 <div className="eyebrow">
                   <Flame size={15} /> LEAGUE NOTICE

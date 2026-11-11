@@ -431,7 +431,10 @@ test('submit, switch to opponent, approve, update standings and persist after re
     .getByRole('radio')
     .first()
     .check();
-  await page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Submit result', exact: true })
+    .click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('main').getByText('Awaiting approval', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Approve result', exact: true })).toHaveCount(0);
@@ -491,6 +494,7 @@ test('administrator creates an odd-player season, publishes fixtures and postpon
   expect(future.filter((f) => f.round <= 2).every((f) => f.dueDate === '2027-01-04')).toBe(true);
   expect(future.filter((f) => f.round === 3).every((f) => f.dueDate === '2027-01-11')).toBe(true);
   await page.goto('/fixtures');
+  await page.getByRole('button', { name: 'All fixtures', exact: true }).click();
   await expect(page.locator('.match-card')).toHaveCount(55);
   await expect(page.locator('.match-card').first()).toContainText('Week commencing 4 Jan 2027');
   await expect(page.locator('.bye-note')).toHaveCount(0);
@@ -636,7 +640,10 @@ test('bracket finalizes and advances through the final to a champion', async ({ 
       .getByRole('radio')
       .first()
       .check();
-    await page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Submit result', exact: true })
+      .click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await page.getByLabel('Playing as').selectOption(players[1]);
     await page.getByRole('button', { name: 'Approve result', exact: true }).click();
@@ -843,4 +850,185 @@ test('administrator creates an empty draft for dashboard sign-ups', async ({ pag
     .filter({ has: page.getByRole('heading', { name: 'Open sign-ups', exact: true }) });
   await card.getByRole('button', { name: 'Join league', exact: true }).click();
   await expect(card).toHaveCount(0);
+});
+
+async function seedQuickMatches(page: import('@playwright/test').Page) {
+  await page.clock.install({ time: new Date('2026-11-11T09:10:00Z') });
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    const entry = (id: string) =>
+      s.participants.find((p) => p.playerIds.includes(id) && p.kind === 'individual')!.id;
+    const template = s.fixtures.find((f) => f.seasonId === s.selectedSeasonId)!;
+    const make = (id: string, home: string, away: string) => ({
+      ...template,
+      id,
+      homeId: entry(home),
+      awayId: entry(away),
+      status: 'scheduled' as const,
+      score: undefined,
+      submittedBy: undefined,
+      history: [],
+      dueDate: '2026-11-09',
+    });
+    s.fixtures = [
+      make('quick-review', 'p01', 'p02'),
+      make('quick-finished', 'p01', 'p03'),
+      make('quick-future', 'p01', 'p04'),
+      make('quick-other', 'p02', 'p04'),
+    ];
+    s.fixtures[0].status = 'pending';
+    s.fixtures[0].score = { home: 2, away: 1 };
+    s.fixtures[0].submittedBy = 'p02';
+    s.fixtures[2].dueDate = '2026-11-16';
+    s.bookings = [
+      {
+        id: 'quick-booking',
+        kind: 'league',
+        ownerId: 'p01',
+        fixtureId: 'quick-finished',
+        startAt: '2026-11-11T09:00:00Z',
+        duration: 15,
+        status: 'reserved',
+        guestIds: [],
+        createdAt: '2026-11-11T08:00:00Z',
+        updatedAt: '2026-11-11T08:00:00Z',
+      },
+    ];
+    s.seasons.find((season) => season.id === s.selectedSeasonId)!.status = 'regular';
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(s));
+  });
+  await page.reload();
+}
+
+test('personal dashboard submits after a booking and opponent confirms without leaving home', async ({
+  page,
+}, info) => {
+  await seedQuickMatches(page);
+  const section = page.locator('.personal-fixtures');
+  await expect(section.getByRole('heading', { name: 'Your league matches' })).toBeVisible();
+  const card = section
+    .locator('article')
+    .filter({ has: page.locator('a[href="/fixtures/quick-finished"]') });
+  await expect(card).not.toContainText('Booking finished');
+  await expect(card.getByRole('button', { name: 'Enter result' })).toBeEnabled();
+  await page.clock.runFor(6 * 60_000);
+  await expect(card).toContainText('Booking finished');
+  await expect(card.getByRole('link', { name: 'Not played? Rearrange' })).toBeVisible();
+  expect(await section.evaluate((el) => el.getBoundingClientRect().top)).toBeLessThan(
+    await page.locator('.dashboard-hero').evaluate((el) => el.getBoundingClientRect().top),
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await section.screenshot({
+    path: `.tools/screenshots/${info.project.name}-personal-actions.png`,
+  });
+  await page.screenshot({
+    path: `.tools/screenshots/${info.project.name}-personal-fixtures.png`,
+    fullPage: true,
+  });
+  await card.getByRole('link', { name: 'Not played? Rearrange' }).click();
+  await expect(page.getByRole('dialog', { name: 'Postpone fixture' })).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.goto('/');
+  await card.getByRole('button', { name: 'Enter result' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('button', { name: 'Submit result', exact: true })).toBeDisabled();
+  await dialog.getByRole('radio', { name: 'I won', exact: true }).check();
+  await dialog.getByRole('radio', { name: 'I won 1–0', exact: true }).check();
+  await dialog.getByRole('button', { name: 'Submit result', exact: true }).click();
+  await expect(card).toContainText('Awaiting opponent confirmation');
+  await expect(card.getByRole('button', { name: 'Review result' })).toHaveCount(0);
+  await page.getByLabel('Playing as').selectOption('p03');
+  await card.getByRole('button', { name: 'Review result' }).click();
+  await dialog.getByRole('button', { name: 'Confirm result', exact: true }).click();
+  await expect(card).toHaveCount(0);
+  await page.reload();
+  const saved = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState,
+  );
+  expect(saved.fixtures.find((f) => f.id === 'quick-finished')!.status).toBe('confirmed');
+  expect(saved.fixtures.find((f) => f.id === 'quick-finished')!.score).toEqual({
+    home: 1,
+    away: 0,
+  });
+});
+
+test('personal fixtures support disputes and mine/all filtering with direct player links', async ({
+  page,
+}) => {
+  await seedQuickMatches(page);
+  const review = page
+    .locator('.personal-fixtures article')
+    .filter({ has: page.locator('a[href="/fixtures/quick-review"]') });
+  await review.getByRole('button', { name: 'Review result' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Dispute score' }).click();
+  await dialog.getByLabel('Reason', { exact: true }).fill('The final frame score is incorrect.');
+  await dialog.getByRole('button', { name: 'Save changes' }).click();
+  await expect(review).toContainText('Administrator reviewing the dispute');
+  await page.getByRole('link', { name: 'All my fixtures', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'My fixtures', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator('.match-card')).toHaveCount(3);
+  await page.getByRole('button', { name: 'All fixtures', exact: true }).click();
+  await expect(page.locator('.match-card')).toHaveCount(4);
+  await page.reload();
+  await expect(page.locator('.match-card')).toHaveCount(4);
+  const otherId = await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    return s.participants.find((p) => p.playerIds.includes('p04'))!.id;
+  });
+  await page.goto(`/fixtures?player=${encodeURIComponent(otherId)}`);
+  await expect(page.getByRole('button', { name: 'All fixtures', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator('.match-card')).toHaveCount(2);
+  await page.getByRole('button', { name: 'My fixtures', exact: true }).click();
+  await expect(page.getByLabel('Player filter')).toHaveValue('all');
+  await page.getByLabel('Week filter').selectOption('2026-11-16');
+  await expect(page.locator('.match-card')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Clear filters', exact: true }).click();
+  await expect(page.locator('.match-card')).toHaveCount(3);
+  await page.goto('/fixtures');
+  await expect(page.getByRole('button', { name: 'My fixtures', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.getByLabel('Playing as').selectOption('colleague-01');
+  await expect(page.getByRole('group', { name: 'Fixture view' })).toHaveCount(0);
+  await expect(page.locator('.match-card')).toHaveCount(4);
+  await page.goto('/');
+  await expect(page.locator('.personal-fixtures')).toHaveCount(0);
+});
+
+test('personal booking links open the right day and preselect the league fixture', async ({
+  page,
+}) => {
+  await seedQuickMatches(page);
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    s.bookings[0].startAt = '2026-11-12T09:00:00Z';
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(s));
+  });
+  await page.reload();
+  const section = page.locator('.personal-fixtures');
+  await section.getByRole('link', { name: 'View booking', exact: true }).click();
+  await expect(page).toHaveURL(/date=2026-11-12/);
+  await expect(page.locator('.booking-card')).toHaveCount(1);
+  await page.goto('/');
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    s.bookings = [];
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(s));
+  });
+  await page.reload();
+  await section.getByRole('link', { name: 'Book table', exact: true }).click();
+  await expect(page.getByRole('dialog').getByLabel('League fixture (optional)')).toHaveValue(
+    'quick-finished',
+  );
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.goto('/bookings?date=not-a-date');
+  await expect(page.getByRole('heading', { name: 'Table bookings', exact: true })).toBeVisible();
 });

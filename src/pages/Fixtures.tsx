@@ -1,13 +1,22 @@
 import { useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
-import { matchStatus, participantName, weekLabel, weekStart } from '../domain/rules';
+import { isParticipant, matchStatus, participantName, weekLabel, weekStart } from '../domain/rules';
 import { Badge, Empty, PageHeading } from '../components/ui';
 import { MatchCard } from '../components/MatchCard';
 
 export function Fixtures() {
   const { state, season } = useLeague();
   const [params, setParams] = useSearchParams();
+  const canSeeMine =
+    !state.readOnly &&
+    state.players.some((p) => p.id === state.currentUserId && p.active) &&
+    state.participants.some(
+      (p) => season.participantIds.includes(p.id) && p.playerIds.includes(state.currentUserId),
+    );
+  const mine =
+    canSeeMine &&
+    (params.get('scope') === 'mine' || (!params.has('scope') && !params.has('player')));
   const status = params.get('status') ?? 'all',
     player = params.get('player') ?? 'all',
     week = params.get('week') ?? 'all';
@@ -22,6 +31,7 @@ export function Fixtures() {
   const matches = all.filter(
     (f) =>
       (status === 'all' || matchStatus(f) === status) &&
+      (!mine || isParticipant(f, state.currentUserId, state.participants)) &&
       (player === 'all' || [f.homeId, f.awayId].includes(player)) &&
       (week === 'all' || weekStart(f.dueDate) === week),
   );
@@ -34,6 +44,30 @@ export function Fixtures() {
         description="Fixtures are assigned to a Monday–Sunday week. Arrange a time with your opponent or play early."
         action={<Badge status={season.status} />}
       />
+      {canSeeMine && (
+        <div className="fixture-scope" role="group" aria-label="Fixture view">
+          {[
+            ['mine', 'My fixtures'],
+            ['all', 'All fixtures'],
+          ].map(([scope, label]) => (
+            <button
+              key={scope}
+              className={`button ${mine === (scope === 'mine') ? 'primary' : 'secondary'}`}
+              aria-pressed={mine === (scope === 'mine')}
+              onClick={() =>
+                setParams((previous) => {
+                  const next = new URLSearchParams(previous);
+                  next.set('scope', scope);
+                  next.delete('player');
+                  return next;
+                })
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="filter-bar">
         <span className="filter-icon">
           <SlidersHorizontal size={18} /> Filter matches
@@ -43,7 +77,15 @@ export function Fixtures() {
           <select
             aria-label="Player filter"
             value={player}
-            onChange={(e) => update('player', e.target.value)}
+            onChange={(e) =>
+              setParams((previous) => {
+                const next = new URLSearchParams(previous);
+                next.set('scope', 'all');
+                if (e.target.value === 'all') next.delete('player');
+                else next.set('player', e.target.value);
+                return next;
+              })
+            }
           >
             <option value="all">All players</option>
             {season.participantIds.map((id) => (
@@ -91,8 +133,8 @@ export function Fixtures() {
             ))}
           </select>
         </label>
-        {params.size > 0 && (
-          <button className="text-link" onClick={() => setParams({})}>
+        {(params.has('player') || params.has('status') || params.has('week')) && (
+          <button className="text-link" onClick={() => setParams({ scope: mine ? 'mine' : 'all' })}>
             Clear filters
           </button>
         )}

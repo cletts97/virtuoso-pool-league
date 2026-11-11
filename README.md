@@ -40,6 +40,10 @@ This is a JavaScript compatibility measure, not a guarantee of full TV support. 
 
 ## Try the main workflow
 
+Signed-in league members now see **Your league matches** near the top of the dashboard, before a smaller season overview. Use **Enter result** to open the won/lost score picker directly, or **Review result** to confirm/dispute an opponent's score. Finished linked bookings without a result are highlighted, with **Not played? Rearrange** as an alternative; a booking never automatically records a result. Cancelled bookings do not prompt, and a future replacement takes precedence over an old finished slot. Completed matches leave the action list; pending submissions show **Awaiting opponent confirmation**. Booking links either preselect the fixture or open the reservation's day.
+
+**Fixtures & results** defaults to **My fixtures** for signed-in season members. Switch to **All fixtures** for the full schedule; direct links using the player filter still show that player's games. Visitors and non-members see the full schedule. Week/status filters work in either view, and clearing them keeps the current view.
+
 1. The initial user is **Alex Morgan (Admin)**. Open **Fixtures & results**, then a scheduled match involving Alex (for example, round 6 against Oliver Grant).
 2. Choose **Submit result** and select a legal score. Scores are always displayed in home–away order.
 3. Use the clearly labelled **DEMO / Playing as** selector to choose the opponent.

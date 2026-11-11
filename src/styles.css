@@ -3760,3 +3760,177 @@ a.bracket-match:hover {
   list-style: decimal;
   font-size: 14px;
 }
+
+/* Personal fixture actions stay above the season overview on small screens. */
+.personal-fixtures {
+  margin-bottom: 24px;
+}
+.personal-fixtures-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.personal-fixtures-heading h2 {
+  font-size: 22px;
+  margin: 5px 0;
+  letter-spacing: -0.5px;
+}
+.personal-fixtures-heading p,
+.personal-more {
+  color: var(--muted);
+  font-size: 12px;
+}
+.personal-fixture-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.personal-fixture {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.personal-fixture.needs-action {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 var(--accent);
+}
+.personal-fixture-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.personal-fixture-top .eyebrow {
+  letter-spacing: 1px;
+  font-size: 10px;
+}
+.personal-opponent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.personal-opponent h3 {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+.personal-opponent h3 span {
+  color: var(--muted);
+  font-weight: 400;
+}
+.personal-week {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.personal-week svg {
+  flex-shrink: 0;
+}
+.personal-booking,
+.personal-score,
+.personal-hint {
+  font-size: 12px;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.personal-booking,
+.personal-hint {
+  color: var(--muted);
+}
+.personal-fixture-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+.personal-fixture-actions .button {
+  min-height: 44px;
+}
+.personal-rearrange {
+  align-self: flex-start;
+  margin-top: 12px;
+  padding: 4px 0;
+}
+.personal-more {
+  margin-top: 12px;
+}
+.personal-empty {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  color: var(--muted);
+}
+.fixture-scope {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.dashboard-hero.dashboard-hero-compact {
+  min-height: 0;
+}
+.dashboard-hero-compact .hero-copy {
+  padding: 22px 28px;
+}
+.dashboard-hero-compact .hero-copy h2 {
+  font-size: 30px;
+  margin: 12px 0 10px;
+  letter-spacing: -1px;
+}
+.dashboard-hero-compact .hero-copy p {
+  margin-bottom: 14px;
+}
+.dashboard-hero-compact .hero-art {
+  min-height: 190px;
+}
+@media (min-width: 1600px) {
+  .personal-fixture-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .personal-fixtures-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .personal-fixture-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .personal-fixture {
+    padding: 18px;
+  }
+  .personal-fixture-actions .button {
+    flex: 1;
+  }
+  .dashboard-hero-compact .hero-art {
+    display: none;
+  }
+  .dashboard-hero.dashboard-hero-compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dashboard-hero-compact .hero-copy {
+    width: 100%;
+    padding: 20px;
+  }
+  .dashboard-hero-compact .hero-copy h2 {
+    font-size: 26px;
+  }
+  .dashboard-hero-compact .hero-copy h2 br {
+    display: none;
+  }
+  .dashboard-hero-compact .hero-copy h2 em::before {
+    content: ' ';
+  }
+}

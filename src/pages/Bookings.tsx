@@ -22,7 +22,15 @@ export function Bookings() {
   const [search, setSearch] = useSearchParams();
   const now = useClock(),
     today = londonDate(now);
-  const [selected, setSelected] = useState(today);
+  const [selected, setSelected] = useState(() => {
+    const requested = search.get('date');
+    return requested &&
+      /^\d{4}-\d{2}-\d{2}$/.test(requested) &&
+      requested >= today &&
+      requested <= addDays(today, 7)
+      ? requested
+      : today;
+  });
   const date = selected < today ? today : selected;
   const [filter, setFilter] = useState('all');
   const [duration, setDuration] = useState<BookingInput['duration']>(15);

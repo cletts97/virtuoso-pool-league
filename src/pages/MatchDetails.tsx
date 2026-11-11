@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Check, Clock3, ShieldCheck } from 'lucide-react';
 import { useLeague } from '../app/LeagueContext';
 import {
@@ -19,18 +19,35 @@ import { bookingDayLabel, bookingEnd, londonDate, londonTime } from '../domain/b
 import { useClock } from '../app/useClock';
 import { liveMode } from '../auth/client';
 import { ResultScorePicker } from '../components/ResultScorePicker';
+import { FixtureResultDialog } from '../components/FixtureResultDialog';
 
 export function MatchDetails() {
   const { id } = useParams();
   const { state, run, busy, preferences } = useLeague();
   const now = useClock();
   const fixture = state.fixtures.find((f) => f.id === id);
+  const [params] = useSearchParams();
   const [action, setAction] = useState<
-    'submit' | 'correct' | 'dispute' | 'postpone' | 'reschedule' | 'approve'
-  >();
+    'submit' | 'correct' | 'dispute' | 'postpone' | 'reschedule' | 'approve' | undefined
+  >(() => {
+    const owner = state.players.find((p) => p.id === state.currentUserId);
+    const currentSeason = state.seasons.find((s) => s.id === fixture?.seasonId);
+    return params.get('action') === 'postpone' &&
+      fixture &&
+      !state.readOnly &&
+      owner?.active &&
+      (owner.role === 'admin' || isParticipant(fixture, owner.id, state.participants)) &&
+      ['scheduled', 'postponed'].includes(fixture.status) &&
+      currentSeason?.status !== 'complete' &&
+      !(fixture.stage === 'regular' && currentSeason?.status === 'playoffs')
+      ? 'postpone'
+      : undefined;
+  });
   const [score, setScore] = useState<Score>();
   const [reason, setReason] = useState('');
-  const [dueDate, setDueDate] = useState(weekStart(addDays(dateOnly(), 7)));
+  const [dueDate, setDueDate] = useState(() =>
+    weekStart(fixture && fixture.dueDate > dateOnly() ? fixture.dueDate : addDays(dateOnly(), 7)),
+  );
   if (!fixture)
     return (
       <Empty title="Match not found">
@@ -61,22 +78,10 @@ export function MatchDetails() {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     let ok = false;
-    if (action === 'submit' && score)
-      ok = await run(
-        { type: 'submit', fixtureId: match.id, score },
-        'Result submitted. Your opponent can now confirm it.',
-      );
     if (action === 'correct' && score)
       ok = await run(
         { type: 'correct', fixtureId: match.id, score, reason },
         'Result updated. The full audit history is preserved.',
-      );
-    if (action === 'approve' || action === 'dispute')
-      ok = await run(
-        { type: 'review', fixtureId: match.id, approve: action === 'approve', reason },
-        action === 'approve'
-          ? 'Result confirmed. The league has been updated.'
-          : 'Dispute recorded for administrator review.',
       );
     if (action === 'postpone' || action === 'reschedule')
       ok = await run(
@@ -291,10 +296,18 @@ export function MatchDetails() {
           </ol>
         </Section>
       </div>
-      {action && (
+      {(action === 'submit' || action === 'approve' || action === 'dispute') && (
+        <FixtureResultDialog
+          key={`${match.id}/${action}`}
+          fixtureId={match.id}
+          initialAction={action}
+          onClose={() => setAction(undefined)}
+        />
+      )}
+      {(action === 'correct' || action === 'postpone' || action === 'reschedule') && (
         <Modal title={titles[action]} onClose={() => setAction(undefined)}>
           <form onSubmit={submit} className="form-stack">
-            {(action === 'submit' || action === 'correct') && (
+            {action === 'correct' && (
               <ResultScorePicker
                 homeName={participantName(state, match.homeId)}
                 awayName={participantName(state, match.awayId)}
@@ -311,13 +324,6 @@ export function MatchDetails() {
                 value={score}
                 onChange={setScore}
               />
-            )}
-            {action === 'approve' && (
-              <p className="muted">
-                Confirm {participantName(state, match.homeId)} {match.score?.home}–
-                {match.score?.away} {participantName(state, match.awayId)}? This makes the result
-                official.
-              </p>
             )}
             {(action === 'postpone' || action === 'reschedule') && (
               <label>
@@ -361,7 +367,7 @@ export function MatchDetails() {
                 Cancel
               </button>
               <button disabled={busy} className="button primary" type="submit">
-                {action === 'approve' ? 'Confirm result' : 'Save changes'}
+                Save changes
               </button>
             </div>
           </form>

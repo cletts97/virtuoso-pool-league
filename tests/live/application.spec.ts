@@ -237,7 +237,10 @@ test('admin selects invited colleagues for a season, and two sessions submit and
     .getByRole('radio')
     .first()
     .check();
-  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Submit result', exact: true })
+    .click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   const opponentContext = await browser.newContext({ baseURL: 'http://127.0.0.1:5174' });
   const opponent = await opponentContext.newPage();
