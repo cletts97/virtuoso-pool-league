@@ -69,12 +69,17 @@ describe('single-frame league results', () => {
       ).find((r) => r.participantId === f.awayId)!.lost,
     ).toBe(beforeSeasonLosses + 1);
   });
-  it('uses the same 48-hour automatic approval rule for a single-frame result', () => {
+  it('uses the same 48-weekday-hour automatic approval rule for a single-frame result', () => {
     const state = createSeed();
     const f = state.fixtures.find((f) => f.status === 'pending' && f.stage === 'regular')!;
     f.score = { home: 1, away: 0 };
     f.history.at(-1)!.at = '2026-10-24T08:00:00Z';
-    const next = automaticallyConfirmResults(state, new Date('2026-10-27T08:00:00Z'));
+    expect(
+      automaticallyConfirmResults(state, new Date('2026-10-27T00:00:00Z')).fixtures.find(
+        (x) => x.id === f.id,
+      )!.status,
+    ).toBe('pending');
+    const next = automaticallyConfirmResults(state, new Date('2026-10-28T00:00:00Z'));
     expect(next.fixtures.find((x) => x.id === f.id)!.status).toBe('confirmed');
   });
 });

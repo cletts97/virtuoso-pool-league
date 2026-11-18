@@ -1,5 +1,6 @@
 import { recentResults, type RecentResult } from '../domain/recentResults';
-import type { BookingConfig, BookingSport, LeagueState } from '../domain/types';
+import type { BookingConfig, BookingSport, LeagueState, BadgeKey } from '../domain/types';
+import { earnedBadges } from '../domain/badges';
 import { bookingEnd, isBookableFixture, todaysBookings } from '../domain/bookings';
 import { participantName, standings } from '../domain/rules';
 
@@ -27,6 +28,7 @@ export interface DisplaySnapshot {
     lost: number;
     difference: number;
     qualifying: boolean;
+    badges?: BadgeKey[];
   }[];
   results: RecentResult[];
   fixtures: { id: string; home: string; away: string; dueDate: string; bookedAt?: string }[];
@@ -80,6 +82,13 @@ export function displaySnapshot(state: LeagueState, now = new Date()): DisplaySn
           qualifying: season.qualifiers.length
             ? season.qualifiers.includes(r.participantId)
             : r.position <= 4,
+          badges: [
+            ...new Set(
+              state.participants
+                .find((p) => p.id === r.participantId)
+                ?.playerIds.flatMap((id) => earnedBadges(state, id).map((a) => a.badgeKey)) ?? [],
+            ),
+          ],
         }))
       : [],
     results: recentResults(state, 6),

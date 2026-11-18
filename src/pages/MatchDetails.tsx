@@ -20,6 +20,7 @@ import { useClock } from '../app/useClock';
 import { liveMode } from '../auth/client';
 import { ResultScorePicker } from '../components/ResultScorePicker';
 import { FixtureResultDialog } from '../components/FixtureResultDialog';
+import { MatchAchievements } from '../components/Achievements';
 
 export function MatchDetails() {
   const { id } = useParams();
@@ -229,6 +230,7 @@ export function MatchDetails() {
           </p>
         )}
       </section>
+      <MatchAchievements fixtureId={match.id} />
       <div className="dashboard-columns">
         <Section title="Match timeline" subtitle="Recorded submissions, approvals and changes.">
           {match.history.length ? (

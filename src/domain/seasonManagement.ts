@@ -24,6 +24,7 @@ export function seasonDeletionBlock(state: LeagueState, season: Season): string 
   const fixtures = state.fixtures.filter((f) => f.seasonId === season.id);
   if (
     season.championId ||
+    state.badgeAwards?.some((a) => a.seasonId === season.id) ||
     season.qualifiers.length ||
     fixtures.some(
       (f) =>

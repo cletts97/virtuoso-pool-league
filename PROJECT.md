@@ -175,6 +175,15 @@ Display standings using the following columns:
 - Casual submissions and resubmissions create unread, season-independent in-app approval notifications for each opposing player (never the submitter or their doubles teammate), linking directly to the result. Show these in Notifications and its unread bell count regardless of selected season; read state persists between sessions.
 - Show pending opposing approvals on the dashboard and casual page. When separately enabled, Resend sends opposing players a protected review link for new submissions/resubmissions through a durable server-only outbox.
 
+## Achievements
+
+- Include six original SVG badges: Season champion, Runner-up, League leader, Seven-ball finish, Break and dish, and Reverse dish. No routine first-win, comeback or sportsmanship badges.
+- Award named-season champion/runner-up badges from confirmed playoff finals, and League leader from the official first regular-season playoff seed. Backfill existing awards and reconcile corrected finals without deleting audit history. Never invent awards from an unfinished season that was ended administratively.
+- Players can claim special achievements when submitting league or casual results, naming the recipient. Require a winning frame, but not an overall match win. Support the individual recipient in casual doubles; teammates cannot approve their own side. Record each type once per person per submission, and group repeat match achievements with a count on profiles.
+- Require explicit opposing-player confirmation for each claim, independently of the score. A badge is earned only when both the claim and score are confirmed. Score auto-confirmation never approves a badge; pending claims remain reviewable afterward. Claims are invalidated by disputes, corrections, voids and superseding submissions, with history retained. Reverse dish requires a legal dry break; Break and dish and Reverse dish must occur in separate winning frames.
+- Administrators can grant and revoke badges through player management, including a season for season awards, optional grant reason and mandatory revocation reason/Yes–No confirmation. Preserve actor/time/reason history. Explicit admin revocations must not be silently re-awarded by automatic synchronization.
+- Show the full collection and season labels on profiles, with compact icons on player cards, standings and TV. Give season awards priority. TV shows at most three distinct badge types per row without increasing row height. Retain the existing database fingerprint/cache optimizations: public reads contain earned summaries only, with no pending claims or review history; badges add no polling. Host and cache all SVGs in Azure, not Supabase. See `docs/BADGES.md` for rollout and behavior.
+
 ## Email Notifications
 
 The application should eventually support:

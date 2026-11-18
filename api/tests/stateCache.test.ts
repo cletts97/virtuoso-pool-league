@@ -8,7 +8,7 @@ vi.mock('../src/state', () => ({ readState: vi.fn() }));
 const fixture = () => {
   let key = 'version-one';
   const query = vi.fn(async (sql: string) => ({
-    rows: sql.includes('to_regclass') ? [{ casual: true }] : [{ fingerprint: key }],
+    rows: sql.includes('to_regclass') ? [{ casual: true, badges: true }] : [{ fingerprint: key }],
   }));
   return {
     client: { query } as unknown as PoolClient,
@@ -81,6 +81,7 @@ describe('bounded server snapshot cache', () => {
       'fixtures',
       'result_events',
       'casual_results',
+      'badge_awards',
     ])
       expect(publicSql).toContain(`public.${table}`);
     for (const table of [
@@ -92,6 +93,8 @@ describe('bounded server snapshot cache', () => {
       expect(publicSql).not.toContain(`public.${table}`);
     await stateFingerprint(client, false);
     expect(query.mock.calls[3][0]).toContain('public.notifications');
+    expect(publicSql).toContain("WHERE t.status='confirmed'");
+    expect(publicSql).not.toContain('t.history');
   });
   it('supports installations without the optional casual-results table', async () => {
     const { client, query } = fixture();

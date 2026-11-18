@@ -7,11 +7,38 @@ const score = z.strictObject({
   away: z.number().int().min(0).max(4),
 });
 const fields = { fixtureId: id, reason: text.max(300) };
+const badgeKey = z.enum([
+  'season_champion',
+  'runner_up',
+  'league_leader',
+  'seven_ball',
+  'break_dish',
+  'reverse_dish',
+]);
+const badgeClaims = z
+  .array(
+    z.strictObject({
+      playerId: id,
+      badgeKey: z.enum(['seven_ball', 'break_dish', 'reverse_dish']),
+    }),
+  )
+  .max(12)
+  .optional();
 export const commandSchema = z.discriminatedUnion('type', [
+  z.strictObject({
+    type: z.literal('grantBadge'),
+    playerId: id,
+    badgeKey,
+    seasonId: id.optional(),
+    reason: z.string().trim().max(300).optional(),
+  }),
+  z.strictObject({ type: z.literal('revokeBadge'), id, reason: text.max(300) }),
+  z.strictObject({ type: z.literal('reviewBadge'), id, approve: z.boolean() }),
   z.strictObject({ type: z.literal('endSeason'), seasonId: id, reason: text.min(5).max(300) }),
   z.strictObject({ type: z.literal('deleteSeason'), seasonId: id, confirmName: text.max(120) }),
   z.strictObject({
     type: z.literal('submitCasual'),
+    badgeClaims,
     result: z.strictObject({
       id,
       homePlayerIds: z.array(id).min(1).max(2),
@@ -40,7 +67,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   }),
   z.strictObject({ type: z.literal('deleteUser'), id }),
   z.strictObject({ type: z.literal('updateProfile'), name: text.max(70) }),
-  z.strictObject({ type: z.literal('submit'), fixtureId: id, score }),
+  z.strictObject({ type: z.literal('submit'), fixtureId: id, score, badgeClaims }),
   z.strictObject({
     type: z.literal('review'),
     fixtureId: id,

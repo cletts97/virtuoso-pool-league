@@ -2,6 +2,7 @@ import type { PoolClient } from 'pg';
 import type { LeagueState } from '../../src/domain/types';
 import { londonDate } from '../../src/domain/bookings';
 import { readState } from './state';
+import { publicBadgeFilter } from './badgeProjection';
 
 // Code-owned identifiers only. The outbox is deliberately absent: delivery retries
 // do not change league data. Include child tables so edits/deletes cannot be missed.
@@ -27,17 +28,18 @@ const sharedTables = [
 export async function stateFingerprint(client: PoolClient, publicOnly: boolean): Promise<string> {
   const {
     rows: [optional],
-  } = await client.query<{ casual: boolean }>(
-    "SELECT to_regclass('public.casual_results') IS NOT NULL AS casual",
+  } = await client.query<{ casual: boolean; badges: boolean }>(
+    "SELECT to_regclass('public.casual_results') IS NOT NULL AS casual, to_regclass('public.badge_awards') IS NOT NULL AS badges",
   );
   const tables = [
     ...sharedTables,
     ...(optional.casual ? ['casual_results'] : []),
+    ...(optional.badges ? ['badge_awards'] : []),
     ...(publicOnly ? [] : ['availability', 'notifications', 'season_join_requests']),
   ];
   const digests = tables.map(
     (table) => `(SELECT md5(coalesce(string_agg(h,'' ORDER BY h),''))
-    FROM (SELECT md5(to_jsonb(t)::text) AS h FROM public.${table} t) hashes)`,
+    FROM (SELECT md5(${table === 'badge_awards' && publicOnly ? 'jsonb_build_array(t.id,t.player_id,t.badge_key,t.season_id,t.fixture_id,t.casual_result_id,t.created_at)::text' : 'to_jsonb(t)::text'}) AS h FROM public.${table} t ${table === 'badge_awards' && publicOnly ? `WHERE ${publicBadgeFilter('t')}` : ''}) hashes)`,
   );
   const {
     rows: [row],

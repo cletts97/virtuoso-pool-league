@@ -10,6 +10,8 @@ import {
   playerLeagueStats,
 } from '../domain/playerStats';
 import { MatchCard } from '../components/MatchCard';
+import { BadgeStrip, PlayerAchievements } from '../components/Achievements';
+import { earnedBadges } from '../domain/badges';
 
 export function Players() {
   const { state } = useLeague();
@@ -52,7 +54,10 @@ export function Players() {
                 <ArrowUpRight size={18} />
               </div>
               <Avatar id={p.id} large />
-              <h2>{p.name}</h2>
+              <h2>
+                {p.name}
+                <BadgeStrip awards={earnedBadges(state, p.id)} />
+              </h2>
               <p>
                 {player?.department}
                 {player && !player.active ? ' · Inactive' : ''}
@@ -146,6 +151,7 @@ export function PlayerProfile() {
           <span>ALL SEASONS</span>
         </div>
       </div>
+      <PlayerAchievements playerId={player!.id} />
       <div className="stats-grid">
         <Stat
           label="Matches won"

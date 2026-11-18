@@ -1,10 +1,12 @@
-import type { LeagueState, Score } from '../domain/types';
+import type { BadgeClaimInput, LeagueState, Score } from '../domain/types';
+import type { BadgeCommand } from './badgeCommands';
 import type { BookingCommand } from './bookingCommands';
 import type { CasualCommand } from './casualCommands';
 import type { SeasonLifecycleCommand } from './seasonCommands';
 import type { RebalancedEnrollmentCommand } from './rebalancedEnrollmentCommand';
 
 export type LeagueCommand =
+  | BadgeCommand
   | SeasonLifecycleCommand
   | RebalancedEnrollmentCommand
   | CasualCommand
@@ -16,7 +18,7 @@ export type LeagueCommand =
   | { type: 'enrolPlayer'; id: string }
   | { type: 'addSeasonPlayer'; seasonId: string; playerId: string; dueDate: string }
   | BookingCommand
-  | { type: 'submit'; fixtureId: string; score: Score }
+  | { type: 'submit'; fixtureId: string; score: Score; badgeClaims?: BadgeClaimInput[] }
   | { type: 'review'; fixtureId: string; approve: boolean; reason: string }
   | { type: 'correct'; fixtureId: string; score: Score; reason: string }
   | { type: 'postpone'; fixtureId: string; dueDate: string; reason: string }

@@ -10,6 +10,8 @@ import type { DisplaySnapshot } from '../data/display';
 import { bookingDayLabel, bookingLabel, londonDate, londonTime } from '../domain/bookings';
 import { weekLabel } from '../domain/rules';
 import { RuleReminders } from '../components/RuleReminders';
+import { BadgeArt } from '../components/Achievements';
+import { BADGES } from '../domain/badges';
 
 const bookingUrl = new URL(
   '/bookings',
@@ -239,7 +241,20 @@ export function Display() {
                 .map((r) => (
                   <tr key={r.id} className={r.qualifying ? 'tv-qualified' : ''}>
                     <td>{r.position}</td>
-                    <td className={r.name.length > 28 ? 'tv-long-name' : undefined}>{r.name}</td>
+                    <td className={r.name.length > 28 ? 'tv-long-name' : undefined}>
+                      <div className="tv-player-with-badges">
+                        <span className="tv-player-name">{r.name}</span>
+                        {!!r.badges?.length && (
+                          <span className="achievement-strip" aria-label="Achievements">
+                            {r.badges.slice(0, 3).map((key) => (
+                              <span key={key} title={BADGES[key].name}>
+                                <BadgeArt badgeKey={key} small />
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td>{r.played}</td>
                     <td>{r.won}</td>
                     <td>{r.lost}</td>

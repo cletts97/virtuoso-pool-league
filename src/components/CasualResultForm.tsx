@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { useLeague } from '../app/LeagueContext';
 import { dateOnly, scoreOptions } from '../domain/rules';
-import type { CasualResult, Player } from '../domain/types';
+import type { BadgeClaimInput, CasualResult, Player } from '../domain/types';
+import { BadgeClaimPicker } from './Achievements';
 import { Modal } from './ui';
 import { ResultScorePicker } from './ResultScorePicker';
 
@@ -63,6 +64,7 @@ export function CasualResultForm({
   const [playedOn, setPlayedOn] = useState(result?.playedOn ?? dateOnly());
   const [chosen, setChosen] = useState(result ? `${result.score.home}:${result.score.away}` : '');
   const [reason, setReason] = useState('');
+  const [badgeClaims, setBadgeClaims] = useState<BadgeClaimInput[]>([]);
   const players = state.players.filter(
     (p) => p.active || (result && [...home, ...away].includes(p.id)),
   );
@@ -82,6 +84,7 @@ export function CasualResultForm({
         ? { type: 'resolveCasual', id, score, reason }
         : {
             type: 'submitCasual',
+            badgeClaims: badgeClaims.filter((c) => [...home, ...away].includes(c.playerId)),
             result: { id, homePlayerIds: home, awayPlayerIds: away, playedOn, bestOf, score },
           },
       resolve
@@ -192,6 +195,13 @@ export function CasualResultForm({
           }
           onChange={(score) => setChosen(score ? `${score.home}:${score.away}` : '')}
         />
+        {!resolve && (
+          <BadgeClaimPicker
+            players={players.filter((p) => [...home, ...away].includes(p.id))}
+            value={badgeClaims}
+            onChange={setBadgeClaims}
+          />
+        )}
         {resolve && (
           <label>
             Reason

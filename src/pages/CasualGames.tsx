@@ -8,6 +8,7 @@ import { Avatar, Badge, Empty, Modal, PageHeading, Section } from '../components
 import { CasualResultForm, TeamPicker } from '../components/CasualResultForm';
 import '../casual.css';
 import { recentResults, resultLabel, resultStatus } from '../domain/recentResults';
+import { MatchAchievements } from '../components/Achievements';
 
 export function CasualGames() {
   const { state, run, busy } = useLeague();
@@ -262,6 +263,7 @@ export function CasualGames() {
                   </>
                 )}
               </div>
+              <MatchAchievements casualResultId={r.id} />
               {!!r.history.length && (
                 <details>
                   <summary>Result history</summary>

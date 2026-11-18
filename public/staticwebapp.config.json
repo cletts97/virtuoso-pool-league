@@ -20,6 +20,10 @@
   },
   "routes": [
     {
+      "route": "/badges/*",
+      "headers": { "Cache-Control": "public, max-age=86400", "Content-Type": "image/svg+xml" }
+    },
+    {
       "route": "/sw.js",
       "headers": {
         "Cache-Control": "no-store",

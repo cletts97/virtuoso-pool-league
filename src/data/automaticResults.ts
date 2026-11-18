@@ -3,6 +3,7 @@ import { addDays, validFixtureScore } from '../domain/rules';
 import { londonDate, londonToUtc } from '../domain/bookings';
 import { validCasualScore } from '../domain/casual';
 import { inAppNotifications, progressPlayoffs } from './commands';
+import { synchronizeBadges } from './badgeCommands';
 
 export function pendingHours(record: { status: string; history: ResultRevision[] }, now: Date) {
   const event = record.history.at(-1);
@@ -70,5 +71,5 @@ export function automaticallyConfirmResults(source: LeagueState, now: Date): Lea
   }
   for (const season of state.seasons)
     if (changedSeasons.has(season.id)) progressPlayoffs(state, season);
-  return state;
+  return synchronizeBadges(state, now);
 }

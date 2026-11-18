@@ -1,10 +1,11 @@
-import type { CasualResult, LeagueState, Score } from '../domain/types';
+import type { BadgeClaimInput, CasualResult, LeagueState, Score } from '../domain/types';
 import { canReviewCasual, validCasualScore } from '../domain/casual';
 import { dateOnly, invariant, validateDate } from '../domain/rules';
 
 export type CasualCommand =
   | {
       type: 'submitCasual';
+      badgeClaims?: BadgeClaimInput[];
       result: Pick<
         CasualResult,
         'id' | 'homePlayerIds' | 'awayPlayerIds' | 'playedOn' | 'bestOf' | 'score'

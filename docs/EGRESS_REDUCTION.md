@@ -1,5 +1,7 @@
 # Database traffic and the 5 GB budget
 
+The 18 November badge feature extends this same cache: only earned public badge fields enter the TV fingerprint and SQL projection, while pending claims and badge audit history remain private. SVG artwork is cached by Azure/browser and never downloaded from Supabase. Badge changes add no polling. See [Achievements](BADGES.md).
+
 The 11 November investigation measured about 762 KB leaving Supabase for each TV refresh. A TV left on all day refreshes 2,880 times, explaining roughly 2.2 GB/day. The owner confirmed Shared Pooler accounted for 99.9% of usage. Most of that data was private notifications and fixture audit history discarded before returning the TV response.
 
 ## What changed

@@ -165,6 +165,7 @@ export class LeagueService {
       );
       let next: LeagueState;
       const playerActions = [
+        'reviewBadge',
         'submitCasual',
         'reviewCasual',
         'updateProfile',

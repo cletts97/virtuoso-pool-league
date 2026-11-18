@@ -316,6 +316,17 @@ test('1080p TV cards contain full text with long names and a current booking', a
     state.participants.forEach((p) => {
       p.name = state.players.find((u) => u.id === p.playerIds[0])!.name;
     });
+    state.badgeAwards = state.players.flatMap((p) =>
+      (['seven_ball', 'break_dish', 'reverse_dish'] as const).map((badgeKey) => ({
+        id: crypto.randomUUID(),
+        playerId: p.id,
+        badgeKey,
+        source: 'manual' as const,
+        status: 'confirmed' as const,
+        createdAt: '2026-10-19T10:00:00Z',
+        history: [{ action: 'granted' as const, actorId: 'p01', at: '2026-10-19T10:00:00Z' }],
+      })),
+    );
     // A busy current match and three future reservations exercise wrapping and queue paging.
     state.bookings[0].guestIds = ['p02', 'p04'];
     state.bookings.push({
@@ -368,4 +379,69 @@ test('1080p TV cards contain full text with long names and a current booking', a
   await page.clock.runFor(31_000);
   await expect(page.getByRole('heading', { name: 'Outside office hours' })).toBeVisible();
   await checkText();
+});
+
+test('TV fits eighteen players with badges at 1080p', async ({ page }, info) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    const template = s.players[0];
+    s.players = Array.from({ length: 18 }, (_, i) => ({
+      ...template,
+      id: `badge-player-${i}`,
+      name: `Player ${String(i + 1).padStart(2, '0')} Badge Holder`,
+    }));
+    s.participants = s.players.map((p) => ({
+      id: `entry-${p.id}`,
+      name: p.name,
+      kind: 'individual',
+      playerIds: [p.id],
+    }));
+    s.seasons = [
+      {
+        ...s.seasons[0],
+        participantIds: s.participants.map((p) => p.id),
+        status: 'regular',
+        qualifiers: [],
+        championId: undefined,
+      },
+    ];
+    s.currentUserId = s.players[0].id;
+    s.selectedSeasonId = s.seasons[0].id;
+    s.fixtures = [];
+    s.bookings = [];
+    s.badgeAwards = s.players.flatMap((p) =>
+      (['seven_ball', 'break_dish', 'reverse_dish'] as const).map((badgeKey) => ({
+        id: crypto.randomUUID(),
+        playerId: p.id,
+        badgeKey,
+        source: 'manual' as const,
+        status: 'confirmed' as const,
+        createdAt: '2026-10-19T10:00:00Z',
+        history: [],
+      })),
+    );
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(s));
+  });
+  await page.goto('/display');
+  await expect(page.locator('.tv-standings tbody tr')).toHaveCount(18);
+  await expect(page.locator('.tv-standings .achievement-art')).toHaveCount(54);
+  expect(
+    await page.locator('.tv-standings').evaluate((panel) => {
+      const bottom = panel.getBoundingClientRect().bottom;
+      return (
+        panel.querySelector('table')!.getBoundingClientRect().bottom < bottom &&
+        panel.querySelector('.tv-legend')!.getBoundingClientRect().bottom <= bottom
+      );
+    }),
+  ).toBe(true);
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollHeight <= innerHeight &&
+        document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: `.tools/screenshots/${info.project.name}-display-badges-18.png` });
 });

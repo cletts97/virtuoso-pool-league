@@ -4,6 +4,8 @@ import type { LeagueState } from '../../src/domain/types';
 import { recentResults } from '../../src/domain/recentResults';
 import { londonDate } from '../../src/domain/bookings';
 import { addDays } from '../../src/domain/rules';
+import { publicBadgeFilter } from './badgeProjection';
+import { earnedBadges, publicBadgeSummary } from '../../src/domain/badges';
 
 /** Full command state by default. Public reads omit private collections and keep
  * only first-submission/latest-event timestamps needed by existing public views.
@@ -73,8 +75,11 @@ export async function readState(
   const announcements = await rows<LeagueState['announcements'][number]>(
     `SELECT id,season_id AS "seasonId",title,body,created_at AS "createdAt" FROM public.announcements ${publicOnly ? "WHERE season_id IN (SELECT id FROM public.seasons WHERE status<>'draft')" : ''} ORDER BY created_at DESC,id`,
   );
-  const [{ enabled: casualResultsEnabled }] = await rows<{ enabled: boolean }>(
-    `SELECT to_regclass('public.casual_results') IS NOT NULL AS enabled`,
+  const [{ enabled: casualResultsEnabled, badgesEnabled }] = await rows<{
+    enabled: boolean;
+    badgesEnabled: boolean;
+  }>(
+    `SELECT to_regclass('public.casual_results') IS NOT NULL AS enabled, to_regclass('public.badge_awards') IS NOT NULL AS "badgesEnabled"`,
   );
   const casualResults = casualResultsEnabled
     ? await rows<NonNullable<LeagueState['casualResults']>[number]>(
@@ -90,6 +95,14 @@ export async function readState(
           : 'submitted_by AS "submittedBy",history'
       }
       FROM public.casual_results ORDER BY played_on DESC,id`,
+      )
+    : [];
+  const badgeRows = badgesEnabled
+    ? await rows(
+        `SELECT a.id,a.player_id AS "playerId",a.badge_key AS "badgeKey",a.season_id AS "seasonId",a.fixture_id AS "fixtureId",a.casual_result_id AS "casualResultId",a.created_at AS "createdAt"
+    ${publicOnly ? '' : ',a.source,a.status,a.submission_id AS "submissionId",a.history'}
+    FROM public.badge_awards a ${publicOnly ? `WHERE ${publicBadgeFilter('a')}` : ''}
+    ORDER BY a.created_at,a.id`,
       )
     : [];
   // JSON serialization also normalizes pg timestamptz Date objects to the frontend's ISO contract.
@@ -108,6 +121,8 @@ export async function readState(
       casualResults,
       casualResultsEnabled,
       joinRequests,
+      badgesEnabled,
+      ...(publicOnly ? { publicBadges: badgeRows } : { badgeAwards: badgeRows }),
       currentUserId: actorId,
       selectedSeasonId: seasons[0]?.id ?? '',
       theme: 'dark',
@@ -122,6 +137,26 @@ export function privateSnapshot(state: LeagueState): LeagueState {
   const actor = state.players.find((p) => p.id === state.currentUserId)!;
   return {
     ...state,
+    publicBadges: earnedBadges(state).map(publicBadgeSummary),
+    badgeAwards: (state.badgeAwards ?? []).filter(
+      (a) =>
+        actor.role === 'admin' ||
+        a.playerId === actor.id ||
+        (a.fixtureId &&
+          state.fixtures.some(
+            (f) =>
+              f.id === a.fixtureId &&
+              state.participants.some(
+                (p) => [f.homeId, f.awayId].includes(p.id) && p.playerIds.includes(actor.id),
+              ),
+          )) ||
+        (a.casualResultId &&
+          state.casualResults?.some(
+            (r) =>
+              r.id === a.casualResultId &&
+              [...r.homePlayerIds, ...r.awayPlayerIds].includes(actor.id),
+          )),
+    ),
     recentResults: recentResults(state, 6),
     joinRequests: (state.joinRequests ?? []).filter(
       (r) => actor.role === 'admin' || r.playerId === actor.id,

@@ -1,5 +1,7 @@
 # Virtuoso Pool League
 
+Achievements: six original SVG badges, automatic season awards, opponent-confirmed match achievements, and administrator grant/revoke controls. Apply the additive badge migration before deploying this feature; see [Badge setup and behavior](docs/BADGES.md). TV badges retain the database cache optimizations.
+
 Database bandwidth: see [traffic reduction and rollout](docs/EGRESS_REDUCTION.md). TV/public reads now use a minimal projection plus server-side change detection; authenticated reads share cached data while preserving per-request access checks. No migration or new settings are required. Hidden tabs pause polling; visible TV refreshes remain every 30 seconds.
 
 Scheduled newsletter, 24-hour reminders and 48-hour automatic confirmation: see [Supabase Cron setup](docs/SCHEDULED_AUTOMATION.md). Requires its additive migration and explicit operator activation; uses the existing Resend sender and Azure HTTP API.

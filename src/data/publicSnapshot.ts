@@ -3,6 +3,7 @@ import { addDays, playedDate } from '../domain/rules';
 import { londonDate } from '../domain/bookings';
 import { casualSubmittedAt } from '../domain/casual';
 import { recentResults } from '../domain/recentResults';
+import { earnedBadges, publicBadgeSummary } from '../domain/badges';
 
 export const PUBLIC_VISITOR_ID = 'public-visitor';
 
@@ -114,6 +115,10 @@ export function publicSnapshot(source: LeagueState, now = new Date()): LeagueSta
   });
   return {
     version: 3,
+    badgesEnabled: source.badgesEnabled,
+    publicBadges: earnedBadges(source)
+      .filter((a) => !a.seasonId || seasonIds.has(a.seasonId))
+      .map(publicBadgeSummary),
     casualResults,
     casualResultsEnabled: source.casualResultsEnabled,
     readOnly: true,

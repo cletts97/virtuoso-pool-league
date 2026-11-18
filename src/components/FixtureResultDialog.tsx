@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useLeague } from '../app/LeagueContext';
 import { canApprove, fixtureScoreOptions, participantName } from '../domain/rules';
 import { canEnterLeagueResult } from '../domain/personalFixtures';
-import type { Score } from '../domain/types';
+import type { BadgeClaimInput, Score } from '../domain/types';
+import { BadgeClaimPicker, MatchAchievements } from './Achievements';
 import { Modal } from './ui';
 import { ResultScorePicker } from './ResultScorePicker';
 
@@ -21,6 +22,7 @@ export function FixtureResultDialog({
   const [action, setAction] = useState(initialAction);
   const [score, setScore] = useState<Score>();
   const [reason, setReason] = useState('');
+  const [badgeClaims, setBadgeClaims] = useState<BadgeClaimInput[]>([]);
   const fixture = state.fixtures.find((f) => f.id === fixtureId);
   const allowed =
     !!fixture &&
@@ -41,7 +43,7 @@ export function FixtureResultDialog({
     const ok =
       action === 'submit'
         ? await run(
-            { type: 'submit', fixtureId, score: score! },
+            { type: 'submit', fixtureId, score: score!, badgeClaims },
             'Result submitted. Your opponent can now confirm it.',
           )
         : await run(
@@ -98,6 +100,21 @@ export function FixtureResultDialog({
                 ? 'Confirm only if this score is correct.'
                 : 'Explain what needs correcting for the administrator.'}
             </p>
+          )}
+          {action === 'submit' ? (
+            <BadgeClaimPicker
+              players={state.players.filter((p) =>
+                state.participants.some(
+                  (entry) =>
+                    [fixture.homeId, fixture.awayId].includes(entry.id) &&
+                    entry.playerIds.includes(p.id),
+                ),
+              )}
+              value={badgeClaims}
+              onChange={setBadgeClaims}
+            />
+          ) : (
+            <MatchAchievements fixtureId={fixtureId} />
           )}
           {action === 'dispute' && (
             <label>

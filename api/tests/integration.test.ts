@@ -18,6 +18,7 @@ import { readState } from '../src/state';
 import { displaySnapshot } from '../../src/data/display';
 import { publicSnapshot } from '../../src/data/publicSnapshot';
 import type { PoolClient } from 'pg';
+import { earnedBadges } from '../../src/domain/badges';
 
 describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
   'disposable LOCAL Supabase integration',
@@ -74,6 +75,104 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       }
       await pool.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [profiles[0]]);
     }, 60000);
+    it('persists badge achievements, enforces review permissions and invalidates the public cache', async () => {
+      let state = await command({
+        type: 'createSeason',
+        name: prefix + ' badges',
+        startDate: londonDate(),
+        participantIds: profiles.slice(0, 4),
+        roundsPerWeek: 2,
+      });
+      const season = state.selectedSeasonId;
+      state = await command({ type: 'generate', seasonId: season });
+      expect(state.badgesEnabled).toBe(true);
+      const fixture = state.fixtures.find((f) => f.seasonId === season)!;
+      const home = state.participants.find((p) => p.id === fixture.homeId)!.playerIds[0];
+      const away = state.participants.find((p) => p.id === fixture.awayId)!.playerIds[0];
+      const homeActor = users[profiles.indexOf(home)],
+        awayActor = users[profiles.indexOf(away)];
+      const publicKey = async () => {
+        const client = await pool.connect();
+        try {
+          return await stateFingerprint(client, true);
+        } finally {
+          client.release();
+        }
+      };
+      const beforePublic = await publicKey();
+      // Warm the same service instance before creating a private claim.
+      await service.publicState();
+      state = await command(
+        {
+          type: 'submit',
+          fixtureId: fixture.id,
+          score: { home: 2, away: 0 },
+          badgeClaims: [{ badgeKey: 'seven_ball', playerId: home }],
+        },
+        homeActor,
+      );
+      const award = state.badgeAwards!.find((a) => a.fixtureId === fixture.id)!;
+      expect(award.status).toBe('pending');
+      expect((await service.publicState()).publicBadges!.some((a) => a.id === award.id)).toBe(
+        false,
+      );
+      expect((await service.load(users[4])).badgeAwards!.some((a) => a.id === award.id)).toBe(
+        false,
+      );
+      await expect(
+        command({ type: 'reviewBadge', id: award.id, approve: true }, homeActor),
+      ).rejects.toThrow('opposing');
+      const pendingPublicKey = await publicKey();
+      state = await command({ type: 'reviewBadge', id: award.id, approve: true }, awayActor);
+      expect(earnedBadges(state, home).some((a) => a.id === award.id)).toBe(false);
+      expect(await publicKey()).toBe(pendingPublicKey);
+      await command(
+        { type: 'review', fixtureId: fixture.id, approve: true, reason: '' },
+        awayActor,
+      );
+      const publicState = await service.publicState();
+      expect(publicState.publicBadges!.find((a) => a.id === award.id)).not.toHaveProperty(
+        'history',
+      );
+      expect(publicState.publicBadges!.some((a) => a.id === award.id)).toBe(true);
+      const client = await pool.connect();
+      try {
+        const afterPublic = await stateFingerprint(client, true);
+        expect(afterPublic).not.toBe(beforePublic);
+        expect(await stateFingerprint(client, true)).toBe(afterPublic);
+      } finally {
+        client.release();
+      }
+      await command({ type: 'revokeBadge', id: award.id, reason: 'Local test revocation' });
+      expect((await service.publicState()).publicBadges!.some((a) => a.id === award.id)).toBe(
+        false,
+      );
+      await expect(
+        command({ type: 'grantBadge', playerId: home, badgeKey: 'reverse_dish' }, users[4]),
+      ).rejects.toThrow('Administrator');
+      state = await command({
+        type: 'grantBadge',
+        playerId: home,
+        badgeKey: 'reverse_dish',
+        reason: 'Local test grant',
+      });
+      const grant = state.badgeAwards!.find(
+        (a) => a.playerId === home && a.source === 'manual' && a.badgeKey === 'reverse_dish',
+      )!;
+      expect((await service.publicState()).publicBadges!.some((a) => a.id === grant.id)).toBe(true);
+      const audit = await pool.query('SELECT history FROM public.badge_awards WHERE id=$1', [
+        award.id,
+      ]);
+      expect(audit.rows[0].history.map((h: { action: string }) => h.action)).toEqual([
+        'claimed',
+        'confirmed',
+        'revoked',
+      ]);
+      const access = await pool.query(
+        "SELECT has_table_privilege('anon','public.badge_awards','SELECT') AS anonymous, has_table_privilege('authenticated','public.badge_awards','UPDATE') AS member, has_table_privilege('service_role','public.badge_awards','INSERT') AS server",
+      );
+      expect(access.rows[0]).toEqual({ anonymous: false, member: false, server: true });
+    });
     it('caches unchanged reads, preserves public parity and invalidates across database writes', async () => {
       const cache = new StateCache();
       async function read<T>(fn: (client: PoolClient) => Promise<T>) {

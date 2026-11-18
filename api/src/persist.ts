@@ -15,6 +15,8 @@ export function normalizeNewIds(before: LeagueState, next: LeagueState): void {
   for (const f of next.fixtures) f.id = ids.get(f.id) ?? f.id;
   for (const n of next.notifications)
     if (n.fixtureId) n.fixtureId = ids.get(n.fixtureId) ?? n.fixtureId;
+  for (const a of next.badgeAwards ?? [])
+    if (a.fixtureId) a.fixtureId = ids.get(a.fixtureId) ?? a.fixtureId;
 }
 export async function persistChanges(
   client: PoolClient,
@@ -260,6 +262,28 @@ export async function persistChanges(
         'UPDATE public.notifications SET read_at=now() WHERE id=$1 AND user_id=$2',
         [n.id, next.currentUserId],
       );
+  }
+  for (const a of next.badgeAwards ?? []) {
+    if (
+      !changed(
+        a,
+        before.badgeAwards?.find((old) => old.id === a.id),
+      )
+    )
+      continue;
+    await upsert('badge_awards', {
+      id: a.id,
+      player_id: a.playerId,
+      badge_key: a.badgeKey,
+      source: a.source,
+      status: a.status,
+      season_id: a.seasonId,
+      fixture_id: a.fixtureId,
+      casual_result_id: a.casualResultId,
+      submission_id: a.submissionId,
+      created_at: a.createdAt,
+      history: JSON.stringify(a.history),
+    });
   }
   for (const a of next.announcements)
     if (!before.announcements.some((o) => o.id === a.id))

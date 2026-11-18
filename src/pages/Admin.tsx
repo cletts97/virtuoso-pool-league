@@ -18,12 +18,14 @@ import '../casual.css';
 import { canAddSeasonPlayer, seasonDeletionBlock } from '../domain/seasonManagement';
 import { SeasonLifecycleForm } from '../components/SeasonLifecycleForm';
 import { ResultEmailStatus } from '../components/ResultEmailStatus';
+import { AdminBadges } from '../components/AdminBadges';
 
 export function Admin() {
   const { state, season, run, preferences, busy } = useLeague();
   const [tab, setTab] = useState('overview');
   const [modal, setModal] = useState<
     | 'deleteUser'
+    | 'badges'
     | 'player'
     | 'season'
     | 'settings'
@@ -350,6 +352,17 @@ export function Admin() {
                       <span>Edit</span>
                     </button>
                     <button
+                      className="button secondary small"
+                      disabled={state.badgesEnabled === false}
+                      aria-label={`Manage badges for ${p.name}`}
+                      onClick={() => {
+                        setEditing(p);
+                        setModal('badges');
+                      }}
+                    >
+                      Badges
+                    </button>
+                    <button
                       className="button danger small"
                       disabled={p.id === user.id}
                       title={p.id === user.id ? 'You cannot delete your own account' : undefined}
@@ -478,6 +491,7 @@ export function Admin() {
           This cannot be undone.
         </Confirm>
       )}
+      {modal === 'badges' && editing && <AdminBadges player={editing} onClose={close} />}
       {modal === 'player' && <PlayerForm player={editing} onClose={close} />}{' '}
       {modal === 'season' && <SeasonForm onClose={close} />}{' '}
       {modal === 'settings' && <SeasonForm edit onClose={close} />}{' '}

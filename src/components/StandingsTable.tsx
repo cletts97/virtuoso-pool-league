@@ -4,6 +4,8 @@ import { useLeague } from '../app/LeagueContext';
 import { standings } from '../domain/rules';
 import type { Standing } from '../domain/types';
 import { ParticipantLink } from './ui';
+import { BadgeStrip } from './Achievements';
+import { earnedBadges } from '../domain/badges';
 
 export function StandingsTable({ preview = false }: { preview?: boolean }) {
   const { state, season } = useLeague();
@@ -97,6 +99,13 @@ export function StandingsTable({ preview = false }: { preview?: boolean }) {
               </td>
               <td>
                 <ParticipantLink id={row.participantId} />
+                <BadgeStrip
+                  awards={
+                    state.participants
+                      .find((p) => p.id === row.participantId)
+                      ?.playerIds.flatMap((id) => earnedBadges(state, id)) ?? []
+                  }
+                />
               </td>
               {columns
                 .slice(1)

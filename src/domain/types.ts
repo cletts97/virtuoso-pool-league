@@ -113,6 +113,9 @@ export interface SeasonJoinRequest {
   reviewedBy?: ID;
 }
 export interface LeagueState {
+  badgeAwards?: BadgeAward[];
+  publicBadges?: PublicBadge[];
+  badgesEnabled?: boolean;
   joinRequests?: SeasonJoinRequest[];
   recentResults?: import('./recentResults').RecentResult[];
   casualResults?: CasualResult[];
@@ -135,6 +138,35 @@ export interface LeagueState {
   selectedSeasonId: ID;
   theme: 'dark' | 'light';
 }
+export type BadgeKey =
+  'season_champion' | 'runner_up' | 'league_leader' | 'seven_ball' | 'break_dish' | 'reverse_dish';
+export type PlayingBadgeKey = Extract<BadgeKey, 'seven_ball' | 'break_dish' | 'reverse_dish'>;
+export interface BadgeClaimInput {
+  badgeKey: PlayingBadgeKey;
+  playerId: ID;
+}
+export interface BadgeAward {
+  id: ID;
+  playerId: ID;
+  badgeKey: BadgeKey;
+  source: 'automatic' | 'manual' | 'claim';
+  status: 'pending' | 'confirmed' | 'rejected' | 'revoked';
+  seasonId?: ID;
+  fixtureId?: ID;
+  casualResultId?: ID;
+  submissionId?: ID;
+  createdAt: string;
+  history: {
+    action: 'claimed' | 'confirmed' | 'rejected' | 'granted' | 'revoked';
+    actorId: ID | null;
+    at: string;
+    reason?: string;
+  }[];
+}
+export type PublicBadge = Pick<
+  BadgeAward,
+  'id' | 'playerId' | 'badgeKey' | 'seasonId' | 'fixtureId' | 'casualResultId' | 'createdAt'
+>;
 export interface CasualResult {
   /** Public submission timestamp; private audit history is excluded from anonymous responses. */
   submittedAt?: string;

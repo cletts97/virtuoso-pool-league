@@ -1074,3 +1074,104 @@ test('normal app and TV pause hidden polling and refresh once when visible again
       .toBe(2);
   }
 });
+
+test('badge claims require opponent confirmation and administrators can grant and revoke', async ({
+  page,
+}, info) => {
+  await seedQuickMatches(page);
+  await page.goto('/fixtures/quick-finished');
+  await page.getByRole('button', { name: 'Submit result', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('radio', { name: 'I won', exact: true }).check();
+  await dialog.getByRole('radio', { name: 'I won 2–0', exact: true }).check();
+  await dialog.locator('.achievement-picker summary').click();
+  const name = await page.evaluate(
+    () =>
+      (JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState).players.find(
+        (p) => p.id === 'p01',
+      )!.name,
+  );
+  await dialog
+    .getByRole('group', { name: 'Break and dish', exact: true })
+    .getByLabel(name, { exact: true })
+    .check();
+  await dialog.getByRole('button', { name: 'Submit result', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('.match-achievements')).toContainText('Awaiting opponent confirmation');
+  await expect(page.getByRole('button', { name: 'Confirm achievement', exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByLabel('Playing as').selectOption('p03');
+  await page.getByRole('button', { name: 'Approve result', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Confirm achievement', exact: true }).click();
+  await expect(dialog.locator('.match-achievements')).toContainText('awaiting score confirmation');
+  await dialog.getByRole('button', { name: 'Confirm result', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.goto('/players/p01');
+  await expect(
+    page.locator('.achievement-card').filter({ hasText: 'Break and dish' }),
+  ).toBeVisible();
+  await page.getByLabel('Playing as').selectOption('p01');
+  await page.goto('/admin');
+  await page.getByRole('tab', { name: 'Players', exact: true }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: `Manage badges for ${name}`, exact: true }).click();
+  await dialog.getByRole('combobox', { name: 'Badge', exact: true }).selectOption('reverse_dish');
+  await dialog.getByLabel('Reason (optional)', { exact: true }).fill('Witnessed in the office');
+  await dialog.getByRole('button', { name: 'Grant badge', exact: true }).click();
+  const row = dialog.locator('.achievement-admin-row').filter({ hasText: 'Reverse dish' });
+  await expect(row).toContainText('confirmed');
+  await row.getByRole('button', { name: 'Revoke', exact: true }).click();
+  await dialog.getByLabel('Reason', { exact: true }).fill('Granted in error');
+  await dialog.getByRole('button', { name: 'Yes, revoke badge', exact: true }).click();
+  await expect(row).toContainText('revoked');
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  // Exercise all six real SVG assets and the responsive profile collection.
+  await page.evaluate(async () => {
+    const path = '/src/data/commands.ts';
+    const { executeCommand } = await import(path);
+    let s = JSON.parse(localStorage.getItem('virtuoso-pool-league.v1')!) as LeagueState;
+    for (const badgeKey of [
+      'season_champion',
+      'runner_up',
+      'league_leader',
+      'seven_ball',
+      'reverse_dish',
+    ] as const)
+      s = executeCommand(s, {
+        type: 'grantBadge',
+        playerId: 'p01',
+        badgeKey,
+        seasonId: ['season_champion', 'runner_up', 'league_leader'].includes(badgeKey)
+          ? s.selectedSeasonId
+          : undefined,
+      });
+    localStorage.setItem('virtuoso-pool-league.v1', JSON.stringify(s));
+  });
+  await page.goto('/players/p01');
+  await expect
+    .poll(() =>
+      page
+        .locator('.achievement-gallery img')
+        .evaluateAll((images) => new Set(images.map((img) => img.getAttribute('src'))).size),
+    )
+    .toBe(6);
+  await expect
+    .poll(() =>
+      page
+        .locator('.achievement-gallery img')
+        .evaluateAll((images) =>
+          images.every(
+            (img) =>
+              (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0,
+          ),
+        ),
+    )
+    .toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page
+    .locator('.achievement-gallery')
+    .screenshot({ path: `.tools/screenshots/${info.project.name}-achievements.png` });
+  await page.goto('/display');
+  await expect(page.locator('.tv-standings .achievement-art').first()).toBeVisible();
+});

@@ -24,6 +24,7 @@ import { executeSeasonLifecycle } from './seasonCommands';
 import { canAddSeasonPlayer, canJoinSeasonDirectly } from '../domain/seasonManagement';
 import { planAdditionalFixtures } from '../domain/lateEntry';
 import { executeRebalancedEnrollment } from './rebalancedEnrollmentCommand';
+import { addBadgeClaims, executeBadgeCommand, synchronizeBadges } from './badgeCommands';
 
 const id = () => crypto.randomUUID();
 const text = (value: string, label: string, max = 300) => {
@@ -217,6 +218,28 @@ function enrollSeasonPlayer(
 export function executeCommand(
   source: LeagueState,
   command: LeagueCommand,
+  notifications: NotificationService = inAppNotifications,
+): LeagueState {
+  const next =
+    command.type === 'grantBadge' ||
+    command.type === 'reviewBadge' ||
+    command.type === 'revokeBadge'
+      ? executeBadgeCommand(source, command)
+      : executeBaseCommand(source, command, notifications);
+  if ((command.type === 'submit' || command.type === 'submitCasual') && command.badgeClaims?.length)
+    addBadgeClaims(
+      next,
+      command.type === 'submit'
+        ? { fixtureId: command.fixtureId }
+        : { casualResultId: command.result.id },
+      command.badgeClaims,
+    );
+  return synchronizeBadges(next);
+}
+
+function executeBaseCommand(
+  source: LeagueState,
+  command: Exclude<LeagueCommand, { type: 'grantBadge' | 'reviewBadge' | 'revokeBadge' }>,
   notifications: NotificationService = inAppNotifications,
 ): LeagueState {
   if (command.type === 'acceptJoinRequestsAndRebalance')
