@@ -135,7 +135,7 @@ export class ResultEmailQueue {
           i.subject,
           i.body +
             (this.automaticConfirmation && !i.subject.includes('disputed')
-              ? '\n\nIf no opponent disputes this result, it will be automatically confirmed 48 hours after submission.'
+              ? '\n\nIf no opponent disputes this result, it will be automatically confirmed after 48 hours, excluding Saturdays and Sundays (UK time).'
               : ''),
         ],
       );

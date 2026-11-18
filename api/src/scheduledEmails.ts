@@ -76,7 +76,7 @@ export function reminderEmailIntents(
       sourceEventId: i.eventId,
       eventId: stableEventId('vpl-reminder/' + i.eventId),
       subject: 'Reminder: please review your pool result',
-      body: `${i.body}\n\nThis result has been awaiting review for over 24 hours. It will be automatically confirmed 48 hours after the latest submission unless an opponent disputes it first.`,
+      body: `${i.body}\n\nThis result has been awaiting review for at least 24 hours. It will be automatically confirmed after 48 hours from the latest submission unless an opponent disputes it first. Both timers exclude Saturdays and Sundays (UK time).`,
     }));
 }
 

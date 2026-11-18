@@ -159,7 +159,7 @@ Display standings using the following columns:
 - The opponent can approve or dispute the submitted result.
 - Only an approved result updates the league standings.
 - Administrators can resolve disputes and correct results.
-- When scheduled automation is enabled, send each opposing active player one reminder after 24 hours from the latest pending submission. Automatically confirm valid still-pending league/casual scores after 48 hours, checked hourly. Never auto-confirm disputed/cancelled results or closed league stages. Record a separate system audit event without impersonating a player; apply the existing standings and playoff progression rules. Resubmitting a disputed casual score restarts its clock.
+- When scheduled automation is enabled, send each opposing active player one reminder after 24 weekday hours from the latest pending submission. Automatically confirm valid still-pending league/casual scores after 48 weekday hours, checked hourly. Both timers exclude Saturday and Sunday in Europe/London, including BST/GMT changes; all Monday–Friday hours count, including nights and bank holidays. Submissions during weekends start accumulating time on Monday at 00:00. Apply this calculation to existing pending submissions too. Never auto-confirm disputed/cancelled results or closed league stages. Record a separate system audit event without impersonating a player; apply the existing standings and playoff progression rules. Resubmitting a disputed casual score restarts its clock.
 - Maintain basic result history for accountability.
 - Prevent duplicate submissions and self-approval.
 

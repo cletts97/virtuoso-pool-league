@@ -12,7 +12,7 @@ import {
 import type { CasualResult } from '../../src/domain/types';
 
 const now = new Date('2026-10-26T07:00:00Z');
-function scenario(hours: number) {
+function scenario(hours: number, at = now) {
   const state = createSeed('2026-10-26');
   const fixture = state.fixtures.find((f) => f.status === 'pending')!;
   fixture.history = [
@@ -20,7 +20,7 @@ function scenario(hours: number) {
       id: crypto.randomUUID(),
       action: 'submitted',
       actorId: fixture.submittedBy!,
-      at: new Date(now.getTime() - hours * 3_600_000).toISOString(),
+      at: new Date(at.getTime() - hours * 3_600_000).toISOString(),
       score: fixture.score,
     },
   ];
@@ -42,16 +42,17 @@ describe('scheduled league operations', () => {
   it.each([23.999, 24, 47.999, 48])(
     'uses submission age boundaries (%s hours) for reminders and automatic approval',
     (hours) => {
-      const { state, fixture, casual } = scenario(hours);
-      expect(pendingHours(fixture, now)).toBeCloseTo(hours);
-      const reminders = reminderEmailIntents(state, now, 'https://pool.example');
+      const weekday = new Date('2026-10-28T12:00:00Z');
+      const { state, fixture, casual } = scenario(hours, weekday);
+      expect(pendingHours(fixture, weekday)).toBeCloseTo(hours);
+      const reminders = reminderEmailIntents(state, weekday, 'https://pool.example');
       const league = reminders.filter((i) => i.matchId === fixture.id);
       const doubles = reminders.filter((i) => i.matchId === casual.id);
       expect(league).toHaveLength(hours >= 24 && hours < 48 ? 1 : 0);
       expect(doubles.map((i) => i.recipientId).sort()).toEqual(
         hours >= 24 && hours < 48 ? ['p04', 'p05'] : [],
       );
-      const next = automaticallyConfirmResults(state, now);
+      const next = automaticallyConfirmResults(state, weekday);
       expect(next.fixtures.find((f) => f.id === fixture.id)!.status).toBe(
         hours >= 48 ? 'confirmed' : 'pending',
       );
@@ -61,11 +62,53 @@ describe('scheduled league operations', () => {
           action: 'auto_approved',
           actorId: null,
         });
-        expect(automaticallyConfirmResults(next, now)).toEqual(next);
+        expect(automaticallyConfirmResults(next, weekday)).toEqual(next);
       }
       expect(fixture.status).toBe('pending');
     },
   );
+  it.each([
+    ['2026-11-13T15:00:00Z', '2026-11-14T15:00:00Z', 9],
+    ['2026-11-13T15:00:00Z', '2026-11-15T23:59:59Z', 9],
+    ['2026-11-13T15:00:00Z', '2026-11-16T14:59:59Z', 24 - 1 / 3600],
+    ['2026-11-13T15:00:00Z', '2026-11-16T15:00:00Z', 24],
+    ['2026-11-13T15:00:00Z', '2026-11-17T14:59:59Z', 48 - 1 / 3600],
+    ['2026-11-13T15:00:00Z', '2026-11-17T15:00:00Z', 48],
+    ['2026-11-14T12:00:00Z', '2026-11-16T00:00:00Z', 0],
+    ['2026-11-14T12:00:00Z', '2026-11-17T00:00:00Z', 24],
+    ['2026-11-14T12:00:00Z', '2026-11-18T00:00:00Z', 48],
+    // BST weekend starts at Friday 23:00 UTC; both DST transitions are excluded.
+    ['2026-07-10T22:30:00Z', '2026-07-12T23:30:00Z', 1],
+    ['2026-03-27T15:00:00Z', '2026-03-30T14:00:00Z', 24],
+    ['2026-10-23T14:00:00Z', '2026-10-26T15:00:00Z', 24],
+    ['2026-11-06T15:00:00Z', '2026-11-23T15:00:00Z', 264],
+  ])('counts weekday hours from %s to %s (%s hours)', (submittedAt, checkedAt, hours) => {
+    const { state, fixture, casual } = scenario(0);
+    fixture.history[0].at = submittedAt;
+    casual.history[0].at = submittedAt;
+    const checked = new Date(checkedAt);
+    expect(pendingHours(fixture, checked)).toBeCloseTo(hours, 8);
+    const reminders = reminderEmailIntents(state, checked, 'https://pool.example');
+    expect(reminders.filter((i) => i.matchId === fixture.id)).toHaveLength(
+      hours >= 24 && hours < 48 ? 1 : 0,
+    );
+    expect(reminders.filter((i) => i.matchId === casual.id)).toHaveLength(
+      hours >= 24 && hours < 48 ? 2 : 0,
+    );
+    const next = automaticallyConfirmResults(state, checked);
+    expect(next.fixtures.find((f) => f.id === fixture.id)!.status).toBe(
+      hours >= 48 ? 'confirmed' : 'pending',
+    );
+    expect(next.casualResults![0].status).toBe(hours >= 48 ? 'confirmed' : 'pending');
+  });
+  it('ignores invalid or future submissions and invalid check times', () => {
+    const { fixture } = scenario(0);
+    fixture.history[0].at = 'invalid';
+    expect(pendingHours(fixture, now)).toBe(-1);
+    fixture.history[0].at = '2026-10-27T07:00:00Z';
+    expect(pendingHours(fixture, now)).toBe(-1);
+    expect(pendingHours(fixture, new Date('invalid'))).toBe(-1);
+  });
   it('never approves disputes or closed seasons; a new submission restarts the clock', () => {
     const { state, fixture, casual } = scenario(60);
     fixture.status = 'disputed';

@@ -426,7 +426,8 @@ describe.skipIf(process.env.RUN_DB_TESTS !== 'true')(
       expect(sent.filter((m) => m.subject.includes('Fixtures for week'))).toHaveLength(5);
 
       // Seed original past submissions, never edit immutable audit events.
-      const at = new Date(),
+      // Keep age thresholds on weekdays regardless of the day this test runs.
+      const at = new Date(londonToUtc(addDays(monday, 2), '12:00')),
         old = new Date(at.getTime() - 49 * 3_600_000).toISOString();
       for (const f of state.fixtures.filter((f) => f.seasonId === season)) {
         const owner = state.participants.find((p) => p.id === f.homeId)!.playerIds[0];
