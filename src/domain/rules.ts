@@ -188,6 +188,7 @@ export function standings(season: Season, fixtures: Fixture[]): Standing[] {
     (a, b) =>
       b.won - a.won ||
       b.difference - a.difference ||
+      a.played - b.played ||
       b.framesWon - a.framesWon ||
       (a.participantId < b.participantId ? -1 : a.participantId > b.participantId ? 1 : 0),
   );
@@ -199,6 +200,7 @@ export function standings(season: Season, fixtures: Fixture[]): Standing[] {
       end < ranked.length &&
       ranked[end].won === first.won &&
       ranked[end].difference === first.difference &&
+      ranked[end].played === first.played &&
       ranked[end].framesWon === first.framesWon
     )
       end++;

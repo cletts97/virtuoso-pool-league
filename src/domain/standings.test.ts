@@ -55,7 +55,7 @@ describe('win-based ranking', () => {
     });
     expect(rows.find((r) => r.participantId === 'a')?.winPercentage).toBe(100);
   });
-  it('uses frames won after equal wins and frame difference', () => {
+  it('prefers fewer matches played after equal wins and frame difference, ahead of frames won', () => {
     const rows = standings(season, [
       match('a', 'c', { home: 2, away: 1 }),
       match('b', 'd', { home: 2, away: 0 }),
@@ -63,7 +63,38 @@ describe('win-based ranking', () => {
     ]);
     expect(
       rows.filter((r) => ['a', 'b'].includes(r.participantId)).map((r) => r.participantId),
-    ).toEqual(['b', 'a']);
+    ).toEqual(['a', 'b']);
+    expect(rows.find((r) => r.participantId === 'a')).toMatchObject({
+      won: 1,
+      difference: 1,
+      played: 1,
+      framesWon: 2,
+    });
+    expect(rows.find((r) => r.participantId === 'b')).toMatchObject({
+      won: 1,
+      difference: 1,
+      played: 2,
+      framesWon: 3,
+    });
+  });
+  it('still uses frames won when wins, difference and matches played are equal', () => {
+    const rows = standings(season, [
+      match('a', 'c', { home: 1, away: 0 }),
+      match('b', 'd', { home: 2, away: 1 }),
+    ]);
+    expect(rows.slice(0, 2).map((r) => r.participantId)).toEqual(['b', 'a']);
+  });
+  it('does not mark different matches-played totals as an unresolved tie', () => {
+    const rows = standings(season, [
+      match('a', 'c', { home: 2, away: 0 }),
+      match('a', 'e', { home: 0, away: 2 }),
+      match('b', 'd', { home: 2, away: 0 }),
+      match('b', 'c', { home: 0, away: 1 }),
+      match('b', 'e', { home: 0, away: 1 }),
+    ]);
+    const tied = rows.filter((r) => ['a', 'b'].includes(r.participantId));
+    expect(tied.map((r) => r.participantId)).toEqual(['a', 'b']);
+    expect(tied.every((r) => !r.unresolvedTie)).toBe(true);
   });
   it('uses the direct result for exactly two equal records, regardless of input order', () => {
     const fixtures = [

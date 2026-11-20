@@ -64,11 +64,12 @@ Rank players using the following criteria, in order:
 
 1. **Matches won (W)** — the player with the most match wins ranks highest.
 2. **Frame difference (+/-)** — frames won minus frames lost.
-3. **Frames won (F)** — the player who has won more individual frames ranks higher.
-4. **Head-to-head result** — where applicable, use the result between the tied players.
-5. **Final tiebreaker** — use a documented deterministic fallback for displaying unresolved ties. Qualification-critical ties should be resolved through an administrator-approved decider where necessary.
+3. **Matches played (P)** — the player who has played fewer confirmed matches ranks higher.
+4. **Frames won (F)** — the player who has won more individual frames ranks higher.
+5. **Head-to-head result** — where applicable, use the result between the tied players.
+6. **Final tiebreaker** — use a documented deterministic fallback for displaying unresolved ties. Qualification-critical ties should be resolved through an administrator-approved decider where necessary.
 
-Head-to-head applies when exactly two players remain tied after W, +/-, and F, using only their confirmed regular-season meeting in the selected season. If that meeting is not confirmed, or three or more players remain tied, immutable participant ID ascending provides display order only. No pairwise head-to-head sort or unagreed mini-league rule is applied to multi-player groups.
+Head-to-head applies when exactly two players remain tied after W, +/-, P (ascending), and F, using only their confirmed regular-season meeting in the selected season. If that meeting is not confirmed, or three or more players remain tied, immutable participant ID ascending provides display order only. No pairwise head-to-head sort or unagreed mini-league rule is applied to multi-player groups.
 
 An unresolved group spanning fourth and fifth place blocks automatic and explicit playoff qualification. The last match approval must still be saved; the season remains in its regular-season state pending resolution. Ties wholly inside or outside the top four do not change qualification membership and use the display fallback for seed order.
 
@@ -429,7 +430,7 @@ The frontend includes administration, approval workflows, historical seasons, an
 
 Defaults established for this iteration:
 
-- **Standings:** Deterministic ranking uses matches won, frame difference, frames won, head-to-head where applicable, then immutable participant ID ascending as the final display-only fallback. Qualification-critical ties that remain unresolved require an administrator-approved resolution.
+- **Standings:** Deterministic ranking uses matches won descending, frame difference descending, matches played ascending, frames won descending, head-to-head where applicable, then immutable participant ID ascending as the final display-only fallback. Qualification-critical ties that remain unresolved require an administrator-approved resolution.
 - **No league points:** No points should be calculated, stored, displayed, or used to rank players. Wins and losses are the primary match outcome statistics.
 - **Playoff qualification:** Top-four seeds lock automatically after all regular-season fixtures are confirmed, or through explicit administrator finalization with a reason and confirmation, provided no unresolved tie spans the qualification cutoff.
 - **Season finalization:** Explicit finalization closes unresolved fixtures without awarding wins, losses, points, or automatic defeats.

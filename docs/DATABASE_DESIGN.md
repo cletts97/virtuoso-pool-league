@@ -60,7 +60,7 @@ A command that changes a fixture must also append its corresponding result event
 
 There are no league-points columns. `regular_season_totals` calculates played, won, lost, frames won/lost, difference, and percentage from `confirmed` **regular-season** fixtures only. It includes entrants with zero matches and returns percentage on a 0-100 scale.
 
-The totals view is not a second ranking engine. Reuse and test the canonical rules module on the backend for wins, frame difference, frames won, head-to-head, recent form, and unresolved ties. The supplied interface alone does not establish that the current ranking algorithm is correct.
+The totals view is not a second ranking engine. Reuse and test the canonical rules module on the backend for wins descending, frame difference descending, matches played ascending, frames won descending, head-to-head, recent form, and unresolved ties. The supplied interface alone does not establish that the current ranking algorithm is correct.
 
 Qualification seed rows are finalized snapshots. The future API must prevent a display-only ID fallback from deciding qualification, block finalization for unresolved qualification-critical ties, preserve locked seeds after historical corrections, and avoid replacing participants in a started final. The schema does not automatically start playoffs or resolve ties.
 

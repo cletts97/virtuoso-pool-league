@@ -69,13 +69,14 @@ export function Standings() {
         <div>
           <h3>Playoff qualification</h3>
           <p>
-            Ranked by match wins, frame difference, then frames won. For exactly two players still
-            tied, their confirmed regular-season head-to-head result decides the order. Otherwise
-            immutable participant ID determines display order only. Unresolved ties across the
-            fourth-place cutoff require an administrator-approved decider. Once qualification is
-            resolved, seeds lock after the regular season is confirmed or explicitly finalized by an
-            administrator. Historical corrections update standings but preserve finalized playoff
-            seeds; highlights identify those locked qualifiers.
+            Ranked by match wins, frame difference, fewer matches played, then frames won. For
+            exactly two players still tied, their confirmed regular-season head-to-head result
+            decides the order. Otherwise immutable participant ID determines display order only.
+            Unresolved ties across the fourth-place cutoff require an administrator-approved
+            decider. Once qualification is resolved, seeds lock after the regular season is
+            confirmed or explicitly finalized by an administrator. Historical corrections update
+            standings but preserve finalized playoff seeds; highlights identify those locked
+            qualifiers.
           </p>
         </div>
       </div>
